@@ -9,4 +9,25 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true,
+    proxy: {
+      '/wp-json': {
+        target: 'http://127.0.0.1',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          Host: 'modena.local',
+        },
+      },
+      '/wp-content': {
+        target: 'http://127.0.0.1',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          Host: 'modena.local',
+        },
+      },
+    },
+  },
 })

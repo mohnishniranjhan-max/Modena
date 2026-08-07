@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --host",
+    "build": "vite build && powershell -Command \"Copy-Item -Path 'dist/assets/*' -Destination 'assets' -Force\"",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite --host preview"
   },
   "dependencies": {
     "lucide-react": "^1.28.0",
