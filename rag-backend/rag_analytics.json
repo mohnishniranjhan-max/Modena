@@ -1,0 +1,1242 @@
+[
+  {
+    "id": "log_1786167749665",
+    "timestamp": 1786167749.6659296,
+    "date": "2026-08-08 11:12:29",
+    "session_id": "test_sess_001",
+    "query": "Tell me about the Modena Sindoor 990W Mixer Grinder motor and price.",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.2617,
+    "docs": [
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "product_id": "26",
+        "category": "Electronics",
+        "sku": "",
+        "price": "2500",
+        "chunk_index": 0
+      },
+      {
+        "product_id": "999",
+        "sku": "MOD-CAST-10",
+        "category": "Utensils",
+        "price": "1450",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786167749677",
+    "timestamp": 1786167749.67713,
+    "date": "2026-08-08 11:12:29",
+    "session_id": "test_sess_002",
+    "query": "I want to speak with a human customer support agent right now.",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "product_id": "999",
+        "price": "1450",
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils"
+      },
+      {
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "product_id": "26",
+        "chunk_index": 0,
+        "permalink": "",
+        "category": "Electronics",
+        "sku": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786167878468",
+    "timestamp": 1786167878.4687564,
+    "date": "2026-08-08 11:14:38",
+    "session_id": "test_sess_001",
+    "query": "Tell me about the Modena Sindoor 990W Mixer Grinder motor and price.",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.8586,
+    "docs": [
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "permalink": "",
+        "price": "2500",
+        "product_id": "26",
+        "sku": "",
+        "chunk_index": 0
+      },
+      {
+        "category": "Utensils",
+        "permalink": "",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "product_id": "999"
+      }
+    ]
+  },
+  {
+    "id": "log_1786169491820",
+    "timestamp": 1786169491.820941,
+    "date": "2026-08-08 11:41:31",
+    "session_id": "sess_jm1z0uddh",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "product_id": "999",
+        "chunk_index": 0,
+        "category": "Utensils",
+        "price": "1450"
+      },
+      {
+        "category": "Electronics",
+        "permalink": "",
+        "sku": "",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "price": "2500",
+        "product_id": "26"
+      }
+    ]
+  },
+  {
+    "id": "log_1786169498864",
+    "timestamp": 1786169498.8641875,
+    "date": "2026-08-08 11:41:38",
+    "session_id": "sess_x09zqr39n",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "product_id": "999",
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "chunk_index": 0,
+        "permalink": ""
+      },
+      {
+        "category": "Electronics",
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "sku": "",
+        "product_id": "26",
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1786169526023",
+    "timestamp": 1786169526.0237484,
+    "date": "2026-08-08 11:42:06",
+    "session_id": "sess_6zt92mqgb",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "price": "1450",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "product_id": "999"
+      },
+      {
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "price": "2500",
+        "category": "Electronics",
+        "product_id": "26",
+        "sku": "",
+        "chunk_index": 0
+      }
+    ]
+  },
+  {
+    "id": "log_1786169753192",
+    "timestamp": 1786169753.192689,
+    "date": "2026-08-08 11:45:53",
+    "session_id": "sess_bo6y9w7je",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "price": "1450",
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "chunk_index": 0
+      },
+      {
+        "price": "2500",
+        "chunk_index": 0,
+        "sku": "",
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "product_id": "26",
+        "category": "Electronics"
+      }
+    ]
+  },
+  {
+    "id": "log_1786169777782",
+    "timestamp": 1786169777.7823594,
+    "date": "2026-08-08 11:46:17",
+    "session_id": "sess_kacjwh5by",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "category": "Utensils",
+        "permalink": "",
+        "price": "1450",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "product_id": "999"
+      },
+      {
+        "price": "2500",
+        "sku": "",
+        "product_id": "26",
+        "permalink": "",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics"
+      }
+    ]
+  },
+  {
+    "id": "log_1786170115760",
+    "timestamp": 1786170115.760146,
+    "date": "2026-08-08 11:51:55",
+    "session_id": "sess_gv0fq0p8e",
+    "query": "hello",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "category": "Utensils",
+        "chunk_index": 0,
+        "permalink": "",
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "sku": "MOD-CAST-10",
+        "product_id": "999"
+      },
+      {
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "product_id": "26",
+        "sku": "",
+        "chunk_index": 0,
+        "category": "Electronics"
+      }
+    ]
+  },
+  {
+    "id": "log_1786170130054",
+    "timestamp": 1786170130.054593,
+    "date": "2026-08-08 11:52:10",
+    "session_id": "sess_k4wjsm6h4",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "sku": "MOD-CAST-10",
+        "category": "Utensils",
+        "permalink": "",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "product_id": "999",
+        "chunk_index": 0
+      },
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "category": "Electronics",
+        "permalink": "",
+        "product_id": "26",
+        "sku": "",
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1786175741734",
+    "timestamp": 1786175741.7346718,
+    "date": "2026-08-08 13:25:41",
+    "session_id": "sess_dgfzbk9qp",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "product_id": "999",
+        "chunk_index": 0,
+        "category": "Utensils",
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "sku": "MOD-CAST-10",
+        "permalink": ""
+      },
+      {
+        "permalink": "",
+        "chunk_index": 0,
+        "product_id": "26",
+        "category": "Electronics",
+        "sku": "",
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder"
+      }
+    ]
+  },
+  {
+    "id": "log_1786175792223",
+    "timestamp": 1786175792.2232904,
+    "date": "2026-08-08 13:26:32",
+    "session_id": "sess_vqgejeg6e",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "product_id": "999",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "category": "Utensils",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450"
+      },
+      {
+        "category": "Electronics",
+        "sku": "",
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "chunk_index": 0,
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1786175798458",
+    "timestamp": 1786175798.458189,
+    "date": "2026-08-08 13:26:38",
+    "session_id": "sess_nbjow8xvk",
+    "query": "hi",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "category": "Utensils",
+        "chunk_index": 0
+      },
+      {
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "chunk_index": 0,
+        "price": "2500",
+        "sku": "",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786175851578",
+    "timestamp": 1786175851.5783088,
+    "date": "2026-08-08 13:27:31",
+    "session_id": "test_sess_001",
+    "query": "Tell me about the Modena Sindoor 990W Mixer Grinder motor and price.",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.2617,
+    "docs": [
+      {
+        "permalink": "",
+        "category": "Electronics",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "sku": "",
+        "price": "2500",
+        "product_id": "26"
+      },
+      {
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": "",
+        "price": "1450",
+        "product_id": "999",
+        "category": "Utensils",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10"
+      }
+    ]
+  },
+  {
+    "id": "log_1786175851593",
+    "timestamp": 1786175851.5938525,
+    "date": "2026-08-08 13:27:31",
+    "session_id": "test_sess_002",
+    "query": "I want to speak with a human customer support agent right now.",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "product_id": "999",
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils"
+      },
+      {
+        "category": "Electronics",
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "sku": "",
+        "product_id": "26",
+        "chunk_index": 0,
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786175880268",
+    "timestamp": 1786175880.2687836,
+    "date": "2026-08-08 13:28:00",
+    "session_id": "sess_3zjywhb5t",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "price": "1450",
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "chunk_index": 0,
+        "permalink": "",
+        "product_id": "999",
+        "category": "Utensils"
+      },
+      {
+        "product_id": "26",
+        "category": "Electronics",
+        "sku": "",
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1786175889485",
+    "timestamp": 1786175889.4852886,
+    "date": "2026-08-08 13:28:09",
+    "session_id": "sess_9afz97yzm",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "name": "Modena Test Cast Iron Pan",
+        "chunk_index": 0,
+        "product_id": "999",
+        "category": "Utensils",
+        "price": "1450",
+        "permalink": "",
+        "sku": "MOD-CAST-10"
+      },
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "sku": "",
+        "category": "Electronics",
+        "price": "2500",
+        "product_id": "26",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786175982972",
+    "timestamp": 1786175982.9726305,
+    "date": "2026-08-08 13:29:42",
+    "session_id": "sess_2ib7d4s2e",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "product_id": "999",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "permalink": ""
+      },
+      {
+        "category": "Electronics",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "price": "2500",
+        "chunk_index": 0,
+        "sku": "",
+        "product_id": "26"
+      }
+    ]
+  },
+  {
+    "id": "log_1786175993149",
+    "timestamp": 1786175993.1494122,
+    "date": "2026-08-08 13:29:53",
+    "session_id": "sess_lgwnuwzep",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "chunk_index": 0
+      },
+      {
+        "sku": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "permalink": "",
+        "product_id": "26",
+        "price": "2500",
+        "chunk_index": 0
+      }
+    ]
+  },
+  {
+    "id": "log_1786176011997",
+    "timestamp": 1786176011.997484,
+    "date": "2026-08-08 13:30:11",
+    "session_id": "sess_v96wuml1q",
+    "query": "njadfnbabdf",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "chunk_index": 0,
+        "permalink": "",
+        "name": "Modena Test Cast Iron Pan",
+        "product_id": "999",
+        "price": "1450",
+        "sku": "MOD-CAST-10",
+        "category": "Utensils"
+      },
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "sku": "",
+        "permalink": "",
+        "chunk_index": 0,
+        "price": "2500",
+        "category": "Electronics",
+        "product_id": "26"
+      }
+    ]
+  },
+  {
+    "id": "log_1786176095726",
+    "timestamp": 1786176095.7260349,
+    "date": "2026-08-08 13:31:35",
+    "session_id": "sess_ot9udt57m",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "category": "Utensils",
+        "chunk_index": 0,
+        "price": "1450"
+      },
+      {
+        "chunk_index": 0,
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "sku": "",
+        "category": "Electronics",
+        "permalink": "",
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1786176113578",
+    "timestamp": 1786176113.5787005,
+    "date": "2026-08-08 13:31:53",
+    "session_id": "sess_55jty2qdw",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "category": "Utensils",
+        "permalink": "",
+        "price": "1450",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan"
+      },
+      {
+        "category": "Electronics",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "product_id": "26",
+        "sku": "",
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1786176506187",
+    "timestamp": 1786176506.1870441,
+    "date": "2026-08-08 13:38:26",
+    "session_id": "sess_bclbu0qjg",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "price": "1450",
+        "product_id": "999",
+        "chunk_index": 0,
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": ""
+      },
+      {
+        "sku": "",
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "product_id": "26",
+        "category": "Electronics",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786176576735",
+    "timestamp": 1786176576.7356038,
+    "date": "2026-08-08 13:39:36",
+    "session_id": "sess_y4ctuuh25",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "category": "Utensils",
+        "price": "1450"
+      },
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "product_id": "26",
+        "sku": "",
+        "category": "Electronics",
+        "chunk_index": 0,
+        "price": "2500",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786177028601",
+    "timestamp": 1786177028.6013322,
+    "date": "2026-08-08 13:47:08",
+    "session_id": "sess_js2bf74q9",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "price": "1450",
+        "product_id": "999",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0
+      },
+      {
+        "chunk_index": 0,
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "sku": "",
+        "product_id": "26",
+        "category": "Electronics",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786177037738",
+    "timestamp": 1786177037.7389526,
+    "date": "2026-08-08 13:47:17",
+    "session_id": "sess_oberg9vky",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "name": "Modena Test Cast Iron Pan",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "product_id": "999",
+        "category": "Utensils",
+        "permalink": "",
+        "price": "1450"
+      },
+      {
+        "chunk_index": 0,
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "product_id": "26",
+        "price": "2500",
+        "category": "Electronics",
+        "sku": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786177146975",
+    "timestamp": 1786177146.9750278,
+    "date": "2026-08-08 13:49:06",
+    "session_id": "sess_mirmaqy1w",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "price": "1450",
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "permalink": "",
+        "chunk_index": 0,
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan"
+      },
+      {
+        "product_id": "26",
+        "sku": "",
+        "permalink": "",
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "category": "Electronics"
+      }
+    ]
+  },
+  {
+    "id": "log_1786193742965",
+    "timestamp": 1786193742.9654808,
+    "date": "2026-08-08 18:25:42",
+    "session_id": "sess_test123",
+    "query": "Tell me about the Modena mixer grinder price",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0422,
+    "docs": [
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "price": "2500",
+        "category": "Electronics",
+        "permalink": "",
+        "product_id": "26",
+        "sku": ""
+      },
+      {
+        "price": "1450",
+        "permalink": "",
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan"
+      }
+    ]
+  },
+  {
+    "id": "log_1786193745601",
+    "timestamp": 1786193745.60168,
+    "date": "2026-08-08 18:25:45",
+    "session_id": "sess_test123",
+    "query": "Tell me about the Modena mixer grinder price",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0422,
+    "docs": [
+      {
+        "price": "2500",
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "sku": "",
+        "chunk_index": 0,
+        "category": "Electronics"
+      },
+      {
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "category": "Utensils",
+        "price": "1450",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan",
+        "product_id": "999"
+      }
+    ]
+  },
+  {
+    "id": "log_1786193829337",
+    "timestamp": 1786193829.3376238,
+    "date": "2026-08-08 18:27:09",
+    "session_id": "test",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "chunk_index": 0,
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "category": "Utensils",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450"
+      },
+      {
+        "category": "Electronics",
+        "permalink": "",
+        "price": "2500",
+        "product_id": "26",
+        "sku": "",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder"
+      }
+    ]
+  },
+  {
+    "id": "log_1786193832124",
+    "timestamp": 1786193832.124955,
+    "date": "2026-08-08 18:27:12",
+    "session_id": "sess_user_test",
+    "query": "What cookware do you have?",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "chunk_index": 0,
+        "permalink": "",
+        "price": "1450",
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils"
+      },
+      {
+        "permalink": "",
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "sku": "",
+        "product_id": "26",
+        "category": "Electronics"
+      }
+    ]
+  },
+  {
+    "id": "log_1786199559258",
+    "timestamp": 1786199559.2589157,
+    "date": "2026-08-08 20:02:39",
+    "session_id": "sess_o6ro30tqs",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "product_id": "999"
+      },
+      {
+        "category": "Electronics",
+        "sku": "",
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "price": "2500",
+        "chunk_index": 0,
+        "product_id": "26"
+      }
+    ]
+  },
+  {
+    "id": "log_1786200162966",
+    "timestamp": 1786200162.9667203,
+    "date": "2026-08-08 20:12:42",
+    "session_id": "sess_8ckg1j58y",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "product_id": "999",
+        "category": "Utensils",
+        "chunk_index": 0,
+        "permalink": ""
+      },
+      {
+        "product_id": "26",
+        "permalink": "",
+        "sku": "",
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "chunk_index": 0
+      }
+    ]
+  },
+  {
+    "id": "log_1786200752516",
+    "timestamp": 1786200752.5165803,
+    "date": "2026-08-08 20:22:32",
+    "session_id": "sess_zfopaonae",
+    "query": "tell me about the website",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "category": "Utensils",
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": "",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "price": "1450"
+      },
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "price": "2500",
+        "product_id": "26",
+        "chunk_index": 0,
+        "category": "Electronics",
+        "sku": "",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786201076111",
+    "timestamp": 1786201076.1112647,
+    "date": "2026-08-08 20:27:56",
+    "session_id": "sess_1do1da28g",
+    "query": "hi",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "chunk_index": 0,
+        "permalink": "",
+        "product_id": "999",
+        "category": "Utensils",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "sku": "MOD-CAST-10"
+      },
+      {
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "sku": "",
+        "price": "2500",
+        "chunk_index": 0,
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786201086139",
+    "timestamp": 1786201086.1395135,
+    "date": "2026-08-08 20:28:06",
+    "session_id": "sess_00rqcucqr",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "permalink": "",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "product_id": "999"
+      },
+      {
+        "chunk_index": 0,
+        "sku": "",
+        "permalink": "",
+        "product_id": "26",
+        "price": "2500",
+        "category": "Electronics",
+        "name": "Modena Sindoor 990W Mixer Grinder"
+      }
+    ]
+  },
+  {
+    "id": "log_1786201107494",
+    "timestamp": 1786201107.4941056,
+    "date": "2026-08-08 20:28:27",
+    "session_id": "sess_sa13c2i9u",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "chunk_index": 0,
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "name": "Modena Test Cast Iron Pan",
+        "permalink": "",
+        "product_id": "999"
+      },
+      {
+        "category": "Electronics",
+        "permalink": "",
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "sku": "",
+        "price": "2500",
+        "chunk_index": 0
+      }
+    ]
+  },
+  {
+    "id": "log_1786201146796",
+    "timestamp": 1786201146.796542,
+    "date": "2026-08-08 20:29:06",
+    "session_id": "sess_1wr7r4jr5",
+    "query": "hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "category": "Utensils",
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "price": "1450",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan"
+      },
+      {
+        "product_id": "26",
+        "category": "Electronics",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "price": "2500",
+        "sku": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1786259175951",
+    "timestamp": 1786259175.951269,
+    "date": "2026-08-09 12:36:15",
+    "session_id": "test_sess_001",
+    "query": "Tell me about the Modena Sindoor 990W Mixer Grinder motor and price.",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.2617,
+    "docs": [
+      {
+        "product_id": "26",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "price": "2500",
+        "sku": "",
+        "category": "Electronics",
+        "permalink": ""
+      },
+      {
+        "category": "Utensils",
+        "price": "1450",
+        "product_id": "999",
+        "sku": "MOD-CAST-10",
+        "permalink": "",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan"
+      }
+    ]
+  },
+  {
+    "id": "log_1786259175968",
+    "timestamp": 1786259175.9689918,
+    "date": "2026-08-09 12:36:15",
+    "session_id": "test_sess_002",
+    "query": "I want to speak with a human customer support agent right now.",
+    "response": "I need to connect you with a human expert.",
+    "status": "escalate",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "sku": "MOD-CAST-10",
+        "product_id": "999",
+        "permalink": "",
+        "category": "Utensils",
+        "price": "1450",
+        "chunk_index": 0,
+        "name": "Modena Test Cast Iron Pan"
+      },
+      {
+        "product_id": "26",
+        "category": "Electronics",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": "",
+        "sku": "",
+        "chunk_index": 0,
+        "price": "2500"
+      }
+    ]
+  }
+]

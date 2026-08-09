@@ -13,20 +13,19 @@ export default defineConfig({
     host: true,
     proxy: {
       '/wp-json': {
-        target: 'http://127.0.0.1',
+        target: 'http://modena.local',
         changeOrigin: true,
         secure: false,
-        headers: {
-          Host: 'modena.local',
-        },
       },
       '/wp-content': {
-        target: 'http://127.0.0.1',
+        target: 'http://modena.local',
         changeOrigin: true,
         secure: false,
-        headers: {
-          Host: 'modena.local',
-        },
+      },
+      '/api/v1': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
       },
     },
   },
