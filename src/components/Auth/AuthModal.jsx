@@ -80,10 +80,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Backdrop */}
-      <div onClick={onClose} className="fixed inset-0 bg-[#2a1613]/70 backdrop-blur-md" />
+      <div onClick={onClose} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-[440px] bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-200 z-50 my-auto text-[#111111] overflow-hidden">
+      <div className="relative w-full max-w-[440px] bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-200 z-50 my-auto text-[#2A2724] overflow-hidden">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
@@ -100,7 +100,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
           />
         </div>
 
-        <h2 className="text-xl font-bold font-inter text-center mb-4 text-[#2a1613]">
+        <h2 className="text-xl font-bold font-inter text-center mb-4 text-[#2A2724]">
           Sign In to Modena
         </h2>
 
@@ -137,7 +137,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 value={emailOrUsername}
                 onChange={(e) => setEmailOrUsername(e.target.value)}
                 placeholder="mohnishniranjhan@gmail.com"
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-[#b70100] focus:ring-2 focus:ring-[#b70100]/20 transition-all"
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-[#E60000] focus:ring-2 focus:ring-[#E60000]/20 transition-all"
               />
               <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
@@ -161,7 +161,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="•••••••••••••••••"
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-[#b70100] focus:ring-2 focus:ring-[#b70100]/20 transition-all"
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-[#E60000] focus:ring-2 focus:ring-[#E60000]/20 transition-all"
               />
               <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
@@ -173,17 +173,17 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
               id="agree-terms-modal"
               required
               defaultChecked
-              className="mt-0.5 accent-[#b70100] cursor-pointer rounded"
+              className="mt-0.5 accent-[#E60000] cursor-pointer rounded"
             />
             <label htmlFor="agree-terms-modal" className="cursor-pointer leading-snug">
-              By signing in, you agree to Modena’s <strong className="text-[#b70100]">Terms &amp; Conditions</strong>, <strong className="text-[#b70100]">Privacy Policy</strong> &amp; <strong className="text-[#b70100]">Return Policy</strong>.
+              By signing in, you agree to Modena’s <strong className="text-[#E60000]">Terms &amp; Conditions</strong>, <strong className="text-[#E60000]">Privacy Policy</strong> &amp; <strong className="text-[#E60000]">Return Policy</strong>.
             </label>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#b70100] hover:bg-[#9a0100] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

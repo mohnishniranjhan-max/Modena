@@ -148,7 +148,7 @@ const Chatbot = () => {
         <button
           onClick={() => setIsOpen(true)}
           aria-label="Open Modena Support Chat"
-          className="h-14 w-14 rounded-full bg-[#E60000] hover:bg-[#CC0000] text-white flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group focus:outline-none focus:ring-4 focus:ring-[#E60000]/40"
+          className="h-14 w-14 rounded-full bg-[#E60000] hover:bg-[#E60000] text-white flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group focus:outline-none focus:ring-4 focus:ring-[#E60000]/40"
         >
           <MessageCircle className="w-7 h-7 text-white fill-white/20 transition-transform duration-200 group-hover:rotate-12" />
           {/* Notification Dot */}
@@ -160,7 +160,7 @@ const Chatbot = () => {
 
       {/* 3. Opened State: Chat Window */}
       {isOpen && (
-        <div className="w-80 h-96 rounded-lg shadow-2xl bg-[#FAF8F6] overflow-hidden flex flex-col border border-[#E8E1DC] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4">
+        <div className="w-80 h-96 rounded-lg shadow-2xl bg-[#FAF8F6] overflow-hidden flex flex-col border border-[#EFEAE6] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4">
           {/* 4. Header */}
           <div className="bg-[#2A2724] text-white p-3.5 flex items-center justify-between font-['Jost',sans-serif] shadow-md select-none">
             <div className="flex items-center gap-2.5">
@@ -205,7 +205,7 @@ const Chatbot = () => {
                     onClick={(e) => e.stopPropagation()}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full bg-[#E60000] hover:bg-[#b70100] text-white font-semibold text-xs py-2.5 px-4 rounded-lg shadow transition-all block cursor-pointer"
+                    className="w-full bg-[#E60000] hover:bg-[#E60000] text-white font-semibold text-xs py-2.5 px-4 rounded-lg shadow transition-all block cursor-pointer"
                   >
                     📧 Email Customer Care
                   </a>
@@ -246,7 +246,7 @@ const Chatbot = () => {
                           isBot
                             ? msg.isEscalation
                               ? 'bg-amber-50 text-amber-900 border border-amber-200 rounded-bl-xs'
-                              : 'bg-[#EFEAE6] text-[#2A2724] rounded-bl-xs border border-[#E8E1DC]'
+                              : 'bg-[#EFEAE6] text-[#2A2724] rounded-bl-xs border border-[#EFEAE6]'
                             : 'bg-[#E60000] text-white rounded-br-xs font-medium'
                         }`}
                       >
@@ -258,7 +258,7 @@ const Chatbot = () => {
                             </span>
                             <button
                               onClick={() => setChatState('human_support')}
-                              className="bg-[#E60000] hover:bg-[#b70100] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg text-center transition-all shadow-sm flex items-center justify-center gap-1 cursor-pointer"
+                              className="bg-[#E60000] hover:bg-[#E60000] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg text-center transition-all shadow-sm flex items-center justify-center gap-1 cursor-pointer"
                             >
                               Open Support Portal
                             </button>
@@ -266,7 +266,7 @@ const Chatbot = () => {
                         )}
                         <span
                           className={`block text-[9px] mt-1 text-right font-normal ${
-                            isBot ? (msg.isEscalation ? 'text-amber-700' : 'text-[#7C746E]') : 'text-white/80'
+                            isBot ? (msg.isEscalation ? 'text-amber-700' : 'text-[#8A827C]') : 'text-white/80'
                           }`}
                         >
                           {msg.time}
@@ -283,7 +283,7 @@ const Chatbot = () => {
                 })}
 
                 {isTyping && (
-                  <div className="flex items-center gap-2 text-[#7C746E] text-xs p-2 bg-[#EFEAE6] w-max rounded-full border border-[#E8E1DC] animate-pulse">
+                  <div className="flex items-center gap-2 text-[#8A827C] text-xs p-2 bg-[#EFEAE6] w-max rounded-full border border-[#EFEAE6] animate-pulse">
                     <Bot className="w-3.5 h-3.5 text-[#2A2724]" />
                     <span>Modena Support is typing...</span>
                   </div>
@@ -295,7 +295,7 @@ const Chatbot = () => {
               {/* Input Area */}
               <form
                 onSubmit={handleSubmit}
-                className="p-2.5 bg-white border-t border-[#E8E1DC] flex items-center gap-2"
+                className="p-2.5 bg-white border-t border-[#EFEAE6] flex items-center gap-2"
               >
                 <input
                   id="chatbot-message-input"
@@ -311,14 +311,14 @@ const Chatbot = () => {
                     }
                   }}
                   placeholder="Ask about kitchenware..."
-                  className="flex-1 bg-[#FAF8F6] border border-[#E8E1DC] rounded-lg px-3 py-2 text-xs sm:text-sm text-[#2A2724] placeholder-gray-400 focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000] transition-colors"
+                  className="flex-1 bg-[#FAF8F6] border border-[#EFEAE6] rounded-lg px-3 py-2 text-xs sm:text-sm text-[#2A2724] placeholder-gray-400 focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000] transition-colors"
                 />
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={!input.trim()}
                   aria-label="Send message"
-                  className="bg-[#E60000] hover:bg-[#CC0000] text-white p-2 rounded-lg transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow active:scale-95 cursor-pointer"
+                  className="bg-[#E60000] hover:bg-[#E60000] text-white p-2 rounded-lg transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow active:scale-95 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>

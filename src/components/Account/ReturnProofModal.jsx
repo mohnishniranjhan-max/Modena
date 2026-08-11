@@ -321,7 +321,7 @@ const ReturnProofModal = ({ orderId, isOpen, onClose, onSuccess }) => {
             <button
               type="submit"
               disabled={loading || !file}
-              className="flex-1 bg-[#E60000] hover:bg-[#cc0000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

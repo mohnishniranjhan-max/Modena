@@ -13,20 +13,20 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
   ];
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300 font-inter text-[#2a1613]">
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300 font-inter text-[#2A2724]">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
-        <button onClick={onBack} className="hover:text-[#b70100] cursor-pointer flex items-center gap-1 font-medium">
+        <button onClick={onBack} className="hover:text-[#E60000] cursor-pointer flex items-center gap-1 font-medium">
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Your Account</span>
         </button>
         <span>›</span>
-        <span className="text-[#b70100] font-semibold">Store Policies & Legal Terms</span>
+        <span className="text-[#E60000] font-semibold">Store Policies & Legal Terms</span>
       </div>
 
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#111111] via-[#2a1613] to-[#111111] text-white p-6 sm:p-10 rounded-3xl mb-8 shadow-xl border border-[#333]">
-        <div className="inline-flex items-center gap-2 bg-[#b70100] text-white text-xs font-label-caps px-3.5 py-1 rounded-full mb-3 font-bold">
+      <div className="bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] text-white p-6 sm:p-10 rounded-3xl mb-8 shadow-xl border border-[#333]">
+        <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-label-caps px-3.5 py-1 rounded-full mb-3 font-bold">
           <ShieldCheck className="w-4 h-4" />
           <span>OFFICIAL STORE POLICIES (v2)</span>
         </div>
@@ -51,12 +51,12 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full text-left px-4 py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
                     isActive
-                      ? 'bg-[#b70100] text-white shadow-md'
-                      : 'text-gray-700 hover:bg-[#fff0ee] hover:text-[#b70100]'
+                      ? 'bg-[#E60000] text-white shadow-md'
+                      : 'text-gray-700 hover:bg-[#FAF8F6] hover:text-[#E60000]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#b70100]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#E60000]'}`} />
                     <span>{tab.name}</span>
                   </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90 text-white' : 'text-gray-400'}`} />
@@ -66,8 +66,8 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
           </div>
 
           {/* Quick Contact Box */}
-          <div className="bg-[#fff0ee] border border-[#e9bcb5] rounded-2xl p-5 space-y-3 text-xs">
-            <h4 className="font-bold text-[#b70100] uppercase tracking-wider flex items-center gap-1.5">
+          <div className="bg-[#FAF8F6] border border-[#E2DCD7] rounded-2xl p-5 space-y-3 text-xs">
+            <h4 className="font-bold text-[#E60000] uppercase tracking-wider flex items-center gap-1.5">
               <Mail className="w-4 h-4" />
               <span>Grievance &amp; Support</span>
             </h4>
@@ -76,15 +76,15 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
             </p>
             <div className="space-y-1.5 font-medium text-gray-800 text-[11px]">
               <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-[#b70100]" />
+                <Mail className="w-3.5 h-3.5 text-[#E60000]" />
                 <a href="mailto:support@modenahome.in" className="hover:underline">support@modenahome.in</a>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-[#b70100]" />
+                <Mail className="w-3.5 h-3.5 text-[#E60000]" />
                 <a href="mailto:grievance@modenahome.in" className="hover:underline">grievance@modenahome.in</a>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-[#b70100]" />
+                <Phone className="w-3.5 h-3.5 text-[#E60000]" />
                 <span><a href="https://wa.me/919326641825" target="_blank" rel="noopener noreferrer" className="hover:underline font-bold">+91 93266 41825</a> (Phone &amp; WhatsApp) / +91 91366 69608</span>
               </div>
             </div>
@@ -98,7 +98,7 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
           {activeTab === 'terms' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div className="border-b border-gray-200 pb-4">
-                <span className="text-[10px] font-bold text-[#b70100] uppercase tracking-wider block">Official Policy</span>
+                <span className="text-[10px] font-bold text-[#E60000] uppercase tracking-wider block">Official Policy</span>
                 <h2 className="text-2xl font-bold text-gray-900 mt-0.5">1. Terms &amp; Conditions</h2>
                 <p className="text-xs text-gray-400 mt-1">Last updated: 8 August 2026</p>
               </div>
@@ -125,7 +125,7 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
 
                 <div className="space-y-2">
                   <h3 className="font-bold text-gray-900">Payments</h3>
-                  <p>We accept prepaid payments only (UPI, Razorpay, credit/debit cards, net banking, and digital wallets). Cash on Delivery is not available.</p>
+                  <p>We accept prepaid payments only (UPI, Zoho Pay, credit/debit cards, net banking, and digital wallets). Cash on Delivery is not available.</p>
                 </div>
 
                 <div className="space-y-2">
@@ -150,14 +150,14 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
           {activeTab === 'returns' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div className="border-b border-gray-200 pb-4">
-                <span className="text-[10px] font-bold text-[#b70100] uppercase tracking-wider block">Official Policy</span>
+                <span className="text-[10px] font-bold text-[#E60000] uppercase tracking-wider block">Official Policy</span>
                 <h2 className="text-2xl font-bold text-gray-900 mt-0.5">2. Return, Refund &amp; Cancellation Policy</h2>
                 <p className="text-xs text-gray-400 mt-1">Last updated: 8 August 2026</p>
               </div>
 
               <div className="space-y-4 text-xs sm:text-sm text-gray-700">
-                <div className="bg-[#fff0ee] p-4 rounded-2xl border border-[#e9bcb5] space-y-1 text-xs">
-                  <strong className="text-[#b70100] font-bold block">Cancellations</strong>
+                <div className="bg-[#FAF8F6] p-4 rounded-2xl border border-[#E2DCD7] space-y-1 text-xs">
+                  <strong className="text-[#E60000] font-bold block">Cancellations</strong>
                   <p>You may cancel your order within 2 hours of placing it, or any time before it is dispatched — whichever is earlier — by emailing support@modenahome.in with your order number. Once an order is dispatched, it cannot be cancelled.</p>
                 </div>
 
@@ -206,15 +206,15 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
           {activeTab === 'shipping' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div className="border-b border-gray-200 pb-4">
-                <span className="text-[10px] font-bold text-[#b70100] uppercase tracking-wider block">Official Policy</span>
+                <span className="text-[10px] font-bold text-[#E60000] uppercase tracking-wider block">Official Policy</span>
                 <h2 className="text-2xl font-bold text-gray-900 mt-0.5">3. Shipping Policy</h2>
                 <p className="text-xs text-gray-400 mt-1">Last updated: 8 August 2026</p>
               </div>
 
               <div className="space-y-4 text-xs sm:text-sm text-gray-700">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-[#fff0ee] p-4 rounded-2xl border border-[#e9bcb5]">
-                    <span className="text-[10px] font-bold text-[#b70100] uppercase tracking-wider block">FREE SHIPPING THRESHOLD</span>
+                  <div className="bg-[#FAF8F6] p-4 rounded-2xl border border-[#E2DCD7]">
+                    <span className="text-[10px] font-bold text-[#E60000] uppercase tracking-wider block">FREE SHIPPING THRESHOLD</span>
                     <h4 className="font-bold text-base text-gray-900 mt-1">Orders Above ₹2,999</h4>
                     <p className="text-xs text-gray-600 mt-1">Enjoy 100% Free Express Logistics across all pincodes in India.</p>
                   </div>
@@ -248,7 +248,7 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
           {activeTab === 'privacy' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div className="border-b border-gray-200 pb-4">
-                <span className="text-[10px] font-bold text-[#b70100] uppercase tracking-wider block">Official Policy</span>
+                <span className="text-[10px] font-bold text-[#E60000] uppercase tracking-wider block">Official Policy</span>
                 <h2 className="text-2xl font-bold text-gray-900 mt-0.5">4. Privacy Policy (DPDP Act 2023 Compliant)</h2>
                 <p className="text-xs text-gray-400 mt-1">Last updated: 8 August 2026</p>
               </div>
@@ -274,8 +274,8 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
                   <p className="mt-2">Under the DPDP Act 2023, you have the right to access, correct, and request erasure of your personal data. Contact our Grievance Officer below to exercise your rights.</p>
                 </div>
 
-                <div className="bg-[#fff0ee] p-4 rounded-2xl border border-[#e9bcb5] space-y-1 text-xs">
-                  <strong className="text-[#b70100] font-bold block">Grievance Officer (DPDP Act 2023)</strong>
+                <div className="bg-[#FAF8F6] p-4 rounded-2xl border border-[#E2DCD7] space-y-1 text-xs">
+                  <strong className="text-[#E60000] font-bold block">Grievance Officer (DPDP Act 2023)</strong>
                   <p><strong>Name:</strong> Anurag Yadav</p>
                   <p><strong>Email:</strong> grievance@modenahome.in</p>
                   <p><strong>Phone:</strong> +91 91366 69608</p>
@@ -288,7 +288,7 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
           {activeTab === 'warranty' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div className="border-b border-gray-200 pb-4">
-                <span className="text-[10px] font-bold text-[#b70100] uppercase tracking-wider block">Official Policy</span>
+                <span className="text-[10px] font-bold text-[#E60000] uppercase tracking-wider block">Official Policy</span>
                 <h2 className="text-2xl font-bold text-gray-900 mt-0.5">5. Warranty Policy</h2>
                 <p className="text-xs text-gray-400 mt-1">Last updated: 8 August 2026</p>
               </div>
@@ -309,12 +309,12 @@ const StorePolicies = ({ onBack, initialTab = 'terms' }) => {
                     <tbody className="divide-y divide-gray-200">
                       <tr>
                         <td className="p-3 font-bold text-gray-900">Mixer Grinders</td>
-                        <td className="p-3 text-[#b70100] font-bold">5 Years</td>
+                        <td className="p-3 text-[#E60000] font-bold">5 Years</td>
                         <td className="p-3">Copper Motor manufacturing defects only</td>
                       </tr>
                       <tr>
                         <td className="p-3 font-bold text-gray-900">Personal Blenders (NutriCharge)</td>
-                        <td className="p-3 text-[#b70100] font-bold">2 Years</td>
+                        <td className="p-3 text-[#E60000] font-bold">2 Years</td>
                         <td className="p-3">High-speed Motor manufacturing defects only</td>
                       </tr>
                       <tr>

@@ -13,7 +13,7 @@ const DEFAULT_SUGGESTIONS = [
   "🔄 What is your Return & Exchange policy?"
 ];
 
-const Chatbot = ({ currentView = 'home', selectedProduct = null, onSelectProduct, onAddToCart, isCartOpen = false, isCheckoutOpen = false }) => {
+const Chatbot = ({ currentView = 'home', selectedProduct = null, onSelectProduct, onAddToCart, isCartOpen = false, isCheckoutOpen = false, isFooterInView = false }) => {
   const { products: liveCatalog } = useProducts();
   const { isMobile } = useDisplayTopology();
   const [isOpen, setIsOpen] = useState(false);
@@ -182,7 +182,7 @@ Customer Message: "${userQuery}"`;
     } else if (q.includes('track') || q.includes('order') || q.includes('delivery')) {
       responseText = "Sure thing! You can track your active package live anytime under **Your Account > Your Orders**. Just click **Track package** next to your order to view BlueDart real-time delivery status!";
     } else if (q.includes('return') || q.includes('replace') || q.includes('refund')) {
-      responseText = "No problem at all! We offer a 30-Day Hassle-Free Return & Replacement policy. You can request a free replacement or direct Razorpay bank refund under **Your Account > Return / Replace**!";
+      responseText = "No problem at all! We offer a 30-Day Hassle-Free Return & Replacement policy. You can request a free replacement or direct Zoho Pay bank refund under **Your Account > Return / Replace**!";
     } else if (q.includes('best') || q.includes('recommend') || q.includes('top') || q.includes('bestseller') || q.includes('popular') || q.includes('favorite') || q.includes('favourite')) {
       responseText = "If you're looking for the absolute **best products** in our store, our **#1 Bestseller** is the **Modena Sindoor 990W Mixer Grinder** (₹2,500.00)! It features a 100% pure heavy copper motor running at 22,000 RPM, perfect for tough Indian grinding with a 5-Year Motor Warranty.\n\nFor cookware, our **10\" Heavy Cast Iron Skillet** (₹1,450.00) is another top-rated customer favorite that comes pre-seasoned with a Lifetime Warranty!\n\nWhich one matches your cooking style best?";
       matchedProducts = catalog.slice(0, 2);
@@ -236,7 +236,7 @@ Customer Message: "${userQuery}"`;
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
-          <strong key={index} className={isBot ? "font-extrabold text-[#b70100]" : "font-extrabold text-white underline"}>
+          <strong key={index} className={isBot ? "font-extrabold text-[#E60000]" : "font-extrabold text-white underline"}>
             {part.slice(2, -2)}
           </strong>
         );
@@ -246,31 +246,41 @@ Customer Message: "${userQuery}"`;
   };
 
   return (
-    <div className={`fixed z-50 transition-all duration-300 ${isOpen && isMobile ? 'inset-0 w-full h-full flex flex-col' : isCheckoutOpen ? 'hidden' : isCartOpen ? 'hidden md:flex md:right-[440px] bottom-6' : 'flex right-4 md:right-6 bottom-4 md:bottom-6'}`}>
+    <div
+      className={`fixed z-50 transition-all duration-500 ease-in-out ${
+        isOpen && isMobile
+          ? 'inset-0 w-full h-full flex flex-col'
+          : isCheckoutOpen
+          ? 'hidden'
+          : isCartOpen
+          ? 'hidden md:flex md:right-[440px] ' + (isFooterInView ? 'bottom-28 md:bottom-32' : 'bottom-6')
+          : 'flex right-4 md:right-6 ' + (isFooterInView ? 'bottom-28 md:bottom-32' : 'bottom-4 md:bottom-6')
+      }`}
+    >
       {/* Floating Action Button (FAB) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           aria-label="Open Chat with Alex"
-          className="h-14 w-14 rounded-full bg-[#b70100] hover:bg-[#e60000] text-white flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/20"
+          className="h-14 w-14 rounded-full bg-[#E60000] hover:bg-[#E60000] text-white flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/20"
         >
           <MessageCircle className="w-7 h-7 text-white fill-white/20 transition-transform duration-200 group-hover:rotate-12" />
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-400 border-2 border-[#111111] text-[9px] font-bold text-black items-center justify-center">1</span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-400 border-2 border-[#2A2724] text-[9px] font-bold text-black items-center justify-center">1</span>
           </span>
         </button>
       )}
 
       {/* Chat Window Container */}
       {isOpen && (
-        <div className={`${isMobile ? 'w-full h-full rounded-none' : 'w-[340px] sm:w-[380px] h-[540px] rounded-3xl'} shadow-2xl bg-white overflow-hidden flex flex-col border border-gray-200 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 text-[#111111]`}>
+        <div className={`${isMobile ? 'w-full h-full rounded-none' : 'w-[340px] sm:w-[380px] h-[540px] rounded-3xl'} shadow-2xl bg-white overflow-hidden flex flex-col border border-gray-200 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 text-[#2A2724]`}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#111111] via-[#2a1613] to-[#111111] text-white p-4 flex items-center justify-between shadow-md relative">
+          <div className="bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] text-white p-4 flex items-center justify-between shadow-md relative">
             <div className="flex items-center gap-3">
-              <div className="relative flex items-center justify-center w-9.5 h-9.5 rounded-2xl bg-[#b70100] text-white shadow-lg font-bold text-sm">
+              <div className="relative flex items-center justify-center w-9.5 h-9.5 rounded-2xl bg-[#E60000] text-white shadow-lg font-bold text-sm">
                 <span>A</span>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#111111]"></span>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#2A2724]"></span>
               </div>
               <div>
                 <h3 className="font-bold text-sm leading-tight text-white tracking-wide flex items-center gap-1.5 font-inter">
@@ -307,7 +317,7 @@ Customer Message: "${userQuery}"`;
 
           {/* Active Product Analysis Context Bar */}
           {selectedProduct && (
-            <div className="bg-red-50 px-4 py-2 border-b border-red-100 flex items-center justify-between text-xs text-[#b70100] animate-in fade-in duration-200">
+            <div className="bg-red-50 px-4 py-2 border-b border-red-100 flex items-center justify-between text-xs text-[#E60000] animate-in fade-in duration-200">
               <div className="flex items-center gap-2 truncate">
                 <Eye className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">Active Showroom Item: <strong className="font-bold">{selectedProduct.name}</strong></span>
@@ -317,14 +327,14 @@ Customer Message: "${userQuery}"`;
           )}
 
           {/* Messages Scroll Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fff8f6] font-inter text-xs">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#FAF8F6] font-inter text-xs">
             {messages.map((msg) => {
               const isBot = msg.sender === 'bot';
               return (
                 <div key={msg.id} className={`flex flex-col ${isBot ? 'items-start' : 'items-end'}`}>
                   <div className={`flex items-end gap-2 ${isBot ? 'justify-start' : 'justify-end'} max-w-[90%]`}>
                     {isBot && (
-                      <div className="w-6 h-6 rounded-full bg-[#b70100] text-white flex items-center justify-center text-[11px] font-extrabold flex-shrink-0 mb-1 shadow">
+                      <div className="w-6 h-6 rounded-full bg-[#E60000] text-white flex items-center justify-center text-[11px] font-extrabold flex-shrink-0 mb-1 shadow">
                         A
                       </div>
                     )}
@@ -332,8 +342,8 @@ Customer Message: "${userQuery}"`;
                     <div
                       className={`p-3.5 rounded-2xl leading-relaxed shadow-sm transition-all ${
                         isBot
-                          ? 'bg-white text-[#2a1613] rounded-bl-xs border border-gray-200'
-                          : 'bg-[#b70100] text-white rounded-br-xs font-medium shadow-red-900/20'
+                          ? 'bg-white text-[#2A2724] rounded-bl-xs border border-gray-200'
+                          : 'bg-[#E60000] text-white rounded-br-xs font-medium shadow-red-900/20'
                       }`}
                     >
                       <p className="whitespace-pre-wrap break-words">{renderFormattedText(msg.text, isBot)}</p>
@@ -343,7 +353,7 @@ Customer Message: "${userQuery}"`;
                     </div>
 
                     {!isBot && (
-                      <div className="w-6 h-6 rounded-full bg-[#111111] text-white flex items-center justify-center text-[10px] flex-shrink-0 mb-1 shadow">
+                      <div className="w-6 h-6 rounded-full bg-[#2A2724] text-white flex items-center justify-center text-[10px] flex-shrink-0 mb-1 shadow">
                         <User className="w-3.5 h-3.5" />
                       </div>
                     )}
@@ -353,17 +363,17 @@ Customer Message: "${userQuery}"`;
                   {msg.products && msg.products.length > 0 && (
                     <div className="mt-2.5 ml-8 space-y-2 w-full max-w-[85%]">
                       {msg.products.map((p) => (
-                        <div key={p.id} className="bg-white rounded-2xl p-2.5 border border-gray-200 shadow-sm flex items-center justify-between gap-2 hover:border-[#b70100] transition-colors">
+                        <div key={p.id} className="bg-white rounded-2xl p-2.5 border border-gray-200 shadow-sm flex items-center justify-between gap-2 hover:border-[#E60000] transition-colors">
                           <div className="flex items-center gap-2.5 overflow-hidden cursor-pointer" onClick={() => onSelectProduct && onSelectProduct(p)}>
                             <img src={p.image} alt={p.name} className="w-11 h-11 object-contain bg-gray-50 rounded-xl p-1 border border-gray-100 flex-shrink-0" />
                             <div className="truncate">
-                              <h4 className="font-bold text-[11px] text-gray-900 truncate hover:text-[#b70100]">{p.name}</h4>
-                              <span className="text-[11px] font-extrabold text-[#b70100] block">{p.price || p.price_html}</span>
+                              <h4 className="font-bold text-[11px] text-gray-900 truncate hover:text-[#E60000]">{p.name}</h4>
+                              <span className="text-[11px] font-extrabold text-[#E60000] block">{p.price || p.price_html}</span>
                             </div>
                           </div>
                           <button
                             onClick={() => onAddToCart && onAddToCart(p)}
-                            className="bg-[#b70100] hover:bg-[#e60000] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1 shadow"
+                            className="bg-[#E60000] hover:bg-[#E60000] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1 shadow"
                           >
                             <ShoppingBag className="w-3 h-3" />
                             <span>Add</span>
@@ -382,10 +392,10 @@ Customer Message: "${userQuery}"`;
                           <button
                             key={idx}
                             onClick={() => handleSend(sug.replace(/^[^\s]+\s/, ''))}
-                            className="bg-white hover:bg-red-50 text-gray-800 hover:text-[#b70100] text-[11px] font-medium py-1.5 px-3 rounded-xl border border-gray-200 text-left transition-colors cursor-pointer flex items-center justify-between group shadow-2xs"
+                            className="bg-white hover:bg-red-50 text-gray-800 hover:text-[#E60000] text-[11px] font-medium py-1.5 px-3 rounded-xl border border-gray-200 text-left transition-colors cursor-pointer flex items-center justify-between group shadow-2xs"
                           >
                             <span>{sug}</span>
-                            <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#b70100] transition-colors" />
+                            <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#E60000] transition-colors" />
                           </button>
                         ))}
                       </div>
@@ -397,7 +407,7 @@ Customer Message: "${userQuery}"`;
 
             {isTyping && (
               <div className="flex items-center gap-2 text-gray-500 text-xs p-2.5 bg-white w-max rounded-2xl border border-gray-200 shadow-sm animate-pulse ml-8">
-                <span className="w-4 h-4 rounded-full bg-[#b70100] text-white text-[9px] font-bold flex items-center justify-center">A</span>
+                <span className="w-4 h-4 rounded-full bg-[#E60000] text-white text-[9px] font-bold flex items-center justify-center">A</span>
                 <span>Alex is typing a response...</span>
               </div>
             )}
@@ -411,7 +421,7 @@ Customer Message: "${userQuery}"`;
               <button
                 key={idx}
                 onClick={() => handleSend(chip.replace(/^[^\s]+\s/, ''))}
-                className="bg-white hover:bg-red-50 text-[#111111] hover:text-[#b70100] text-[10px] font-bold py-1 px-2.5 rounded-full border border-gray-200 transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
+                className="bg-white hover:bg-red-50 text-[#2A2724] hover:text-[#E60000] text-[10px] font-bold py-1 px-2.5 rounded-full border border-gray-200 transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
               >
                 {chip}
               </button>
@@ -432,13 +442,13 @@ Customer Message: "${userQuery}"`;
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={selectedProduct ? `Ask Alex about ${selectedProduct.name}...` : "Message Alex about cookware, specs, orders..."}
-              className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#b70100] focus:ring-1 focus:ring-[#b70100] transition-colors"
+              className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000] transition-colors"
             />
             <button
               type="submit"
               disabled={!input.trim()}
               aria-label="Send message to Alex"
-              className="bg-[#b70100] hover:bg-[#e60000] text-white p-2.5 rounded-2xl transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer hover:scale-105 active:scale-95"
+              className="bg-[#E60000] hover:bg-[#E60000] text-white p-2.5 rounded-2xl transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer hover:scale-105 active:scale-95"
             >
               <Send className="w-4 h-4" />
             </button>

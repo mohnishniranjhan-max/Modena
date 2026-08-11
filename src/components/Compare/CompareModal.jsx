@@ -10,13 +10,13 @@ export default function CompareModal({ items, onClose, onAddToCart }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
       <div onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#111111] space-y-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#2A2724] space-y-6 max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full cursor-pointer">
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-          <div className="w-10 h-10 rounded-full bg-red-50 text-[#b70100] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center">
             <Award className="w-6 h-6" />
           </div>
           <div>
@@ -33,12 +33,12 @@ export default function CompareModal({ items, onClose, onAddToCart }) {
                   <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
                 </div>
 
-                <span className="text-[10px] font-bold bg-[#b70100] text-white px-2 py-0.5 rounded shadow">
+                <span className="text-[10px] font-bold bg-[#E60000] text-white px-2 py-0.5 rounded shadow">
                   {item.badge || 'MODENA CRAFT'}
                 </span>
 
                 <h4 className="font-bold text-sm text-gray-900 leading-tight">{item.name}</h4>
-                <span className="text-lg font-bold text-[#b70100] block">{item.price_html || item.dealPrice || `₹${item.price}`}</span>
+                <span className="text-lg font-bold text-[#E60000] block">{item.price_html || item.dealPrice || `₹${item.price}`}</span>
               </div>
 
               {/* Specifications List */}
@@ -49,7 +49,7 @@ export default function CompareModal({ items, onClose, onAddToCart }) {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Rating:</span>
-                  <strong className="text-amber-600 font-bold">★ {item.rating || '4.9/5'}</strong>
+                  <strong className="text-amber-600 font-bold">{item.hasReviews || item.rating_count > 0 ? `★ ${Number(item.average_rating || 0).toFixed(1)} (${item.rating_count})` : 'No reviews'}</strong>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Warranty:</span>
@@ -66,7 +66,7 @@ export default function CompareModal({ items, onClose, onAddToCart }) {
                   onAddToCart(item);
                   onClose();
                 }}
-                className="w-full bg-[#b70100] hover:bg-[#e60000] text-white text-xs font-bold py-3 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                className="w-full bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold py-3 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>ADD TO CART</span>

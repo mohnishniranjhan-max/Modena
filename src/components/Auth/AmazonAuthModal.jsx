@@ -520,10 +520,10 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Backdrop */}
-      <div onClick={onClose} className="fixed inset-0 bg-[#2a1613]/70 backdrop-blur-md" />
+      <div onClick={onClose} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
 
       {/* Main Modal Card */}
-      <div className="relative w-full max-w-[460px] bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-200 z-50 my-auto text-[#111111] overflow-hidden">
+      <div className="relative w-full max-w-[460px] bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-200 z-50 my-auto text-[#2A2724] overflow-hidden">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -542,7 +542,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
         </div>
 
         {/* Modal Title */}
-        <h2 className="text-xl font-bold font-inter text-center mb-1 text-[#2a1613]">
+        <h2 className="text-xl font-bold font-inter text-center mb-1 text-[#2A2724]">
           {step === 1
             ? 'Sign in or create account'
             : step === 2
@@ -592,7 +592,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="name@example.com or +919962105345"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-[#b70100] focus:ring-2 focus:ring-[#b70100]/20 transition-all"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-[#E60000] focus:ring-2 focus:ring-[#E60000]/20 transition-all"
                 />
                 <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
               </div>
@@ -605,7 +605,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
             <button
               type="submit"
               disabled={loading || !identifier.trim()}
-              className="w-full bg-[#b70100] hover:bg-[#9a0100] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -622,10 +622,10 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 id="agree-terms-amazon"
                 required
                 defaultChecked
-                className="mt-0.5 accent-[#b70100] cursor-pointer rounded"
+                className="mt-0.5 accent-[#E60000] cursor-pointer rounded"
               />
               <label htmlFor="agree-terms-amazon" className="cursor-pointer leading-snug">
-                By continuing, you agree to Modena's <strong className="text-[#b70100]">Terms &amp; Conditions</strong>, <strong className="text-[#b70100]">Privacy Policy</strong> &amp; <strong className="text-[#b70100]">Return Policy</strong>.
+                By continuing, you agree to Modena's <strong className="text-[#E60000]">Terms &amp; Conditions</strong>, <strong className="text-[#E60000]">Privacy Policy</strong> &amp; <strong className="text-[#E60000]">Return Policy</strong>.
               </label>
             </div>
           </form>
@@ -640,7 +640,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="text-[#b70100] hover:underline font-bold text-[11px] cursor-pointer"
+                className="text-[#E60000] hover:underline font-bold text-[11px] cursor-pointer"
               >
                 Change
               </button>
@@ -653,7 +653,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 onClick={() => setActiveAuthTab('password')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeAuthTab === 'password'
-                    ? 'bg-white text-[#2a1613] shadow-sm'
+                    ? 'bg-white text-[#2A2724] shadow-sm'
                     : 'text-gray-500 hover:text-black'
                 }`}
               >
@@ -667,7 +667,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 }}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeAuthTab === 'otp'
-                    ? 'bg-white text-[#2a1613] shadow-sm'
+                    ? 'bg-white text-[#2A2724] shadow-sm'
                     : 'text-gray-500 hover:text-black'
                 }`}
               >
@@ -683,7 +683,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                     <label htmlFor="amazon-password-input" className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Password
                     </label>
-                    <button type="button" className="text-xs text-[#b70100] hover:underline font-semibold cursor-pointer">
+                    <button type="button" className="text-xs text-[#E60000] hover:underline font-semibold cursor-pointer">
                       Forgot Password?
                     </button>
                   </div>
@@ -696,7 +696,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:border-[#b70100] focus:ring-2 focus:ring-[#b70100]/20 transition-all"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:border-[#E60000] focus:ring-2 focus:ring-[#E60000]/20 transition-all"
                     />
                     <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                     <button
@@ -715,7 +715,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="rounded border-gray-300 text-[#b70100] focus:ring-[#b70100]"
+                      className="rounded border-gray-300 text-[#E60000] focus:ring-[#E60000]"
                     />
                     <span>Keep me signed in</span>
                   </label>
@@ -724,7 +724,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#b70100] hover:bg-[#9a0100] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign In'}
                 </button>
@@ -747,7 +747,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
                     placeholder="982415"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-center text-xl font-mono tracking-widest focus:outline-none focus:border-[#b70100] transition-all"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-center text-xl font-mono tracking-widest focus:outline-none focus:border-[#E60000] transition-all"
                   />
                 </div>
 
@@ -755,8 +755,8 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   <div className="flex items-center justify-center gap-4 bg-gray-50 p-2 rounded-xl">
                     <span className="text-[11px] font-semibold text-gray-500 mr-1">Receive via:</span>
                     <label className="flex items-center gap-1.5 text-[11px] font-bold cursor-pointer group">
-                      <input type="radio" name="otpChannel_step2" value="whatsapp" checked={otpChannel === 'whatsapp'} onChange={() => setOtpChannel('whatsapp')} className="text-[#25D366] focus:ring-[#25D366]" />
-                      <span className="text-[#25D366] group-hover:opacity-80 transition-opacity">WhatsApp</span>
+                      <input type="radio" name="otpChannel_step2" value="whatsapp" checked={otpChannel === 'whatsapp'} onChange={() => setOtpChannel('whatsapp')} className="text-[#2E7D5B] focus:ring-[#2E7D5B]" />
+                      <span className="text-[#2E7D5B] group-hover:opacity-80 transition-opacity">WhatsApp</span>
                     </label>
                     <label className="flex items-center gap-1.5 text-[11px] font-bold cursor-pointer group">
                       <input type="radio" name="otpChannel_step2" value="sms" checked={otpChannel === 'sms'} onChange={() => setOtpChannel('sms')} className="text-gray-900 focus:ring-gray-900" />
@@ -771,15 +771,15 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                     {/* Channel Toggle for Resend */}
                     {!identifier.includes('@') && canResend && (
                       <div className="flex bg-gray-100 rounded-md p-0.5 text-[10px]">
-                        <button type="button" onClick={() => setOtpChannel('whatsapp')} className={`px-2 py-1 rounded ${otpChannel === 'whatsapp' ? 'bg-white shadow-sm font-bold text-[#25D366]' : 'text-gray-500'}`}>WhatsApp</button>
-                        <button type="button" onClick={() => setOtpChannel('sms')} className={`px-2 py-1 rounded ${otpChannel === 'sms' ? 'bg-white shadow-sm font-bold text-[#b70100]' : 'text-gray-500'}`}>SMS</button>
+                        <button type="button" onClick={() => setOtpChannel('whatsapp')} className={`px-2 py-1 rounded ${otpChannel === 'whatsapp' ? 'bg-white shadow-sm font-bold text-[#2E7D5B]' : 'text-gray-500'}`}>WhatsApp</button>
+                        <button type="button" onClick={() => setOtpChannel('sms')} className={`px-2 py-1 rounded ${otpChannel === 'sms' ? 'bg-white shadow-sm font-bold text-[#E60000]' : 'text-gray-500'}`}>SMS</button>
                       </div>
                     )}
                     <button
                       type="button"
                       disabled={!canResend || loading}
                       onClick={() => handleSendOtp()}
-                      className="text-[#b70100] hover:underline font-bold disabled:opacity-50 cursor-pointer"
+                      className="text-[#E60000] hover:underline font-bold disabled:opacity-50 cursor-pointer"
                     >
                       {canResend ? 'Resend OTP' : `Resend in ${resendTimer}s`}
                     </button>
@@ -789,7 +789,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 <button
                   type="submit"
                   disabled={loading || otpCode.length < 6}
-                  className="w-full bg-[#b70100] hover:bg-[#9a0100] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
                 </button>
@@ -801,9 +801,9 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
         {/* STEP 3: New User OTP Verification */}
         {step === 3 && (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="p-3 bg-[#fff0ee] border border-[#e9bcb5] text-[#2a1613] text-xs rounded-xl space-y-1">
+            <div className="p-3 bg-[#FAF8F6] border border-[#E2DCD7] text-[#2A2724] text-xs rounded-xl space-y-1">
               <p className="font-semibold">Verify New Account</p>
-              <p className="text-[11px] text-[#5c5957]">
+              <p className="text-[11px] text-[#514C48]">
                 We sent a 6-digit OTP code to <strong>{identifier}</strong>.
               </p>
             </div>
@@ -821,7 +821,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
                 placeholder="982415"
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-center text-xl font-mono tracking-widest focus:outline-none focus:border-[#b70100]"
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-center text-xl font-mono tracking-widest focus:outline-none focus:border-[#E60000]"
               />
             </div>
 
@@ -829,8 +829,8 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
               <div className="flex items-center justify-center gap-4 bg-gray-50 p-2 rounded-xl">
                 <span className="text-[11px] font-semibold text-gray-500 mr-1">Receive via:</span>
                 <label className="flex items-center gap-1.5 text-[11px] font-bold cursor-pointer group">
-                  <input type="radio" name="otpChannel_step3" value="whatsapp" checked={otpChannel === 'whatsapp'} onChange={() => setOtpChannel('whatsapp')} className="text-[#25D366] focus:ring-[#25D366]" />
-                  <span className="text-[#25D366] group-hover:opacity-80 transition-opacity">WhatsApp</span>
+                  <input type="radio" name="otpChannel_step3" value="whatsapp" checked={otpChannel === 'whatsapp'} onChange={() => setOtpChannel('whatsapp')} className="text-[#2E7D5B] focus:ring-[#2E7D5B]" />
+                  <span className="text-[#2E7D5B] group-hover:opacity-80 transition-opacity">WhatsApp</span>
                 </label>
                 <label className="flex items-center gap-1.5 text-[11px] font-bold cursor-pointer group">
                   <input type="radio" name="otpChannel_step3" value="sms" checked={otpChannel === 'sms'} onChange={() => setOtpChannel('sms')} className="text-gray-900 focus:ring-gray-900" />
@@ -845,15 +845,15 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                 {/* Channel Toggle for Resend */}
                 {!identifier.includes('@') && canResend && (
                   <div className="flex bg-gray-100 rounded-md p-0.5 text-[10px]">
-                    <button type="button" onClick={() => setOtpChannel('whatsapp')} className={`px-2 py-1 rounded ${otpChannel === 'whatsapp' ? 'bg-white shadow-sm font-bold text-[#25D366]' : 'text-gray-500'}`}>WhatsApp</button>
-                    <button type="button" onClick={() => setOtpChannel('sms')} className={`px-2 py-1 rounded ${otpChannel === 'sms' ? 'bg-white shadow-sm font-bold text-[#b70100]' : 'text-gray-500'}`}>SMS</button>
+                    <button type="button" onClick={() => setOtpChannel('whatsapp')} className={`px-2 py-1 rounded ${otpChannel === 'whatsapp' ? 'bg-white shadow-sm font-bold text-[#2E7D5B]' : 'text-gray-500'}`}>WhatsApp</button>
+                    <button type="button" onClick={() => setOtpChannel('sms')} className={`px-2 py-1 rounded ${otpChannel === 'sms' ? 'bg-white shadow-sm font-bold text-[#E60000]' : 'text-gray-500'}`}>SMS</button>
                   </div>
                 )}
                 <button
                   type="button"
                   disabled={!canResend || loading}
                   onClick={() => handleSendOtp()}
-                  className="text-[#b70100] hover:underline font-bold disabled:opacity-50 cursor-pointer"
+                  className="text-[#E60000] hover:underline font-bold disabled:opacity-50 cursor-pointer"
                 >
                   {canResend ? 'Resend Code' : `Resend in ${resendTimer}s`}
                 </button>
@@ -863,7 +863,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
             <button
               type="submit"
               disabled={loading || otpCode.length < 6}
-              className="w-full bg-[#b70100] hover:bg-[#9a0100] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Continue Registration →'}
             </button>
@@ -892,7 +892,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Mohnish Niranjhan"
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs focus:outline-none focus:border-[#b70100]"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs focus:outline-none focus:border-[#E60000]"
                 />
                 <User className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
               </div>
@@ -912,7 +912,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   value={email || (identifier.includes('@') ? identifier : '')}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs focus:outline-none focus:border-[#b70100]"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs focus:outline-none focus:border-[#E60000]"
                 />
                 <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
               </div>
@@ -932,7 +932,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   value={phone || (!identifier.includes('@') ? identifier : '')}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+919962105345"
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs focus:outline-none focus:border-[#b70100]"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs focus:outline-none focus:border-[#E60000]"
                 />
                 <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
               </div>
@@ -953,7 +953,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 pr-9 text-xs focus:outline-none focus:border-[#b70100]"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 pr-9 text-xs focus:outline-none focus:border-[#E60000]"
                 />
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                 <button
@@ -990,7 +990,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 pr-9 text-xs focus:outline-none focus:border-[#b70100]"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 pl-9 pr-9 text-xs focus:outline-none focus:border-[#E60000]"
                 />
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                 <button
@@ -1007,13 +1007,13 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
             <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-[#b70100]" /> Automatically Detected Location
+                  <MapPin className="w-3.5 h-3.5 text-[#E60000]" /> Automatically Detected Location
                 </span>
                 <button
                   type="button"
                   onClick={detectUserLocation}
                   disabled={locationLoading}
-                  className="text-[11px] text-[#b70100] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-[#E60000] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <RefreshCw className={`w-3 h-3 ${locationLoading ? 'animate-spin' : ''}`} /> Re-detect
                 </button>
@@ -1021,11 +1021,11 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
 
               {locationLoading ? (
                 <div className="flex items-center gap-2 text-xs text-gray-500 py-1">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#b70100]" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E60000]" />
                   <span>Acquiring precise geolocation coordinates...</span>
                 </div>
               ) : (
-                <div className="text-xs font-semibold text-[#2a1613] bg-white p-2 rounded-lg border border-gray-200">
+                <div className="text-xs font-semibold text-[#2A2724] bg-white p-2 rounded-lg border border-gray-200">
                   📍 {locationData.formatted}
                 </div>
               )}
@@ -1034,7 +1034,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
             <button
               type="submit"
               disabled={loading || password !== confirmPassword || password.length < 6}
-              className="w-full bg-[#b70100] hover:bg-[#9a0100] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 pt-3"
+              className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 pt-3"
             >
               {loading ? (
                 <>

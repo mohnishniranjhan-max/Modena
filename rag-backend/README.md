@@ -21,7 +21,7 @@ A production-ready Headless E-Commerce storefront for **Modena Kitchenware**, po
 │  - WooCommerce Store REST API  │   │  - LangChain Session Memory   │
 │  - JWT Authentication          │   │  - ChromaDB Vector Storage     │
 │  - Custom OTP & User Endpoints │   │  - Human Escalation Rules      │
-│  - Razorpay Payment REST API   │   │  - Evaluation & Analytics      │
+│  - Zoho Pay Payment REST API   │   │  - Evaluation & Analytics      │
 └────────────────────────────────┘   └────────────────────────────────┘
 ```
 
@@ -31,7 +31,7 @@ A production-ready Headless E-Commerce storefront for **Modena Kitchenware**, po
   - Automatically detects whether an email exists in WordPress.
   - Generates and verifies **6-digit OTP codes** for new user sign-ups (`/wp-json/modena/v1/send-otp` & `/wp-json/modena/v1/verify-otp-register`).
   - Native **JWT Authentication** (`/wp-json/jwt-auth/v1/token`) storing tokens in `localStorage`.
-- **Payment Gateway Integration**: Custom REST API endpoints for **Razorpay** order creation and signature verification.
+- **Payment Gateway Integration**: Custom REST API endpoints for **Zoho Pay** order session creation and payment verification.
 
 ### 2. 🤖 RAG AI Chatbot Assistant (`rag-backend/`)
 - **FastAPI Core**: Lightweight asynchronous web framework powering AI endpoints.
@@ -114,8 +114,8 @@ python -m pytest tests/test_rag_pipeline.py -v
 | `POST` | `/wp-json/modena/v1/check-user-exists` | Check if user email is registered in WordPress. |
 | `POST` | `/wp-json/modena/v1/send-otp` | Generate and dispatch 6-digit account verification OTP. |
 | `POST` | `/wp-json/modena/v1/verify-otp-register` | Validate OTP and create new customer account in WordPress. |
-| `POST` | `/wp-json/modena/v1/create-razorpay-order` | Create Razorpay order ID. |
-| `POST` | `/wp-json/modena/v1/verify-razorpay-payment` | Verify Razorpay payment signature. |
+| `POST` | `/wp-json/modena/v1/create-zohopay-session` | Create Zoho Pay payment session ID. |
+| `POST` | `/wp-json/modena/v1/verify-zohopay-payment` | Verify Zoho Pay payment transaction. |
 
 ---
 

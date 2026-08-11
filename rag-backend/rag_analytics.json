@@ -1238,5 +1238,36 @@
         "price": "2500"
       }
     ]
+  },
+  {
+    "id": "log_1786350538125",
+    "timestamp": 1786350538.125123,
+    "date": "2026-08-10 13:58:58",
+    "session_id": "test_session_123",
+    "query": "Tell me about Modena 990W Mixer Grinder",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0628,
+    "docs": [
+      {
+        "price": "2500",
+        "sku": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0,
+        "category": "Electronics",
+        "product_id": "26",
+        "permalink": ""
+      },
+      {
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "category": "Utensils",
+        "permalink": ""
+      }
+    ]
   }
 ]

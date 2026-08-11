@@ -30,7 +30,7 @@ export function generateInvoicePDF(order, customerDetails = {}) {
   const customerEmail = order.customer?.email || customerDetails.email || '';
 
   // 1. BRAND HEADER (Modena Crimson Accent Bar)
-  doc.setFillColor(183, 1, 0); // #b70100
+  doc.setFillColor(183, 1, 0); // #E60000
   doc.rect(0, 0, 210, 28, 'F');
 
   doc.setTextColor(255, 255, 255);
@@ -58,7 +58,7 @@ export function generateInvoicePDF(order, customerDetails = {}) {
   doc.setFont('helvetica', 'bold');
   doc.text(`Invoice No: INV-${orderNum}`, 134, 41);
   doc.text(`Order Date: ${orderDate}`, 134, 47);
-  doc.text(`Payment: ${order.paymentMethod ? String(order.paymentMethod).toUpperCase() : 'RAZORPAY / COD'}`, 134, 53);
+  doc.text(`Payment: ${order.paymentMethod ? String(order.paymentMethod).toUpperCase() : 'ZOHO PAY / COD'}`, 134, 53);
 
   // Horizontal Divider Line
   doc.setDrawColor(220, 220, 220);

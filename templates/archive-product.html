@@ -1,0 +1,74 @@
+<!-- wp:template-part {"slug":"header","tagName":"header","theme":"modena-react-theme","area":"header"} /-->
+
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|10","bottom":"var:preset|spacing|16"}}},"layout":{"type":"constrained","contentSize":"1280px"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--10);padding-bottom:var(--wp--preset--spacing--16)">
+
+    <!-- wp:group {"style":{"spacing":{"padding":{"left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+    <div class="wp-block-group" style="padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+
+        <!-- wp:heading {"level":1,"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.04em"},"color":{"text":"#2a1613"}},"fontSize":"4xl"} -->
+        <h1 class="wp-block-heading has-4-xl-font-size" style="font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:#2a1613">Our Products</h1>
+        <!-- /wp:heading -->
+
+        <!-- wp:woocommerce/catalog-sorting /-->
+
+    </div>
+    <!-- /wp:group -->
+
+    <!-- wp:woocommerce/breadcrumbs {"style":{"typography":{"fontSize":"0.75rem"},"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|2","bottom":"var:preset|spacing|8"},"padding":{"left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}}} /-->
+
+    <!-- wp:columns {"isStackedOnMobile":true,"style":{"spacing":{"blockGap":{"top":"var:preset|spacing|6","left":"var:preset|spacing|8"},"padding":{"left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}}} -->
+    <div class="wp-block-columns is-layout-flex" style="padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+
+        <!-- wp:column {"width":"22%"} -->
+        <div class="wp-block-column" style="flex-basis:22%">
+
+            <!-- wp:woocommerce/filter-wrapper {"filterType":"price-filter","heading":"Filter by Price"} -->
+            <div class="wp-block-woocommerce-filter-wrapper">
+                <!-- wp:woocommerce/price-filter {"heading":"Price Range","lock":{"remove":true}} /-->
+            </div>
+            <!-- /wp:woocommerce/filter-wrapper -->
+
+            <!-- wp:woocommerce/filter-wrapper {"filterType":"attribute-filter","heading":"Filter by Category"} -->
+            <div class="wp-block-woocommerce-filter-wrapper">
+                <!-- wp:woocommerce/attribute-filter {"attributeId":1,"heading":"Category","lock":{"remove":true},"displayStyle":"dropdown"} /-->
+            </div>
+            <!-- /wp:woocommerce/filter-wrapper -->
+
+            <!-- wp:woocommerce/filter-wrapper {"filterType":"active-filters","heading":"Active Filters"} -->
+            <div class="wp-block-woocommerce-filter-wrapper">
+                <!-- wp:woocommerce/active-filters {"lock":{"remove":true}} /-->
+            </div>
+            <!-- /wp:woocommerce/filter-wrapper -->
+
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column {"width":"78%"} -->
+        <div class="wp-block-column" style="flex-basis:78%">
+
+            <!-- wp:woocommerce/product-results-count {"style":{"typography":{"fontSize":"0.8rem"},"color":{"text":"#7a6460"},"spacing":{"margin":{"bottom":"var:preset|spacing|5"}}}} /-->
+
+            <!-- wp:woocommerce/product-template -->
+            <!-- wp:woocommerce/product-image {"isDescendentOfQueryLoop":true,"style":{"border":{"radius":"12px"}}} /-->
+            <!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"style":{"typography":{"fontWeight":"700","fontSize":"0.95rem"},"color":{"text":"#2a1613"},"spacing":{"margin":{"top":"var:preset|spacing|3","bottom":"var:preset|spacing|1"}}}} /-->
+            <!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"style":{"typography":{"fontWeight":"700","fontSize":"1rem"},"color":{"text":"#b70100"}}} /-->
+            <!-- wp:woocommerce/product-button {"style":{"spacing":{"margin":{"top":"var:preset|spacing|3"}}}} /-->
+            <!-- /wp:woocommerce/product-template -->
+
+            <!-- wp:query-pagination {"style":{"spacing":{"margin":{"top":"var:preset|spacing|10"}}}} -->
+            <!-- wp:query-pagination-previous /-->
+            <!-- wp:query-pagination-numbers /-->
+            <!-- wp:query-pagination-next /-->
+            <!-- /wp:query-pagination -->
+
+        </div>
+        <!-- /wp:column -->
+
+    </div>
+    <!-- /wp:columns -->
+
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer","theme":"modena-react-theme","area":"footer"} /-->

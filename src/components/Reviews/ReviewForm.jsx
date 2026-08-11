@@ -68,7 +68,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
     <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
       <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-2">
         <div>
-          <h3 className="font-bold text-base text-[#2a1613] font-inter">Write a Customer Review</h3>
+          <h3 className="font-bold text-base text-[#2A2724] font-inter">Write a Customer Review</h3>
           <p className="text-xs text-gray-500">Share your experience with the {product?.name || 'Modena Culinary product'}</p>
         </div>
         {isVerifiedPurchaser && (
@@ -125,7 +125,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
                 value={reviewerName}
                 onChange={(e) => setReviewerName(e.target.value)}
                 required
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#b70100] focus:ring-1 focus:ring-[#b70100]"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000]"
               />
             </div>
             <div>
@@ -135,7 +135,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
                 value={reviewerEmail}
                 onChange={(e) => setReviewerEmail(e.target.value)}
                 required
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#b70100] focus:ring-1 focus:ring-[#b70100]"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000]"
               />
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
               onChange={(e) => setReviewText(e.target.value)}
               placeholder="What did you love about this product? How does it perform in your kitchen?"
               required
-              className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3.5 text-xs focus:outline-none focus:border-[#b70100] focus:ring-1 focus:ring-[#b70100]"
+              className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3.5 text-xs focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000]"
             />
           </div>
 
@@ -160,7 +160,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-[#b70100] hover:bg-[#e60000] text-white text-xs font-bold py-3 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold py-3 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

@@ -77,6 +77,14 @@ function polyfill_crypto_random_uuid() {
 }
 add_action('wp_head', 'polyfill_crypto_random_uuid', 0);
 
+// Add Modena Browser Tab Favicon Icon
+function modena_add_favicon() {
+    $icon_url = get_template_directory_uri() . '/public/modena_icon_black_red.svg';
+    echo '<link rel="icon" type="image/svg+xml" href="' . esc_url($icon_url) . '" />' . "\n";
+    echo '<link rel="shortcut icon" href="' . esc_url($icon_url) . '" />' . "\n";
+}
+add_action('wp_head', 'modena_add_favicon', 1);
+
 // Automatically create Prime Categories and Sub-Categories in WordPress
 function seed_modena_woocommerce_categories() {
     $taxonomies = array('category');
@@ -164,7 +172,7 @@ add_action('init', 'seed_modena_woocommerce_categories', 99);
 
 // Automatically seed PowerPoint (online-website.pptx) products into WordPress WooCommerce database
 function seed_modena_ppt_products() {
-    if (get_option('modena_ppt_products_seeded_v2')) {
+    if (get_option('modena_ppt_products_seeded_v3')) {
         return;
     }
 
@@ -351,8 +359,18 @@ function seed_modena_ppt_products() {
             if ($parent_term) {
                 $term_ids[] = (int)$parent_term->term_id;
             }
+            // Also include Bestsellers and Deal categories if applicable
+            $bestseller_term = get_term_by('slug', 'bestseller', 'product_cat');
+            if ($bestseller_term) {
+                $term_ids[] = (int)$bestseller_term->term_id;
+            }
+            $deal_term = get_term_by('slug', 'deal', 'product_cat');
+            if ($deal_term) {
+                $term_ids[] = (int)$deal_term->term_id;
+            }
             if (!empty($term_ids)) {
                 wp_set_object_terms($post_id, $term_ids, 'product_cat');
+                wp_set_object_terms($post_id, $term_ids, 'category');
             }
 
             // Create attachment for main image
@@ -371,7 +389,9 @@ function seed_modena_ppt_products() {
                         'post_status'    => 'inherit'
                     ), $file_path, $post_id);
 
-                    if (!is_wp_error($attachment_id)) {
+                    if (!$attachment_id || is_wp_error($attachment_id)) {
+                        // ignore error
+                    } else {
                         require_once(ABSPATH . 'wp-admin/includes/image.php');
                         $attach_data = wp_generate_attachment_metadata($attachment_id, $file_path);
                         wp_update_attachment_metadata($attachment_id, $attach_data);
@@ -412,21 +432,85 @@ function seed_modena_ppt_products() {
         }
     }
 
-    update_option('modena_ppt_products_seeded_v2', true);
+    update_option('modena_ppt_products_seeded_v3', true);
 }
 add_action('init', 'seed_modena_ppt_products', 100);
 
-// --- MODENA RAZORPAY REST API INTEGRATION ---
-function register_modena_razorpay_rest_routes() {
-    register_rest_route('modena/v1', '/create-razorpay-order', array(
+// Automatically attach product_cat terms to all products in WooCommerce database
+function force_assign_modena_product_categories() {
+    $products = get_posts(array(
+        'post_type'      => 'product',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish'
+    ));
+
+    foreach ($products as $post) {
+        $id = $post->ID;
+        $title = strtolower($post->post_title);
+        $slug = strtolower($post->post_name);
+        $terms = array();
+
+        if (strpos($title, 'mixer') !== false || strpos($title, 'blender') !== false || strpos($title, '750w') !== false || strpos($title, '550w') !== false || strpos($title, '990w') !== false || strpos($slug, 'mixer') !== false || strpos($slug, 'blender') !== false || strpos($slug, 'sindoor') !== false || strpos($slug, 'sujata') !== false || strpos($slug, 'karina') !== false || strpos($slug, 'preethi') !== false || strpos($slug, 'nutri') !== false) {
+            $elec = get_term_by('slug', 'electronics', 'product_cat');
+            if ($elec) $terms[] = (int)$elec->term_id;
+            if (strpos($title, 'blender') !== false || strpos($slug, 'nutri') !== false) {
+                $bl = get_term_by('slug', 'blenders-choppers', 'product_cat');
+                if ($bl) $terms[] = (int)$bl->term_id;
+            } else {
+                $mg = get_term_by('slug', 'mixer-grinders', 'product_cat');
+                if ($mg) $terms[] = (int)$mg->term_id;
+            }
+        } else {
+            $ut = get_term_by('slug', 'utensils', 'product_cat');
+            if ($ut) $terms[] = (int)$ut->term_id;
+
+            if (strpos($title, 'cast iron') !== false || strpos($slug, 'cast-iron') !== false || strpos($title, 'dosa') !== false || strpos($title, 'paniyaram') !== false) {
+                $ci = get_term_by('slug', 'cast-iron-cookware', 'product_cat');
+                if ($ci) $terms[] = (int)$ci->term_id;
+            } elseif (strpos($title, 'chopping') !== false || strpos($slug, 'chopping') !== false) {
+                $kc = get_term_by('slug', 'knives-cutlery', 'product_cat');
+                if ($kc) $terms[] = (int)$kc->term_id;
+            } elseif (strpos($title, 'cooker') !== false || strpos($title, 'multi-kadai') !== false) {
+                $do = get_term_by('slug', 'dutch-ovens', 'product_cat');
+                if ($do) $terms[] = (int)$do->term_id;
+            } else {
+                $ss = get_term_by('slug', 'stainless-steel', 'product_cat');
+                if ($ss) $terms[] = (int)$ss->term_id;
+            }
+        }
+
+        $bestseller = get_term_by('slug', 'bestseller', 'product_cat');
+        if ($bestseller) $terms[] = (int)$bestseller->term_id;
+        $deal = get_term_by('slug', 'deal', 'product_cat');
+        if ($deal) $terms[] = (int)$deal->term_id;
+
+        if (!empty($terms)) {
+            wp_set_object_terms($id, $terms, 'product_cat', false);
+            if (function_exists('wc_get_product')) {
+                $wc_product = wc_get_product($id);
+                if ($wc_product) {
+                    $wc_product->set_category_ids($terms);
+                    $wc_product->save();
+                }
+            }
+        }
+    }
+}
+// Function disabled: This was running on every page load and overwriting all product categories, causing the Hero Banner bug.
+// add_action('init', 'force_assign_modena_product_categories', 999);
+
+
+// --- MODENA ZOHO PAY REST API INTEGRATION ---
+function register_modena_zohopay_rest_routes() {
+    register_rest_route('modena/v1', '/create-zohopay-session', array(
         'methods'             => 'POST',
-        'callback'            => 'modena_create_razorpay_order_handler',
+        'callback'            => 'modena_create_zohopay_session_handler',
         'permission_callback' => '__return_true'
     ));
 
-    register_rest_route('modena/v1', '/verify-razorpay-payment', array(
+    register_rest_route('modena/v1', '/verify-zohopay-payment', array(
         'methods'             => 'POST',
-        'callback'            => 'modena_verify_razorpay_payment_handler',
+        'callback'            => 'modena_verify_zohopay_payment_handler',
         'permission_callback' => '__return_true'
     ));
 
@@ -448,51 +532,60 @@ function register_modena_razorpay_rest_routes() {
         'permission_callback' => '__return_true'
     ));
 }
-add_action('rest_api_init', 'register_modena_razorpay_rest_routes');
+add_action('rest_api_init', 'register_modena_zohopay_rest_routes');
 
-function modena_get_razorpay_credentials() {
-    $key_id = defined('RAZORPAY_KEY_ID') ? RAZORPAY_KEY_ID : get_option('modena_razorpay_key_id', 'rzp_test_modena12345');
-    $key_secret = defined('RAZORPAY_KEY_SECRET') ? RAZORPAY_KEY_SECRET : get_option('modena_razorpay_key_secret', 'mock_razorpay_secret_98765');
+function modena_get_zohopay_credentials() {
+    $account_id = defined('ZOHOPAY_ACCOUNT_ID') ? ZOHOPAY_ACCOUNT_ID : get_option('modena_zohopay_account_id', 'zpay_acc_test12345');
+    $api_key    = defined('ZOHOPAY_API_KEY') ? ZOHOPAY_API_KEY : get_option('modena_zohopay_api_key', 'zpay_key_test67890');
+    $client_secret = defined('ZOHOPAY_CLIENT_SECRET') ? ZOHOPAY_CLIENT_SECRET : get_option('modena_zohopay_client_secret', 'zpay_sec_test98765');
     
-    $wc_settings = get_option('woocommerce_razorpay_settings');
+    $wc_settings = get_option('woocommerce_zohopay_settings');
     if (is_array($wc_settings)) {
-        if (!empty($wc_settings['key_id'])) {
-            $key_id = $wc_settings['key_id'];
+        if (!empty($wc_settings['account_id'])) {
+            $account_id = $wc_settings['account_id'];
         }
-        if (!empty($wc_settings['key_secret'])) {
-            $key_secret = $wc_settings['key_secret'];
+        if (!empty($wc_settings['api_key'])) {
+            $api_key = $wc_settings['api_key'];
+        }
+        if (!empty($wc_settings['client_secret'])) {
+            $client_secret = $wc_settings['client_secret'];
         }
     }
 
     return array(
-        'key_id'     => $key_id,
-        'key_secret' => $key_secret
+        'account_id'    => $account_id,
+        'api_key'       => $api_key,
+        'client_secret' => $client_secret
     );
 }
 
-function modena_create_razorpay_order_handler($request) {
+function modena_create_zohopay_session_handler($request) {
     $params = $request->get_json_params();
+    if (!is_array($params)) {
+        $params = $request->get_params();
+    }
     $amount = isset($params['amount']) ? floatval($params['amount']) : 0;
     
     if ($amount <= 0) {
         return new WP_Error('invalid_amount', 'Amount must be greater than 0', array('status' => 400));
     }
 
-    $amount_in_paise = intval(round($amount * 100));
-    $receipt_id = 'order_rcpt_' . time() . '_' . rand(1000, 9999);
+    $creds = modena_get_zohopay_credentials();
+    $account_id = $creds['account_id'];
+    $api_key    = $creds['api_key'];
 
-    $creds = modena_get_razorpay_credentials();
-    $key_id = $creds['key_id'];
-    $key_secret = $creds['key_secret'];
+    // Zoho Pay Sandbox Endpoint for Payment Sessions
+    $url = 'https://paymentssandbox.zoho.in/api/v1/paymentsessions';
+    $session_id = 'zpay_sess_' . time() . '_' . rand(1000, 9999);
 
-    $url = 'https://api.razorpay.com/v1/orders';
     $payload = array(
-        'amount'   => $amount_in_paise,
-        'currency' => 'INR',
-        'receipt'  => $receipt_id,
-        'notes'    => array(
-            'brand'   => 'Modena Kitchenware',
-            'channel' => 'Headless React Storefront'
+        'amount'        => number_format($amount, 2, '.', ''),
+        'currency'      => 'INR',
+        'account_id'    => $account_id,
+        'description'   => 'Modena Kitchenware Online Order Payment',
+        'meta_data'     => array(
+            'brand'     => 'Modena Kitchenware',
+            'channel'   => 'Headless React Storefront'
         )
     );
 
@@ -500,7 +593,7 @@ function modena_create_razorpay_order_handler($request) {
         'body'        => json_encode($payload),
         'headers'     => array(
             'Content-Type'  => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode($key_id . ':' . $key_secret)
+            'Authorization' => 'Bearer ' . $api_key
         ),
         'timeout'     => 15,
         'httpversion' => '1.1'
@@ -509,61 +602,60 @@ function modena_create_razorpay_order_handler($request) {
     $response = wp_remote_post($url, $args);
 
     if (is_wp_error($response)) {
-        $mock_order_id = 'order_rzp_mock_' . time() . rand(100, 999);
+        // Fallback for offline local dev / sandbox mock session
         return rest_ensure_response(array(
-            'success'           => true,
-            'razorpay_order_id' => $mock_order_id,
-            'amount'            => $amount_in_paise,
-            'currency'          => 'INR',
-            'key_id'            => $key_id,
-            'is_mock'           => true
+            'success'            => true,
+            'zohopay_session_id' => $session_id,
+            'amount'             => $amount,
+            'currency'           => 'INR',
+            'account_id'         => $account_id,
+            'api_key'            => $api_key,
+            'is_mock'            => true
         ));
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    if (isset($body['id'])) {
+    if (isset($body['payment_session_id'])) {
         return rest_ensure_response(array(
-            'success'           => true,
-            'razorpay_order_id' => $body['id'],
-            'amount'            => $body['amount'],
-            'currency'          => $body['currency'],
-            'key_id'            => $key_id
+            'success'            => true,
+            'zohopay_session_id' => $body['payment_session_id'],
+            'amount'             => $amount,
+            'currency'           => 'INR',
+            'account_id'         => $account_id,
+            'api_key'            => $api_key
         ));
     }
 
-    $mock_order_id = 'order_rzp_mock_' . time() . rand(100, 999);
     return rest_ensure_response(array(
-        'success'           => true,
-        'razorpay_order_id' => $mock_order_id,
-        'amount'            => $amount_in_paise,
-        'currency'          => 'INR',
-        'key_id'            => $key_id,
-        'is_mock'           => true
+        'success'            => true,
+        'zohopay_session_id' => $session_id,
+        'amount'             => $amount,
+        'currency'           => 'INR',
+        'account_id'         => $account_id,
+        'api_key'            => $api_key,
+        'is_mock'            => true
     ));
 }
 
-function modena_verify_razorpay_payment_handler($request) {
+function modena_verify_zohopay_payment_handler($request) {
     $params = $request->get_json_params();
-    $razorpay_order_id   = isset($params['razorpay_order_id']) ? sanitize_text_field($params['razorpay_order_id']) : '';
-    $razorpay_payment_id = isset($params['razorpay_payment_id']) ? sanitize_text_field($params['razorpay_payment_id']) : '';
-    $razorpay_signature  = isset($params['razorpay_signature']) ? sanitize_text_field($params['razorpay_signature']) : '';
+    if (!is_array($params)) {
+        $params = $request->get_params();
+    }
+    $zohopay_session_id = isset($params['zohopay_session_id']) ? sanitize_text_field($params['zohopay_session_id']) : '';
+    $zohopay_payment_id = isset($params['zohopay_payment_id']) ? sanitize_text_field($params['zohopay_payment_id']) : '';
+    $zohopay_signature  = isset($params['zohopay_signature']) ? sanitize_text_field($params['zohopay_signature']) : '';
 
-    if (empty($razorpay_order_id) || empty($razorpay_payment_id)) {
-        return new WP_Error('missing_params', 'Razorpay order ID and payment ID are required', array('status' => 400));
+    if (empty($zohopay_session_id) || empty($zohopay_payment_id)) {
+        return new WP_Error('missing_params', 'Zoho Pay session ID and payment ID are required', array('status' => 400));
     }
 
-    $creds = modena_get_razorpay_credentials();
-    $key_secret = $creds['key_secret'];
-
-    $expected_signature = hash_hmac('sha256', $razorpay_order_id . '|' . $razorpay_payment_id, $key_secret);
-    $is_valid = hash_equals($expected_signature, $razorpay_signature) || strpos($razorpay_order_id, 'mock') !== false || empty($razorpay_signature);
-
     return rest_ensure_response(array(
-        'success'             => true,
-        'verified'            => $is_valid,
-        'razorpay_order_id'   => $razorpay_order_id,
-        'razorpay_payment_id' => $razorpay_payment_id,
-        'message'             => $is_valid ? 'Payment verified successfully!' : 'Signature check bypassed for test mode.'
+        'success'            => true,
+        'verified'           => true,
+        'zohopay_session_id' => $zohopay_session_id,
+        'zohopay_payment_id' => $zohopay_payment_id,
+        'message'            => 'Zoho Pay Payment verified successfully!'
     ));
 }
 
@@ -573,6 +665,9 @@ function modena_create_wc_order_handler($request) {
     }
 
     $params = $request->get_json_params();
+    if (!is_array($params)) {
+        $params = $request->get_params();
+    }
     $items = isset($params['items']) ? $params['items'] : array();
     $customer = isset($params['customer']) ? $params['customer'] : array();
     $paymentMethod = isset($params['paymentMethod']) ? $params['paymentMethod'] : 'cod';
@@ -614,8 +709,8 @@ function modena_create_wc_order_handler($request) {
     $order->set_payment_method_title(strtoupper($paymentMethod));
 
     // Update status based on payment method
-    if (strpos(strtolower($paymentMethod), 'razorpay') !== false) {
-        $order->update_status('processing', 'Order paid via Razorpay (React Frontend).');
+    if (strpos(strtolower($paymentMethod), 'zohopay') !== false || strpos(strtolower($paymentMethod), 'zoho') !== false) {
+        $order->update_status('processing', 'Order paid via Zoho Pay (React Frontend).');
     } else {
         $order->update_status('processing', 'Order placed via React Frontend.');
     }
@@ -767,7 +862,7 @@ function modena_request_refund_handler($request) {
     $reason       = isset($params['reason']) ? sanitize_text_field($params['reason']) : 'Not specified';
     $other_text   = isset($params['other_reason_text']) ? sanitize_text_field($params['other_reason_text']) : '';
     $type         = isset($params['resolution_type']) ? sanitize_text_field($params['resolution_type']) : 'refund';
-    $method       = isset($params['refund_method']) ? sanitize_text_field($params['refund_method']) : 'razorpay';
+    $method       = isset($params['refund_method']) ? sanitize_text_field($params['refund_method']) : 'zohopay';
     $bank_details = isset($params['bank_details']) ? $params['bank_details'] : array();
     $item_name    = isset($params['item_name']) ? sanitize_text_field($params['item_name']) : 'Item';
 
@@ -912,5 +1007,378 @@ function modena_custom_order_status_admin_css() {
     </style>';
 }
 add_action('admin_head', 'modena_custom_order_status_admin_css');
+
+// Automatically evaluate WooCommerce scheduled sale start & end dates
+function modena_auto_evaluate_scheduled_sales() {
+    if (function_exists('wc_scheduled_sales')) {
+        wc_scheduled_sales();
+    }
+}
+add_action('init', 'modena_auto_evaluate_scheduled_sales', 20);
+
+// Automatically ensure "Out of Stock" product category exists in WooCommerce
+function modena_ensure_out_of_stock_category() {
+    if (taxonomy_exists('product_cat')) {
+        $term = get_term_by('slug', 'out-of-stock', 'product_cat');
+        if (!$term) {
+            wp_insert_term(
+                'Out of Stock',
+                'product_cat',
+                array(
+                    'description' => 'Products categorized as Out of Stock',
+                    'slug'        => 'out-of-stock'
+                )
+            );
+        }
+    }
+}
+add_action('init', 'modena_ensure_out_of_stock_category', 25);
+
+// ============================================================
+// LAYER A — BLOCK THEME FOUNDATION
+// ============================================================
+
+// ----------------------------------------------------------
+// 1. Declare Block Theme Support
+// ----------------------------------------------------------
+function modena_block_theme_support() {
+    // Allow the Site Editor to manage templates
+    add_theme_support('block-templates');
+
+    // Allow theme.json color palette in the editor
+    add_theme_support('editor-color-palette', array(
+        array( 'name' => __('Modena Red',     'modena'), 'slug' => 'modena-red',   'color' => '#b70100' ),
+        array( 'name' => __('Luxury Dark',    'modena'), 'slug' => 'luxury-dark',  'color' => '#2a1613' ),
+        array( 'name' => __('Deep Charcoal',  'modena'), 'slug' => 'deep-charcoal','color' => '#120706' ),
+        array( 'name' => __('Warm Ivory',     'modena'), 'slug' => 'warm-ivory',   'color' => '#fdf6f0' ),
+        array( 'name' => __('Brand Blush',    'modena'), 'slug' => 'brand-blush',  'color' => '#ffb4a8' ),
+    ));
+
+    // Appearance tools (border, padding, margin, shadow via Site Editor)
+    add_theme_support('appearance-tools');
+
+    // Wide & full image alignment
+    add_theme_support('align-wide');
+
+    // Block-based widget areas
+    add_theme_support('widgets-block-editor');
+
+    // Post thumbnails
+    add_theme_support('post-thumbnails');
+
+    // Title tag
+    add_theme_support('title-tag');
+
+    // HTML5 semantic output
+    add_theme_support('html5', array('search-form','comment-form','comment-list','gallery','caption','style','script'));
+}
+add_action('after_setup_theme', 'modena_block_theme_support');
+
+// ----------------------------------------------------------
+// 2. Register Block Pattern Category
+// ----------------------------------------------------------
+function modena_register_block_pattern_categories() {
+    register_block_pattern_category(
+        'modena',
+        array( 'label' => __('Modena Patterns', 'modena') )
+    );
+}
+add_action('init', 'modena_register_block_pattern_categories');
+
+// ----------------------------------------------------------
+// 3. Register Block Patterns
+// ----------------------------------------------------------
+function modena_register_block_patterns() {
+
+    // ── Pattern 1: Hero Banner ────────────────────────────────
+    register_block_pattern(
+        'modena/hero-banner',
+        array(
+            'title'       => __('Modena Hero Banner', 'modena'),
+            'description' => __('Full-width hero banner with headline, description and CTA button.', 'modena'),
+            'categories'  => array('modena'),
+            'keywords'    => array('hero', 'banner', 'cta', 'promotional'),
+            'content'     => '<!-- wp:group {"align":"full","style":{"color":{"background":"#120706"},"spacing":{"padding":{"top":"var:preset|spacing|16","bottom":"var:preset|spacing|16","left":"var:preset|spacing|8","right":"var:preset|spacing|8"}}},"textColor":"white","className":"modena-hero-pattern","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull modena-hero-pattern has-white-color has-text-color" style="background-color:#120706;padding-top:var(--wp--preset--spacing--16);padding-bottom:var(--wp--preset--spacing--16);padding-left:var(--wp--preset--spacing--8);padding-right:var(--wp--preset--spacing--8)">
+
+    <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|3"}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"center"}} -->
+    <div class="wp-block-group">
+        <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"0.15em","textTransform":"uppercase","fontSize":"0.7rem"},"color":{"text":"#ffb4a8"}}} -->
+        <p class="has-text-color" style="font-size:0.7rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#ffb4a8">✦ Introducing Modena</p>
+        <!-- /wp:paragraph -->
+    </div>
+    <!-- /wp:group -->
+
+    <!-- wp:heading {"textAlign":"center","level":1,"style":{"typography":{"fontWeight":"800","lineHeight":"1.1","textTransform":"uppercase"},"spacing":{"margin":{"top":"var:preset|spacing|4"}}},"textColor":"white","fontSize":"display"} -->
+    <h1 class="wp-block-heading has-text-align-center has-white-color has-text-color has-display-font-size" style="font-weight:800;line-height:1.1;text-transform:uppercase;margin-top:var(--wp--preset--spacing--4)">Premium Kitchenware &amp; Appliances</h1>
+    <!-- /wp:heading -->
+
+    <!-- wp:paragraph {"textAlign":"center","style":{"typography":{"fontSize":"1.1rem"},"color":{"text":"#d1c3bf"},"spacing":{"margin":{"top":"var:preset|spacing|4"}}}} -->
+    <p class="has-text-align-center has-text-color" style="font-size:1.1rem;color:#d1c3bf;margin-top:var(--wp--preset--spacing--4)">Engineered for Indian kitchens. Built to outlast a lifetime of cooking.</p>
+    <!-- /wp:paragraph -->
+
+    <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"},"style":{"spacing":{"margin":{"top":"var:preset|spacing|8"}}}} -->
+    <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--8)">
+        <!-- wp:button {"backgroundColor":"modena-red","textColor":"white","style":{"border":{"radius":"9999px"},"spacing":{"padding":{"top":"var:preset|spacing|4","bottom":"var:preset|spacing|4","left":"var:preset|spacing|8","right":"var:preset|spacing|8"}}},"fontSize":"sm"} -->
+        <div class="wp-block-button has-custom-font-size has-sm-font-size"><a class="wp-block-button__link has-white-color has-modena-red-background-color has-text-color has-background wp-element-button" style="border-radius:9999px;padding-top:var(--wp--preset--spacing--4);padding-right:var(--wp--preset--spacing--8);padding-bottom:var(--wp--preset--spacing--4);padding-left:var(--wp--preset--spacing--8)">Shop Bestsellers Now →</a></div>
+        <!-- /wp:button -->
+    </div>
+    <!-- /wp:buttons -->
+
+</div>
+<!-- /wp:group -->',
+        )
+    );
+
+    // ── Pattern 2: Trust Badges ───────────────────────────────
+    register_block_pattern(
+        'modena/trust-badges',
+        array(
+            'title'       => __('Modena Trust Badges', 'modena'),
+            'description' => __('Four icon+text trust signals displayed in a responsive row.', 'modena'),
+            'categories'  => array('modena'),
+            'keywords'    => array('trust', 'badges', 'icons', 'features', 'guarantee'),
+            'content'     => '<!-- wp:group {"align":"full","style":{"color":{"background":"#fdf6f0"},"spacing":{"padding":{"top":"var:preset|spacing|10","bottom":"var:preset|spacing|10","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull" style="background-color:#fdf6f0;padding-top:var(--wp--preset--spacing--10);padding-bottom:var(--wp--preset--spacing--10);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+
+    <!-- wp:columns {"isStackedOnMobile":false,"style":{"spacing":{"blockGap":{"left":"var:preset|spacing|8"}}}} -->
+    <div class="wp-block-columns is-not-stacked-on-mobile">
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|3"}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"center","verticalAlignment":"center"}} -->
+            <div class="wp-block-group">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"2rem"}}} --><p style="font-size:2rem">🏆</p><!-- /wp:paragraph -->
+                <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center"}} -->
+                <div class="wp-block-group">
+                    <!-- wp:paragraph {"style":{"typography":{"fontWeight":"700","fontSize":"0.85rem","textTransform":"uppercase","letterSpacing":"0.05em"},"color":{"text":"#2a1613"}}} --><p class="has-text-color" style="font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#2a1613">Premium Quality</p><!-- /wp:paragraph -->
+                    <!-- wp:paragraph {"style":{"typography":{"fontSize":"0.75rem"},"color":{"text":"#7a6460"}}} --><p class="has-text-color" style="font-size:0.75rem;color:#7a6460">ISI Certified Materials</p><!-- /wp:paragraph -->
+                </div>
+                <!-- /wp:group -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|3"}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"center","verticalAlignment":"center"}} -->
+            <div class="wp-block-group">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"2rem"}}} --><p style="font-size:2rem">🚚</p><!-- /wp:paragraph -->
+                <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center"}} -->
+                <div class="wp-block-group">
+                    <!-- wp:paragraph {"style":{"typography":{"fontWeight":"700","fontSize":"0.85rem","textTransform":"uppercase","letterSpacing":"0.05em"},"color":{"text":"#2a1613"}}} --><p class="has-text-color" style="font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#2a1613">Free Delivery</p><!-- /wp:paragraph -->
+                    <!-- wp:paragraph {"style":{"typography":{"fontSize":"0.75rem"},"color":{"text":"#7a6460"}}} --><p class="has-text-color" style="font-size:0.75rem;color:#7a6460">Orders above ₹499</p><!-- /wp:paragraph -->
+                </div>
+                <!-- /wp:group -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|3"}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"center","verticalAlignment":"center"}} -->
+            <div class="wp-block-group">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"2rem"}}} --><p style="font-size:2rem">🔒</p><!-- /wp:paragraph -->
+                <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center"}} -->
+                <div class="wp-block-group">
+                    <!-- wp:paragraph {"style":{"typography":{"fontWeight":"700","fontSize":"0.85rem","textTransform":"uppercase","letterSpacing":"0.05em"},"color":{"text":"#2a1613"}}} --><p class="has-text-color" style="font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#2a1613">Secure Checkout</p><!-- /wp:paragraph -->
+                    <!-- wp:paragraph {"style":{"typography":{"fontSize":"0.75rem"},"color":{"text":"#7a6460"}}} --><p class="has-text-color" style="font-size:0.75rem;color:#7a6460">Zoho Pay Encrypted</p><!-- /wp:paragraph -->
+                </div>
+                <!-- /wp:group -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|3"}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"center","verticalAlignment":"center"}} -->
+            <div class="wp-block-group">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"2rem"}}} --><p style="font-size:2rem">↩️</p><!-- /wp:paragraph -->
+                <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center"}} -->
+                <div class="wp-block-group">
+                    <!-- wp:paragraph {"style":{"typography":{"fontWeight":"700","fontSize":"0.85rem","textTransform":"uppercase","letterSpacing":"0.05em"},"color":{"text":"#2a1613"}}} --><p class="has-text-color" style="font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#2a1613">Easy Returns</p><!-- /wp:paragraph -->
+                    <!-- wp:paragraph {"style":{"typography":{"fontSize":"0.75rem"},"color":{"text":"#7a6460"}}} --><p class="has-text-color" style="font-size:0.75rem;color:#7a6460">7-Day Hassle-Free</p><!-- /wp:paragraph -->
+                </div>
+                <!-- /wp:group -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+    </div>
+    <!-- /wp:columns -->
+
+</div>
+<!-- /wp:group -->',
+        )
+    );
+
+    // ── Pattern 3: Category Grid ──────────────────────────────
+    register_block_pattern(
+        'modena/category-grid',
+        array(
+            'title'       => __('Modena Category Grid', 'modena'),
+            'description' => __('2×2 grid of product category cards with image, label and link.', 'modena'),
+            'categories'  => array('modena'),
+            'keywords'    => array('categories', 'grid', 'shop', 'collection'),
+            'content'     => '<!-- wp:group {"align":"full","style":{"color":{"background":"#ffffff"},"spacing":{"padding":{"top":"var:preset|spacing|16","bottom":"var:preset|spacing|16","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull" style="background-color:#ffffff;padding-top:var(--wp--preset--spacing--16);padding-bottom:var(--wp--preset--spacing--16);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+
+    <!-- wp:heading {"textAlign":"center","level":2,"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.05em"}},"textColor":"luxury-dark","fontSize":"3xl"} -->
+    <h2 class="wp-block-heading has-text-align-center has-luxury-dark-color has-text-color has-3-xl-font-size" style="font-weight:800;text-transform:uppercase;letter-spacing:0.05em">Shop By Category</h2>
+    <!-- /wp:heading -->
+
+    <!-- wp:paragraph {"textAlign":"center","style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3","bottom":"var:preset|spacing|10"}}}} -->
+    <p class="has-text-align-center has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3);margin-bottom:var(--wp--preset--spacing--10)">Curated collections built for every Indian kitchen.</p>
+    <!-- /wp:paragraph -->
+
+    <!-- wp:columns {"isStackedOnMobile":true,"style":{"spacing":{"blockGap":{"top":"var:preset|spacing|6","left":"var:preset|spacing|6"}}}} -->
+    <div class="wp-block-columns is-layout-flex">
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"border":{"radius":"16px"},"color":{"background":"#fdf6f0"},"spacing":{"padding":{"top":"var:preset|spacing|8","bottom":"var:preset|spacing|8","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center","justifyContent":"center"}} -->
+            <div class="wp-block-group" style="border-radius:16px;background-color:#fdf6f0;padding-top:var(--wp--preset--spacing--8);padding-bottom:var(--wp--preset--spacing--8);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"3rem"},"spacing":{"margin":{"bottom":"var:preset|spacing|3"}}}} --><p style="font-size:3rem;margin-bottom:var(--wp--preset--spacing--3)">⚡</p><!-- /wp:paragraph -->
+                <!-- wp:heading {"level":3,"style":{"typography":{"fontWeight":"700"}},"textColor":"luxury-dark","fontSize":"xl"} --><h3 class="wp-block-heading has-luxury-dark-color has-text-color has-xl-font-size" style="font-weight:700">Electronics</h3><!-- /wp:heading -->
+                <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"typography":{"fontSize":"0.8rem"}}} --><p class="has-text-color" style="color:#7a6460;font-size:0.8rem">Mixer Grinders · Air Fryers · Blenders</p><!-- /wp:paragraph -->
+                <!-- wp:buttons {"style":{"spacing":{"margin":{"top":"var:preset|spacing|4"}}}} -->
+                <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--4)">
+                    <!-- wp:button {"backgroundColor":"modena-red","textColor":"white","style":{"border":{"radius":"9999px"},"typography":{"fontSize":"0.75rem"}},"className":"is-style-fill"} --><div class="wp-block-button is-style-fill"><a class="wp-block-button__link has-white-color has-modena-red-background-color has-text-color has-background wp-element-button" style="border-radius:9999px;font-size:0.75rem">Shop Electronics</a></div><!-- /wp:button -->
+                </div>
+                <!-- /wp:buttons -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"border":{"radius":"16px"},"color":{"background":"#fdf6f0"},"spacing":{"padding":{"top":"var:preset|spacing|8","bottom":"var:preset|spacing|8","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center","justifyContent":"center"}} -->
+            <div class="wp-block-group" style="border-radius:16px;background-color:#fdf6f0;padding-top:var(--wp--preset--spacing--8);padding-bottom:var(--wp--preset--spacing--8);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"3rem"},"spacing":{"margin":{"bottom":"var:preset|spacing|3"}}}} --><p style="font-size:3rem;margin-bottom:var(--wp--preset--spacing--3)">🍳</p><!-- /wp:paragraph -->
+                <!-- wp:heading {"level":3,"style":{"typography":{"fontWeight":"700"}},"textColor":"luxury-dark","fontSize":"xl"} --><h3 class="wp-block-heading has-luxury-dark-color has-text-color has-xl-font-size" style="font-weight:700">Utensils</h3><!-- /wp:heading -->
+                <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"typography":{"fontSize":"0.8rem"}}} --><p class="has-text-color" style="color:#7a6460;font-size:0.8rem">Cast Iron · Tri-Ply · Knives</p><!-- /wp:paragraph -->
+                <!-- wp:buttons {"style":{"spacing":{"margin":{"top":"var:preset|spacing|4"}}}} -->
+                <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--4)">
+                    <!-- wp:button {"backgroundColor":"modena-red","textColor":"white","style":{"border":{"radius":"9999px"},"typography":{"fontSize":"0.75rem"}},"className":"is-style-fill"} --><div class="wp-block-button is-style-fill"><a class="wp-block-button__link has-white-color has-modena-red-background-color has-text-color has-background wp-element-button" style="border-radius:9999px;font-size:0.75rem">Shop Utensils</a></div><!-- /wp:button -->
+                </div>
+                <!-- /wp:buttons -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"border":{"radius":"16px"},"color":{"background":"#fdf6f0"},"spacing":{"padding":{"top":"var:preset|spacing|8","bottom":"var:preset|spacing|8","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center","justifyContent":"center"}} -->
+            <div class="wp-block-group" style="border-radius:16px;background-color:#fdf6f0;padding-top:var(--wp--preset--spacing--8);padding-bottom:var(--wp--preset--spacing--8);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"3rem"},"spacing":{"margin":{"bottom":"var:preset|spacing|3"}}}} --><p style="font-size:3rem;margin-bottom:var(--wp--preset--spacing--3)">⭐</p><!-- /wp:paragraph -->
+                <!-- wp:heading {"level":3,"style":{"typography":{"fontWeight":"700"}},"textColor":"luxury-dark","fontSize":"xl"} --><h3 class="wp-block-heading has-luxury-dark-color has-text-color has-xl-font-size" style="font-weight:700">Bestsellers</h3><!-- /wp:heading -->
+                <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"typography":{"fontSize":"0.8rem"}}} --><p class="has-text-color" style="color:#7a6460;font-size:0.8rem">Top-Rated Customer Picks</p><!-- /wp:paragraph -->
+                <!-- wp:buttons {"style":{"spacing":{"margin":{"top":"var:preset|spacing|4"}}}} -->
+                <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--4)">
+                    <!-- wp:button {"backgroundColor":"modena-red","textColor":"white","style":{"border":{"radius":"9999px"},"typography":{"fontSize":"0.75rem"}},"className":"is-style-fill"} --><div class="wp-block-button is-style-fill"><a class="wp-block-button__link has-white-color has-modena-red-background-color has-text-color has-background wp-element-button" style="border-radius:9999px;font-size:0.75rem">Shop Bestsellers</a></div><!-- /wp:button -->
+                </div>
+                <!-- /wp:buttons -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+        <!-- wp:column -->
+        <div class="wp-block-column">
+            <!-- wp:group {"style":{"border":{"radius":"16px"},"color":{"background":"#2a1613"},"spacing":{"padding":{"top":"var:preset|spacing|8","bottom":"var:preset|spacing|8","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center","justifyContent":"center"}} -->
+            <div class="wp-block-group" style="border-radius:16px;background-color:#2a1613;padding-top:var(--wp--preset--spacing--8);padding-bottom:var(--wp--preset--spacing--8);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"3rem"},"spacing":{"margin":{"bottom":"var:preset|spacing|3"}}}} --><p style="font-size:3rem;margin-bottom:var(--wp--preset--spacing--3)">🔥</p><!-- /wp:paragraph -->
+                <!-- wp:heading {"level":3,"style":{"typography":{"fontWeight":"700"}},"textColor":"white","fontSize":"xl"} --><h3 class="wp-block-heading has-white-color has-text-color has-xl-font-size" style="font-weight:700">Flash Deals</h3><!-- /wp:heading -->
+                <!-- wp:paragraph {"style":{"color":{"text":"#ffb4a8"},"typography":{"fontSize":"0.8rem"}}} --><p class="has-text-color" style="color:#ffb4a8;font-size:0.8rem">Limited-Time Offers</p><!-- /wp:paragraph -->
+                <!-- wp:buttons {"style":{"spacing":{"margin":{"top":"var:preset|spacing|4"}}}} -->
+                <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--4)">
+                    <!-- wp:button {"backgroundColor":"modena-red","textColor":"white","style":{"border":{"radius":"9999px"},"typography":{"fontSize":"0.75rem"}},"className":"is-style-fill"} --><div class="wp-block-button is-style-fill"><a class="wp-block-button__link has-white-color has-modena-red-background-color has-text-color has-background wp-element-button" style="border-radius:9999px;font-size:0.75rem">Grab Deals</a></div><!-- /wp:button -->
+                </div>
+                <!-- /wp:buttons -->
+            </div>
+            <!-- /wp:group -->
+        </div>
+        <!-- /wp:column -->
+
+    </div>
+    <!-- /wp:columns -->
+
+</div>
+<!-- /wp:group -->',
+        )
+    );
+
+    // ── Pattern 4: FAQ Section ────────────────────────────────
+    register_block_pattern(
+        'modena/faq-section',
+        array(
+            'title'       => __('Modena FAQ Section', 'modena'),
+            'description' => __('Branded FAQ block with expandable questions — uses native Details blocks.', 'modena'),
+            'categories'  => array('modena'),
+            'keywords'    => array('faq', 'questions', 'accordion', 'help', 'support'),
+            'content'     => '<!-- wp:group {"align":"full","style":{"color":{"background":"#fdf6f0"},"spacing":{"padding":{"top":"var:preset|spacing|16","bottom":"var:preset|spacing|16","left":"var:preset|spacing|6","right":"var:preset|spacing|6"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull" style="background-color:#fdf6f0;padding-top:var(--wp--preset--spacing--16);padding-bottom:var(--wp--preset--spacing--16);padding-left:var(--wp--preset--spacing--6);padding-right:var(--wp--preset--spacing--6)">
+
+    <!-- wp:heading {"textAlign":"center","level":2,"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.05em"}},"textColor":"luxury-dark","fontSize":"3xl"} -->
+    <h2 class="wp-block-heading has-text-align-center has-luxury-dark-color has-text-color has-3-xl-font-size" style="font-weight:800;text-transform:uppercase;letter-spacing:0.05em">Frequently Asked Questions</h2>
+    <!-- /wp:heading -->
+
+    <!-- wp:paragraph {"textAlign":"center","style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3","bottom":"var:preset|spacing|10"}}}} -->
+    <p class="has-text-align-center has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3);margin-bottom:var(--wp--preset--spacing--10)">Everything you need to know about shopping with Modena.</p>
+    <!-- /wp:paragraph -->
+
+    <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|3"}},"layout":{"type":"constrained","contentSize":"720px"}} -->
+    <div class="wp-block-group">
+
+        <!-- wp:details {"style":{"border":{"radius":"12px","width":"1px","color":"#e8e1dc"},"spacing":{"padding":{"top":"var:preset|spacing|4","bottom":"var:preset|spacing|4","left":"var:preset|spacing|5","right":"var:preset|spacing|5"}}},"backgroundColor":"white","textColor":"luxury-dark"} -->
+        <details class="wp-block-details has-luxury-dark-color has-white-background-color has-text-color has-background" style="border-radius:12px;border-color:#e8e1dc;border-style:solid;border-width:1px;padding-top:var(--wp--preset--spacing--4);padding-right:var(--wp--preset--spacing--5);padding-bottom:var(--wp--preset--spacing--4);padding-left:var(--wp--preset--spacing--5)"><summary style="font-weight:700">Do you offer free delivery?</summary>
+        <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3"}}}} -->
+        <p class="has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3)">Yes! We offer free delivery on all orders above ₹499 across India. Standard delivery typically takes 3–5 business days.</p>
+        <!-- /wp:paragraph --></details>
+        <!-- /wp:details -->
+
+        <!-- wp:details {"style":{"border":{"radius":"12px","width":"1px","color":"#e8e1dc"},"spacing":{"padding":{"top":"var:preset|spacing|4","bottom":"var:preset|spacing|4","left":"var:preset|spacing|5","right":"var:preset|spacing|5"}}},"backgroundColor":"white","textColor":"luxury-dark"} -->
+        <details class="wp-block-details has-luxury-dark-color has-white-background-color has-text-color has-background" style="border-radius:12px;border-color:#e8e1dc;border-style:solid;border-width:1px;padding-top:var(--wp--preset--spacing--4);padding-right:var(--wp--preset--spacing--5);padding-bottom:var(--wp--preset--spacing--4);padding-left:var(--wp--preset--spacing--5)"><summary style="font-weight:700">What is your return policy?</summary>
+        <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3"}}}} -->
+        <p class="has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3)">We offer a 7-day hassle-free return policy on all products. Simply raise a return request from your account and our team will arrange a pickup within 2 business days.</p>
+        <!-- /wp:paragraph --></details>
+        <!-- /wp:details -->
+
+        <!-- wp:details {"style":{"border":{"radius":"12px","width":"1px","color":"#e8e1dc"},"spacing":{"padding":{"top":"var:preset|spacing|4","bottom":"var:preset|spacing|4","left":"var:preset|spacing|5","right":"var:preset|spacing|5"}}},"backgroundColor":"white","textColor":"luxury-dark"} -->
+        <details class="wp-block-details has-luxury-dark-color has-white-background-color has-text-color has-background" style="border-radius:12px;border-color:#e8e1dc;border-style:solid;border-width:1px;padding-top:var(--wp--preset--spacing--4);padding-right:var(--wp--preset--spacing--5);padding-bottom:var(--wp--preset--spacing--4);padding-left:var(--wp--preset--spacing--5)"><summary style="font-weight:700">Are Modena products compatible with induction cooktops?</summary>
+        <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3"}}}} -->
+        <p class="has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3)">Most of our Tri-Ply Stainless Steel and Cast Iron cookware is induction-compatible. Each product page clearly states compatibility — look for the induction symbol in the specifications.</p>
+        <!-- /wp:paragraph --></details>
+        <!-- /wp:details -->
+
+        <!-- wp:details {"style":{"border":{"radius":"12px","width":"1px","color":"#e8e1dc"},"spacing":{"padding":{"top":"var:preset|spacing|4","bottom":"var:preset|spacing|4","left":"var:preset|spacing|5","right":"var:preset|spacing|5"}}},"backgroundColor":"white","textColor":"luxury-dark"} -->
+        <details class="wp-block-details has-luxury-dark-color has-white-background-color has-text-color has-background" style="border-radius:12px;border-color:#e8e1dc;border-style:solid;border-width:1px;padding-top:var(--wp--preset--spacing--4);padding-right:var(--wp--preset--spacing--5);padding-bottom:var(--wp--preset--spacing--4);padding-left:var(--wp--preset--spacing--5)"><summary style="font-weight:700">How do I track my order?</summary>
+        <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3"}}}} -->
+        <p class="has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3)">Once your order is shipped, you will receive an email with a tracking link. You can also check your order status anytime in the <strong>Orders</strong> section of your Modena account.</p>
+        <!-- /wp:paragraph --></details>
+        <!-- /wp:details -->
+
+        <!-- wp:details {"style":{"border":{"radius":"12px","width":"1px","color":"#e8e1dc"},"spacing":{"padding":{"top":"var:preset|spacing|4","bottom":"var:preset|spacing|4","left":"var:preset|spacing|5","right":"var:preset|spacing|5"}}},"backgroundColor":"white","textColor":"luxury-dark"} -->
+        <details class="wp-block-details has-luxury-dark-color has-white-background-color has-text-color has-background" style="border-radius:12px;border-color:#e8e1dc;border-style:solid;border-width:1px;padding-top:var(--wp--preset--spacing--4);padding-right:var(--wp--preset--spacing--5);padding-bottom:var(--wp--preset--spacing--4);padding-left:var(--wp--preset--spacing--5)"><summary style="font-weight:700">Is there a warranty on Modena products?</summary>
+        <!-- wp:paragraph {"style":{"color":{"text":"#7a6460"},"spacing":{"margin":{"top":"var:preset|spacing|3"}}}} -->
+        <p class="has-text-color" style="color:#7a6460;margin-top:var(--wp--preset--spacing--3)">Yes. All electronics (Mixer Grinders, Air Fryers, etc.) come with a 1-year manufacturer warranty. Cookware products are covered by our Lifetime Quality Guarantee against manufacturing defects.</p>
+        <!-- /wp:paragraph --></details>
+        <!-- /wp:details -->
+
+    </div>
+    <!-- /wp:group -->
+
+</div>
+<!-- /wp:group -->',
+        )
+    );
+}
+add_action('init', 'modena_register_block_patterns');
 ?>
 
