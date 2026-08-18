@@ -5,7 +5,7 @@ import { decodeHtmlEntities, normalizeProduct } from '../../hooks/useProducts';
 /**
  * HeroBanner Component
  * Data-driven Hero Banner that strictly fetches products from the WooCommerce 'hero-banner' category.
- * Desktop Layout: Details on left, 4:3 image with seamless fade mask emerging on the right.
+ * Desktop Layout: 16:7 aspect ratio banner with details on left and product image on pedestal right.
  * Mobile Layout: Full-bleed product image top half, content card overlapping bottom â€” premium e-commerce style.
  */
 const HeroBanner = ({
@@ -18,47 +18,69 @@ const HeroBanner = ({
 
   useEffect(() => {
     let isMounted = true;
-    const fetchHeroProducts = async () => {
+
+    const fetchHeroBanners = async () => {
       setIsLoading(true);
       try {
-        const url = `/wp-json/wc/store/v1/products?per_page=100&timestamp=${new Date().getTime()}`;
-        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        // Fetch dedicated Hero Banners CPT with linked WooCommerce products (Single Source of Truth)
+        const customUrl = `/wp-json/modena/v1/hero-banners?timestamp=${new Date().getTime()}`;
+        const response = await fetch(customUrl, {
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
 
         if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const heroProducts = data.filter((item) => {
-              if (!Array.isArray(item.categories)) return false;
-              return item.categories.some(
-                (c) =>
-                  c.slug === 'hero-banner' ||
-                  c.name?.toLowerCase() === 'hero banner' ||
-                  c.name?.toLowerCase() === 'herobanner' ||
-                  String(c.id) === String(categoryId)
-              );
+          const customBanners = await response.json();
+          if (Array.isArray(customBanners)) {
+            const mappedSlides = customBanners.map((banner) => {
+              const linkedProd = banner.linked_product;
+              const hasValidProduct = linkedProd && linkedProd.is_valid !== false;
+
+              const rawProduct = hasValidProduct
+                ? {
+                    id: linkedProd.id,
+                    name: linkedProd.name || banner.title,
+                    title: linkedProd.name || banner.title,
+                    price: linkedProd.price,
+                    price_html: linkedProd.price_html,
+                    image: linkedProd.image || banner.banner_image,
+                    permalink: linkedProd.permalink,
+                    desc: linkedProd.short_description,
+                    short_description: linkedProd.short_description,
+                    rawProduct: linkedProd
+                  }
+                : null;
+
+              const rawDesc = banner.short_description || (hasValidProduct ? linkedProd.short_description : '') || '';
+              const cleanShortDesc = decodeHtmlEntities(rawDesc)
+                .replace(/<[^>]*>?/gm, '')
+                .trim();
+
+              const slideTitle = banner.title || (hasValidProduct ? linkedProd.name : 'MODENA CULINARY PRODUCT');
+
+              return {
+                id: banner.id,
+                name: slideTitle.toUpperCase(),
+                short_description: cleanShortDesc || 'Engineered for commercial power, durability, and high performance.',
+                image: banner.banner_image || (hasValidProduct ? linkedProd.image : ''),
+                price: hasValidProduct ? (linkedProd.price_html || linkedProd.price) : null,
+                rawProduct: rawProduct,
+                badge: banner.badge || 'INTRODUCING MODENA',
+                ctaText: banner.cta_text || 'SHOP BESTSELLER NOW',
+                linkedProduct: rawProduct,
+                isValidProduct: hasValidProduct
+              };
             });
 
-            if (heroProducts.length > 0) {
-              const mappedSlides = heroProducts.map((item) => {
-                const normalized = normalizeProduct(item);
-                return {
-                  id: normalized.id,
-                  name: (normalized.name || 'MODENA CULINARY PRODUCT').toUpperCase(),
-                  short_description: normalized.desc || normalized.description || '',
-                  image: normalized.image,
-                  price: normalized.price_html || normalized.price || null,
-                  rawProduct: normalized,
-                  badge: 'INTRODUCING MODENA',
-                  ctaText: 'Shop Bestseller Now'
-                };
-              });
-
-              if (isMounted) {
-                setSlides(mappedSlides);
-                setIsLoading(false);
-              }
-              return;
+            if (isMounted) {
+              setSlides(mappedSlides);
+              setIsLoading(false);
             }
+            return;
           }
         }
       } catch (err) {
@@ -71,7 +93,7 @@ const HeroBanner = ({
       }
     };
 
-    fetchHeroProducts();
+    fetchHeroBanners();
 
     return () => {
       isMounted = false;
@@ -103,29 +125,80 @@ const HeroBanner = ({
     onSelectProduct(normalized);
   };
 
-  // 1. Loading Skeleton View
+  // 1. Loading Skeleton View (Matches current banner layout & studio styling)
   if (isLoading) {
     return (
       <div className="relative w-full max-w-[1720px] mx-auto px-3 sm:px-6 pt-2 pb-2">
-        {/* Mobile Skeleton */}
+        {/* Mobile Skeleton (< 640px) */}
         <div className="sm:hidden relative w-full rounded-[28px] overflow-hidden bg-[#2A2724] border border-white/10 shadow-2xl animate-pulse">
-          <div className="h-56 bg-stone-900/60" />
-          <div className="p-5 space-y-3">
-            <div className="w-28 h-5 bg-red-950/60 rounded-full" />
-            <div className="w-3/4 h-8 bg-stone-800/80 rounded-xl" />
-            <div className="w-full h-10 bg-stone-800/50 rounded-lg" />
-            <div className="w-full h-11 bg-[#E60000]/40 rounded-2xl" />
+          {/* Top 16:7 Aspect Ratio Image Area */}
+          <div className="relative w-full aspect-[16/7] bg-[#1A1816] flex items-center justify-center" style={{ aspectRatio: '16 / 7' }}>
+            <div className="w-32 h-20 bg-stone-800/50 rounded-xl" />
+          </div>
+          {/* Bottom Content Card Area */}
+          <div className="p-5 space-y-3.5 bg-[#2A2724]">
+            <div className="w-32 h-5 bg-[#E60000]/25 border border-[#E60000]/30 rounded-full" />
+            <div className="space-y-2">
+              <div className="w-4/5 h-6 bg-stone-800/90 rounded-lg" />
+              <div className="w-3/5 h-6 bg-stone-800/70 rounded-lg" />
+            </div>
+            <div className="space-y-1.5 pt-0.5">
+              <div className="w-full h-3.5 bg-stone-800/50 rounded" />
+              <div className="w-4/5 h-3.5 bg-stone-800/40 rounded" />
+            </div>
+            <div className="w-full h-12 bg-[#E60000]/80 rounded-2xl mt-2" />
           </div>
         </div>
-        {/* Desktop Skeleton */}
-        <div className="hidden sm:flex relative w-full h-[540px] lg:h-[580px] rounded-[36px] overflow-hidden bg-[#2A2724] border border-white/10 shadow-2xl items-center p-12">
-          <div className="w-full lg:w-1/2 space-y-5">
-            <div className="w-40 h-7 bg-red-950/60 rounded-full border border-red-900/40" />
-            <div className="w-3/4 h-12 sm:h-16 bg-stone-800/80 rounded-xl" />
-            <div className="w-full h-12 bg-stone-800/50 rounded-lg" />
-            <div className="w-48 h-12 bg-[#E60000]/40 rounded-full" />
+
+        {/* Desktop Skeleton (>= 640px) */}
+        <div className="hidden sm:block">
+          <div 
+            className="relative w-full aspect-[16/7] rounded-[24px] overflow-hidden bg-[#0D0504] border border-white/10 shadow-2xl flex items-center justify-between px-8 lg:px-16 animate-pulse"
+            style={{ aspectRatio: '16 / 7' }}
+          >
+            {/* Left side: Artwork / studio lighting aura */}
+            <div className="w-1/2 h-full flex items-center justify-center relative pointer-events-none">
+              <div className="w-64 h-64 lg:w-84 lg:h-84 rounded-full bg-stone-900/60 border border-stone-800/30 flex items-center justify-center">
+                <div className="w-48 h-48 lg:w-64 lg:h-64 rounded-2xl bg-stone-800/30" />
+              </div>
+            </div>
+
+            {/* Right side: Product Details & CTA */}
+            <div className="relative z-20 w-full lg:w-[48%] ml-auto flex flex-col justify-center space-y-3.5 text-left">
+              {/* Badge */}
+              <div className="w-36 h-6 bg-[#E60000]/20 border border-[#E60000]/40 rounded-full" />
+              
+              {/* Headline (2 lines) */}
+              <div className="space-y-2.5">
+                <div className="w-11/12 h-8 lg:h-10 bg-stone-800/90 rounded-xl" />
+                <div className="w-3/4 h-8 lg:h-10 bg-stone-800/70 rounded-xl" />
+              </div>
+
+              {/* Tagline / Description (2 lines) */}
+              <div className="space-y-2 pt-1">
+                <div className="w-full h-4 bg-stone-800/50 rounded-md" />
+                <div className="w-4/5 h-4 bg-stone-800/40 rounded-md" />
+              </div>
+
+              {/* CTA Button */}
+              <div className="pt-2">
+                <div className="w-52 h-11 bg-[#E60000]/90 rounded-full shadow-lg shadow-red-950/50" />
+              </div>
+            </div>
+
+            {/* Bottom Pagination Dots Skeleton (Bottom Left) */}
+            <div className="absolute bottom-5 left-8 lg:left-16 flex items-center gap-2">
+              <div className="w-6 h-1.5 bg-[#E60000]/60 rounded-full" />
+              <div className="w-2 h-1.5 bg-stone-700/60 rounded-full" />
+              <div className="w-2 h-1.5 bg-stone-700/60 rounded-full" />
+            </div>
+
+            {/* Bottom Navigation Arrows Skeleton (Bottom Right) */}
+            <div className="absolute bottom-5 right-8 lg:right-16 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20" />
+              <div className="w-10 h-10 rounded-full bg-white/20" />
+            </div>
           </div>
-          <div className="hidden lg:block lg:w-1/2 h-full bg-stone-900/50 rounded-2xl" />
         </div>
       </div>
     );
@@ -135,15 +208,18 @@ const HeroBanner = ({
   if (slides.length === 0) {
     return (
       <div className="relative w-full max-w-[1720px] mx-auto px-3 sm:px-6 pt-2 pb-2">
-        <div className="relative w-full h-[360px] sm:h-[460px] rounded-[36px] overflow-hidden bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] border border-white/10 shadow-2xl flex flex-col items-center justify-center text-center p-8 space-y-3">
+        <div 
+          className="relative w-full aspect-[16/7] rounded-[24px] overflow-hidden bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] border border-white/10 shadow-2xl flex flex-col items-center justify-center text-center p-8 space-y-3"
+          style={{ aspectRatio: '16 / 7' }}
+        >
           <div className="w-12 h-12 rounded-full bg-[#E60000]/20 border border-[#E60000]/40 flex items-center justify-center text-[#EFEAE6] mb-1">
             <Sparkles className="w-6 h-6 text-[#EFEAE6]" />
           </div>
           <h2 className="text-2xl sm:text-4xl font-extrabold text-white uppercase tracking-tight font-display-lg">
-            no hero product
+            no hero banner
           </h2>
           <p className="text-xs sm:text-sm text-gray-400 font-medium max-w-md leading-relaxed">
-            No products are currently assigned to the <code className="bg-white/10 px-2 py-0.5 rounded text-amber-300 font-mono">hero-banner</code> category in WooCommerce.
+            No hero banners are currently published under <code className="bg-white/10 px-2 py-0.5 rounded text-amber-300 font-mono">Hero Banners</code> in WordPress Admin.
           </p>
         </div>
       </div>
@@ -164,8 +240,8 @@ const HeroBanner = ({
       {/* ============================== */}
       <div className="sm:hidden relative w-full rounded-[28px] overflow-hidden bg-[#2A2724] border border-white/10 shadow-2xl">
 
-        {/* Full-Bleed Product Image â€” Top Half (clickable, no zoom button) */}
-        <div className="relative w-full h-[220px] overflow-hidden">
+        {/* Full-Bleed Product Image — Top Half (16:7 Aspect Ratio) */}
+        <div className="relative w-full aspect-[16/7] overflow-hidden" style={{ aspectRatio: '16 / 7' }}>
           {slides.map((slide, index) => (
             <div
               key={slide.id || index}
@@ -285,9 +361,12 @@ const HeroBanner = ({
       {/* DESKTOP / TABLET HERO BANNER (>= 640px)       */}
       {/* ============================================= */}
       <div className="hidden sm:block">
-        <div className="relative w-full h-[540px] lg:h-[600px] rounded-[36px] overflow-hidden bg-gradient-to-r from-[#171413] to-[#201514] shadow-2xl border border-white/10 group flex items-center justify-between px-12 lg:px-16">
+        <div 
+          className="relative w-full aspect-[16/7] rounded-[24px] overflow-hidden bg-[#0D0504] shadow-2xl flex items-center justify-between px-8 lg:px-16"
+          style={{ aspectRatio: '16 / 7' }}
+        >
 
-          {/* BACKGROUND SLIDES: Right Photo with Red Glow */}
+          {/* BACKGROUND SLIDES: Studio Hero Banner Artwork */}
           {slides.map((slide, index) => (
             <div
               key={slide.id || index}
@@ -296,27 +375,22 @@ const HeroBanner = ({
                 index === currentIndex ? 'opacity-100 z-0' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              {/* Red Glow Behind Image */}
-              <div className="absolute top-1/2 right-[10%] -translate-y-1/2 w-[400px] h-[400px] lg:w-[500px] lg:h-[500px] rounded-full bg-[#E60000]/10 border border-[#E60000]/30 shadow-[0_0_120px_60px_rgba(230,0,0,0.15)] pointer-events-none" />
-
               {slide.image && (
-                <div className="absolute top-0 right-0 w-full lg:w-[55%] h-full z-10 flex items-center justify-center p-8">
-                  <img
-                    src={slide.image}
-                    alt={slide.name}
-                    className={`w-full h-full object-contain object-center lg:object-right transition-transform duration-[6000ms] ease-out select-none drop-shadow-2xl ${
-                      index === currentIndex ? 'scale-105' : 'scale-100'
-                    }`}
-                  />
-                </div>
+                <img
+                  src={slide.image}
+                  alt={slide.name}
+                  className={`w-full h-full object-cover object-left select-none transition-transform duration-[6000ms] ease-out ${
+                    index === currentIndex ? 'scale-[1.02]' : 'scale-100'
+                  }`}
+                />
               )}
             </div>
           ))}
 
-          {/* LEFT COLUMN: Animated Product Details & CTA */}
-          <div className="relative z-20 w-full lg:w-[50%] flex flex-col justify-center space-y-4 sm:space-y-5 text-left pointer-events-none pl-4 lg:pl-8">
-            {/* Top Badge / Intro Text */}
-            <div className="self-start inline-flex items-center gap-2 bg-[#2A1616] text-[#EFEAE6] border border-[#E60000]/20 text-[10px] lg:text-[11px] font-bold px-3 lg:px-4 py-1.5 rounded-full uppercase tracking-widest transition-all duration-700">
+          {/* RIGHT COLUMN: Product Details & CTA */}
+          <div className="relative z-20 w-full lg:w-[48%] ml-auto flex flex-col justify-center space-y-3.5 text-left pointer-events-none">
+            {/* Top Badge */}
+            <div className="self-start inline-flex items-center gap-2 bg-[#E60000]/20 text-[#EFEAE6] border border-[#E60000]/40 text-[10px] lg:text-[11px] font-bold px-3.5 py-1 rounded-full uppercase tracking-widest transition-all duration-700 backdrop-blur-sm">
               <Package className="w-3.5 h-3.5 text-[#EFEAE6]" />
               <span>{activeSlide.badge || 'INTRODUCING MODENA'}</span>
             </div>
@@ -327,29 +401,29 @@ const HeroBanner = ({
                 e.stopPropagation();
                 handleSelectProduct(activeSlide.rawProduct || activeSlide);
               }}
-              className="text-4xl sm:text-5xl lg:text-[3.5rem] font-medium tracking-tight uppercase leading-[1.1] text-white font-display-lg transition-all duration-700 pointer-events-auto cursor-pointer hover:text-gray-200"
+              className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight uppercase leading-[1.15] text-white font-display-lg transition-all duration-700 pointer-events-auto cursor-pointer hover:text-gray-200 line-clamp-2 drop-shadow-md"
             >
               {activeSlide.name}
             </h1>
 
             {/* Subheading / Tagline */}
             {activeSlide.short_description && (
-              <p className="text-sm sm:text-base lg:text-lg text-gray-400 font-normal leading-relaxed max-w-xl transition-all duration-700 pt-2">
+              <p className="text-xs sm:text-sm lg:text-[15px] text-gray-300 font-normal leading-relaxed max-w-md transition-all duration-700 line-clamp-2 drop-shadow">
                 {activeSlide.short_description}
               </p>
             )}
 
             {/* CTA Button */}
-            <div className="pt-6 pointer-events-auto">
+            <div className="pt-2 pointer-events-auto">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSelectProduct(activeSlide.rawProduct || activeSlide);
                 }}
-                className="bg-[#E60000] hover:bg-red-800 transition-all duration-300 text-white font-bold text-sm px-8 py-3.5 rounded-full flex items-center gap-3 cursor-pointer uppercase tracking-widest shadow-lg shadow-[#E60000]/20"
+                className="bg-[#E60000] hover:bg-red-700 transition-all duration-300 text-white font-bold text-xs sm:text-sm px-7 py-3 rounded-full flex items-center gap-2.5 cursor-pointer uppercase tracking-widest shadow-lg shadow-red-950/50 border border-red-500/20"
               >
-                <span>{activeSlide.ctaText || 'Shop Bestseller Now'}</span>
+                <span>{activeSlide.ctaText || 'SHOP BESTSELLER NOW'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -357,7 +431,7 @@ const HeroBanner = ({
 
           {/* Pagination Dots (Bottom Left) */}
           {slides.length > 1 && (
-            <div className="absolute bottom-10 left-12 lg:left-24 z-30 flex items-center gap-3">
+            <div className="absolute bottom-5 left-8 lg:left-16 z-30 flex items-center gap-3">
               {slides.map((_, idx) => (
                 <button
                   key={idx}
@@ -366,8 +440,8 @@ const HeroBanner = ({
                     setCurrentIndex(idx);
                   }}
                   aria-label={`Go to slide ${idx + 1}`}
-                  className={`h-2 rounded-full transition-all duration-500 cursor-pointer ${
-                    idx === currentIndex ? 'w-6 bg-[#E60000]' : 'w-2 bg-gray-500 hover:bg-gray-400'
+                  className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                    idx === currentIndex ? 'w-6 bg-[#E60000]' : 'w-1.5 bg-gray-500/60 hover:bg-gray-300'
                   }`}
                 />
               ))}
@@ -376,16 +450,16 @@ const HeroBanner = ({
 
           {/* Navigation Arrows (Bottom Right) */}
           {slides.length > 1 && (
-            <div className="absolute bottom-10 right-12 lg:right-16 z-30 flex items-center gap-3">
+            <div className="absolute bottom-5 right-8 lg:right-16 z-30 flex items-center gap-3">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   prevSlide();
                 }}
                 aria-label="Previous Hero Product"
-                className="w-10 h-10 rounded-full bg-white hover:bg-gray-200 text-black flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95"
+                className="w-10 h-10 rounded-full bg-white/90 hover:bg-white text-black flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95 border border-white/20"
               >
-                <ChevronLeft className="w-5 h-5 stroke-[2]" />
+                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
               </button>
               <button
                 onClick={(e) => {
@@ -393,9 +467,9 @@ const HeroBanner = ({
                   nextSlide();
                 }}
                 aria-label="Next Hero Product"
-                className="w-10 h-10 rounded-full bg-white hover:bg-gray-200 text-black flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95"
+                className="w-10 h-10 rounded-full bg-white/90 hover:bg-white text-black flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95 border border-white/20"
               >
-                <ChevronRight className="w-5 h-5 stroke-[2]" />
+                <ChevronRight className="w-5 h-5 stroke-[2.5]" />
               </button>
             </div>
           )}

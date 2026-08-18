@@ -185,9 +185,6 @@ const ReturnProofModal = ({ orderId, isOpen, onClose, onSuccess }) => {
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-gray-100">
           <div>
-            <span className="font-label-caps text-[#E60000] text-[11px] font-bold tracking-widest block uppercase mb-1">
-              Verification Required
-            </span>
             <h3 className="font-display-lg text-xl sm:text-2xl text-gray-900 font-bold">
               Upload Return Proof
             </h3>

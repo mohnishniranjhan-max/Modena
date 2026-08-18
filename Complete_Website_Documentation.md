@@ -10,7 +10,7 @@
 - Intelligent RAG AI Chatbot Assistant (Alex).
 - Dynamic product catalog powered by WooCommerce.
 - Multi-step OTP and JWT authentication.
-- Seamless single-page cart and Zoho Pay checkout.
+- Seamless single-page cart and Razorpay checkout.
 - Account management (Orders, Returns, Replacements).
 **Overall Architecture:** A decoupled architecture with a React/Vite SPA on the frontend, communicating via REST APIs to a Headless WordPress/WooCommerce database, and a FastAPI Python backend handling the RAG AI chatbot pipeline.
 
@@ -38,7 +38,7 @@
 
 ### Authentication & Third-Party
 - **JWT Auth (WordPress plugin):** Issues tokens for REST API authentication.
-- **Zoho Pay:** Payment gateway integration for handling transactions.
+- **Razorpay:** Payment gateway integration for handling transactions.
 
 ## 3. WEBSITE STRUCTURE
 ### Pages and Routes
@@ -59,7 +59,7 @@ The application is structured as a Single Page Application (SPA). Views are mana
 - **Authentication Modals (Login/Register)**: 
   - **Purpose:** User sign-up and login via email/OTP and passwords.
 - **Cart & Checkout Drawers/Modals**: 
-  - **Purpose:** Review selected items and process payment via Zoho Pay.
+  - **Purpose:** Review selected items and process payment via Razorpay.
 
 ## 4. HOMEPAGE
 The homepage is constructed dynamically using modular sections:
@@ -108,9 +108,9 @@ The homepage is constructed dynamically using modular sections:
 - **Pricing:** Calculates subtotal dynamically based on the parsed numeric prices of cart items.
 - **Checkout Process:**
   1. User fills out shipping/billing details.
-  2. Frontend requests a Zoho Pay session ID (`/wp-json/modena/v1/create-zohopay-session`).
-  3. Zoho Pay checkout modal opens.
-  4. On success, payment transaction is verified (`/wp-json/modena/v1/verify-zohopay-payment`).
+  2. Frontend requests a Razorpay session ID (`/wp-json/modena/v1/create-razorpay-session`).
+  3. Razorpay checkout modal opens.
+  4. On success, payment transaction is verified (`/wp-json/modena/v1/verify-razorpay-payment`).
   5. WooCommerce Order is created via API.
 
 ## 10. ORDERS, RETURNS & REPLACEMENTS
@@ -149,7 +149,7 @@ WooCommerce Webhook → FastAPI Backend → ChromaDB (Embeddings) → RAG Chatbo
 - `POST /wp-json/modena/v1/check-user-exists`: Verify if email is registered.
 - `POST /wp-json/modena/v1/send-otp`: Trigger email OTP.
 - `POST /wp-json/modena/v1/verify-otp-register`: Validate OTP and register.
-- `POST /wp-json/modena/v1/create-zohopay-session`: Generate payment session intent.
+- `POST /wp-json/modena/v1/create-razorpay-session`: Generate payment session intent.
 - `POST /wp-json/modena/v1/upload-return-proof`: Upload return images.
 
 ### Frontend to FastAPI (RAG)
@@ -191,7 +191,7 @@ WooCommerce Webhook → FastAPI Backend → ChromaDB (Embeddings) → RAG Chatbo
 
 ## 19. SECURITY
 - **Authentication:** Uses secure JWT tokens stored locally.
-- **Payment Security:** Zoho Pay handles PCI compliance; the backend strictly verifies the payment transaction before creating orders.
+- **Payment Security:** Razorpay handles PCI compliance; the backend strictly verifies the payment transaction before creating orders.
 - **CORS:** The FastAPI backend is configured to accept cross-origin requests from the React frontend.
 - **Sanitization:** HTML strings from WordPress are aggressively sanitized and decoded in React to prevent XSS.
 
@@ -229,7 +229,7 @@ modena-react-theme/
 
 ## 22. USER FLOW
 **Standard Purchase Journey:**
-Visitor → Views Homepage Hero Banner → Browses Signature Collection → Clicks Product → Views Details & Pinch-Zooms Image → Adds to Cart → Opens Cart Drawer → Authenticates (OTP) → Completes Zoho Pay Checkout → Views Order in Dashboard.
+Visitor → Views Homepage Hero Banner → Browses Signature Collection → Clicks Product → Views Details & Pinch-Zooms Image → Adds to Cart → Opens Cart Drawer → Authenticates (OTP) → Completes Razorpay Checkout → Views Order in Dashboard.
 
 **Support Journey:**
 Customer → Opens Chatbot → Asks question about product → AI responds based on Vector DB → Customer gets instant clarification.
@@ -238,7 +238,7 @@ Customer → Opens Chatbot → Asks question about product → AI responds based
 - **WooCommerce API Down:** Frontend gracefully displays fallback skeleton loaders or empty states.
 - **FastAPI Down:** Chatbot displays a polite "Agent offline" message.
 - **Image Loading Issues:** React `onError` handlers replace broken URLs with high-quality fallback placeholder images.
-- **Payment Failure:** Zoho Pay modal closes and the user is kept in the cart state without losing data.
+- **Payment Failure:** Razorpay modal closes and the user is kept in the cart state without losing data.
 
 ## 24. MAINTENANCE GUIDE
 - **Adding Hero Products:** Log into WordPress, create/edit a product, and assign the category `hero-banner`.

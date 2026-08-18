@@ -233,16 +233,16 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
       // Continue to WP fallback probe
     }
 
-    // WordPress User Existence Fallback Probe
+    // WordPress User Existence Fallback Check via clean dedicated endpoint
     if (!userIsExisting) {
       try {
-        const wpRes = await fetch('http://modena.local/wp-json/jwt-auth/v1/token', {
+        const wpRes = await fetch('/wp-json/modena/v1/check-user-exists', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: cleanIdent, password: 'check_user_existence_probe' })
+          body: JSON.stringify({ email: cleanIdent })
         });
         const wpData = await wpRes.json();
-        if (wpData.code === '[jwt_auth] incorrect_password' || wpRes.status === 200) {
+        if (wpData && wpData.exists) {
           userIsExisting = true;
         }
       } catch {

@@ -18,13 +18,26 @@ class Settings(BaseModel):
     MAX_SESSION_HISTORY: int = 10
     ANALYTICS_LOG_FILE: str = os.path.join(os.path.dirname(__file__), "rag_analytics.json")
     
+    # Authentication & Security
+    JWT_SECRET: str = os.environ.get("JWT_SECRET", "")
+    
     # SMTP Email Settings
     SMTP_SERVER: str = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
     SMTP_PORT: int = int(os.environ.get("SMTP_PORT", 587))
-    SMTP_USERNAME: str = os.environ.get("SMTP_USERNAME", "your-email@gmail.com")
-    SMTP_PASSWORD: str = os.environ.get("SMTP_PASSWORD", "your-app-password")
+    SMTP_USERNAME: str = os.environ.get("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = os.environ.get("SMTP_PASSWORD", "")
     EMAILS_FROM_NAME: str = os.environ.get("EMAILS_FROM_NAME", "Modena Kitchenware")
-    EMAILS_FROM_EMAIL: str = os.environ.get("EMAILS_FROM_EMAIL", "your-email@gmail.com")
+    EMAILS_FROM_EMAIL: str = os.environ.get("EMAILS_FROM_EMAIL", "")
+
+    # WhatsApp Cloud API (Meta)
+    WHATSAPP_PHONE_NUMBER_ID: str = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "")
+    WHATSAPP_ACCESS_TOKEN: str = os.environ.get("WHATSAPP_ACCESS_TOKEN", "")
+
+    # SMS Gateway
+    SMS_PROVIDER: str = os.environ.get("SMS_PROVIDER", "twilio")
+    TWILIO_ACCOUNT_SID: str = os.environ.get("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN: str = os.environ.get("TWILIO_AUTH_TOKEN", "")
+    TWILIO_PHONE_NUMBER: str = os.environ.get("TWILIO_PHONE_NUMBER", "")
 
 settings = Settings()
 

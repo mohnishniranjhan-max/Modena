@@ -3,41 +3,42 @@
 @theme {
   --font-jost: 'Jost', sans-serif;
   --font-inter: 'Inter', sans-serif;
+  --font-roboto-condensed: 'Roboto Condensed', sans-serif;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --color-background: #FAF8F6;
-  --color-on-background: #2A2724;
-  --color-surface: #FAF8F6;
-  --color-surface-dim: #EFEAE6;
-  --color-surface-bright: #FAF8F6;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #FAF8F6;
-  --color-surface-container: #FAF8F6;
-  --color-surface-container-high: #FAF8F6;
-  --color-surface-container-highest: #FAF8F6;
-  --color-on-surface: #2A2724;
-  --color-on-surface-variant: #514C48;
-  --color-outline: #8A827C;
-  --color-outline-variant: #E2DCD7;
-  --color-surface-tint: #E60000;
-  --color-primary: #E60000;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #E60000;
-  --color-on-primary-container: #FAF8F6;
-  --color-secondary: #8A827C;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #EFEAE6;
-  --color-on-secondary-container: #8A827C;
-  --color-tertiary: #514C48;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #8A827C;
-  --color-on-tertiary-container: #fdf8f4;
-  --color-tertiary-fixed: #E2DCD7;
-  --color-tertiary-fixed-dim: #E2DCD7;
-  --color-secondary-fixed: #EFEAE6;
-  --color-secondary-fixed-dim: #E2DCD7;
+  --color-background: #F3F1ED;
+  --color-on-background: #292725;
+  --color-surface: #F8F7F4;
+  --color-surface-dim: #EAE7E1;
+  --color-surface-bright: #F8F7F4;
+  --color-surface-container-lowest: #F8F7F4;
+  --color-surface-container-low: #F3F1ED;
+  --color-surface-container: #EAE7E1;
+  --color-surface-container-high: #D8D4CD;
+  --color-surface-container-highest: #D8D4CD;
+  --color-on-surface: #292725;
+  --color-on-surface-variant: #716D67;
+  --color-outline: #716D67;
+  --color-outline-variant: #D8D4CD;
+  --color-surface-tint: #C91F26;
+  --color-primary: #C91F26;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #C91F26;
+  --color-on-primary-container: #F8F7F4;
+  --color-secondary: #716D67;
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #EAE7E1;
+  --color-on-secondary-container: #716D67;
+  --color-tertiary: #716D67;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #D8D4CD;
+  --color-on-tertiary-container: #292725;
+  --color-tertiary-fixed: #D8D4CD;
+  --color-tertiary-fixed-dim: #D8D4CD;
+  --color-secondary-fixed: #EAE7E1;
+  --color-secondary-fixed-dim: #D8D4CD;
   --color-error: #B3261E;
-  --color-charcoal: #2A2724;
+  --color-charcoal: #292725;
 
   --spacing-stack-lg: 80px;
   --spacing-stack-md: 32px;
@@ -61,8 +62,8 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: #FAF8F6;
-  color: #2A2724;
+  background-color: #F3F1ED;
+  color: #292725;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
@@ -71,6 +72,12 @@ body {
 
 button {
   font-size: 0.85rem;
+}
+
+.roboto-condensed {
+  font-family: "Roboto Condensed", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
 }
 
 /* Custom Typography Helpers matching DESIGN.md */
@@ -167,3 +174,28 @@ button {
   word-wrap: normal !important;
   display: none !important;
 }
+
+/* Animated Sparkles for Corporate Gifting */
+@keyframes magicalSparkle {
+  0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; transform: translate(var(--tx-mid), var(--ty-mid)) scale(1.2) rotate(45deg); }
+  80% { opacity: 0.6; }
+  100% { transform: translate(var(--tx-end), var(--ty-end)) scale(0) rotate(90deg); opacity: 0; }
+}
+.animate-sparkle {
+  animation: magicalSparkle var(--duration, 2s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  position: absolute;
+  pointer-events: none;
+}
+
+:root {
+  --cart-offset: 1rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --cart-offset: 1.5rem;
+  }
+}
+

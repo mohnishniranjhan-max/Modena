@@ -37,7 +37,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
 
     try {
       const token = localStorage.getItem('modena_jwt_token');
-      const res = await fetch('/wp-json/wc/v3/products/reviews', {
+      const res = await fetch('/wp-json/modena/v1/submit-review', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,15 +50,14 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
         setSuccessMessage('Thank you! Your review has been submitted.');
         setReviewText('');
         if (onReviewSubmitted) onReviewSubmitted(payload);
+        window.dispatchEvent(new Event('modena_reviews_updated'));
       } else {
-        setSuccessMessage('Thank you! Your review has been submitted.');
-        setReviewText('');
-        if (onReviewSubmitted) onReviewSubmitted(payload);
+        const data = await res.json().catch(() => ({}));
+        setErrorMessage(data.message || 'Could not submit review. Please try again.');
       }
-    } catch {
-      setSuccessMessage('Thank you! Your review has been submitted.');
-      setReviewText('');
-      if (onReviewSubmitted) onReviewSubmitted(payload);
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      setErrorMessage('A network error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

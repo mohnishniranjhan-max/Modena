@@ -1,0 +1,327 @@
+/* E-Book Specific Layout mimicking A4 Pages */
+
+.page {
+    width: var(--page-width);
+    min-height: var(--page-height);
+    background: var(--color-surface);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 10mm;
+    position: relative;
+    overflow: hidden;
+    /* Print handling setup */
+    page-break-after: always;
+}
+
+/* Shared Page Header */
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h2 {
+    font-size: 28px;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.header-line {
+    height: 2px;
+    background: var(--color-primary);
+    width: 60px;
+    margin-top: 10px;
+}
+
+/* Cover Page */
+.cover-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+}
+
+.cover-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.cover-logo {
+    margin-bottom: 40px;
+}
+
+.cover-title {
+    font-size: 48px;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+}
+
+.cover-subtitle {
+    font-size: 20px;
+    color: var(--color-text-muted);
+    margin-bottom: 30px;
+}
+
+.cover-year {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--color-primary);
+}
+
+.cover-footer {
+    padding: 20px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* About Page */
+.about-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.about-text h3 {
+    font-size: 20px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.about-text p {
+    margin-bottom: 16px;
+    color: #444;
+}
+
+.about-features {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.about-features li {
+    margin-bottom: 10px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.about-features li::before {
+    content: "•";
+    color: var(--color-primary);
+    position: absolute;
+    left: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.about-image-container {
+    width: 100%;
+    height: 300px;
+    background: var(--color-background);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.about-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Table of Contents */
+.toc-list {
+    list-style: none;
+    margin-bottom: 30px;
+}
+
+.toc-list li {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.toc-title {
+    font-weight: 500;
+}
+
+.toc-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--color-border);
+    margin: 0 10px;
+    position: relative;
+    top: -4px;
+}
+
+.toc-page-num {
+    font-family: var(--font-heading);
+    font-weight: 600;
+}
+
+.toc-category-header {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: 24px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Category Divider Page */
+.category-divider-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.category-divider-content {
+    text-align: center;
+}
+
+.category-divider-content h1 {
+    color: white;
+    font-size: 42px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.category-divider-content .divider-line {
+    width: 80px;
+    height: 3px;
+    background: white;
+    margin: 20px auto;
+}
+
+/* Product Page Layouts */
+.product-grid-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+    height: calc(100% - 60px); /* Account for header */
+}
+
+/* Fallback for single large product display */
+.product-single-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 60px);
+}
+
+.product-card {
+    border: 1px solid var(--color-border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.product-image-wrapper {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.product-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.product-category-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.product-name {
+    font-size: 16px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    height: 42px; /* Force 2 lines approx */
+    overflow: hidden;
+}
+
+.product-price {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.product-desc {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    flex: 1;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+}
+
+.product-specs {
+    margin-top: 16px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+    font-size: 11px;
+}
+
+/* Contact Page */
+.contact-card {
+    background: var(--color-background);
+    padding: 40px;
+    border-radius: 4px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.contact-card h3 {
+    font-size: 24px;
+    margin-bottom: 16px;
+}
+
+.contact-details {
+    margin: 30px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.contact-item {
+    font-size: 16px;
+}
+
+.contact-footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.brand-tagline {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    color: var(--color-primary);
+    margin-top: 8px;
+}
+
+/* Responsive adjustments for viewing on screens smaller than A4 */
+@media (max-width: 220mm) {
+    .page {
+        width: 100%;
+        min-height: auto;
+        aspect-ratio: 1 / 1.414; /* A4 aspect ratio */
+    }
+}

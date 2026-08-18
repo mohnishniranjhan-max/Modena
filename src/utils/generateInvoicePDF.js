@@ -50,7 +50,7 @@ export function generateInvoicePDF(order, customerDetails = {}) {
   doc.setFont('helvetica', 'normal');
   doc.text('Plot 42, Heritage Industrial Park, Koramangala', 14, 43);
   doc.text('Bengaluru, Karnataka - 560034, India', 14, 48);
-  doc.text('GSTIN: 29AABCM9901Z1Z8 | Support: +91 (800) 555-MODENA', 14, 53);
+  doc.text('GSTIN: 29AABCM9901Z1Z8 | Support: +91 93266 41825', 14, 53);
 
   // Invoice & Order Metadata Box
   doc.setFillColor(248, 248, 248);
@@ -58,7 +58,7 @@ export function generateInvoicePDF(order, customerDetails = {}) {
   doc.setFont('helvetica', 'bold');
   doc.text(`Invoice No: INV-${orderNum}`, 134, 41);
   doc.text(`Order Date: ${orderDate}`, 134, 47);
-  doc.text(`Payment: ${order.paymentMethod ? String(order.paymentMethod).toUpperCase() : 'ZOHO PAY / COD'}`, 134, 53);
+  doc.text(`Payment: ${order.paymentMethod ? String(order.paymentMethod).toUpperCase() : 'RAZORPAY / COD'}`, 134, 53);
 
   // Horizontal Divider Line
   doc.setDrawColor(220, 220, 220);
@@ -152,7 +152,7 @@ export function generateInvoicePDF(order, customerDetails = {}) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text('Thank you for choosing Modena. For return requests or assistance, visit support.modena.local or call +91 (800) 555-MODENA.', 14, 272);
+  doc.text('Thank you for choosing Modena. For return requests or assistance, visit modenahome.in or call +91 93266 41825.', 14, 272);
   doc.text('This is an official computer-generated tax invoice and does not require a physical signature.', 14, 277);
 
   // Trigger automatic download

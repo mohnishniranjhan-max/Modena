@@ -10,7 +10,7 @@
 
 This document outlines all missing features, architectural gaps, unconfigured integrations, and handoff requirements for the **Modena E-Commerce Store**. 
 
-While the project features a **state-of-the-art React 19 Single Page Application (SPA)** with interactive Amazon-style mobile cards, live search, invoice PDF generation, Zoho Pay checkout, and a custom RAG AI Chatbot backend, there are several key items specified in the **Developer Task Brief** and standard e-commerce production checklists that remain to be implemented or configured.
+While the project features a **state-of-the-art React 19 Single Page Application (SPA)** with interactive Amazon-style mobile cards, live search, invoice PDF generation, Razorpay checkout, and a custom RAG AI Chatbot backend, there are several key items specified in the **Developer Task Brief** and standard e-commerce production checklists that remain to be implemented or configured.
 
 ---
 
@@ -100,9 +100,9 @@ Per Section 2 of the Developer Brief, external services must sit cleanly on top 
 Per Section 7 of the Developer Task Brief, the final handoff must include:
 
 - [ ] **Plugin & Config Sheet**: Matrix of all installed plugins, purpose, and settings.
-- [ ] **Credential Ownership Matrix**: Secure document listing account owners for Meta, Google, Zoho Pay, and WhatsApp Business.
+- [ ] **Credential Ownership Matrix**: Secure document listing account owners for Meta, Google, Razorpay, and WhatsApp Business.
 - [ ] **Test Evidence Package**:
-  - Screenshot of successful Zoho Pay test order.
+  - Screenshot of successful Razorpay test order.
   - Meta Pixel / CAPI event verification screenshot.
   - Google Merchant Center feed approval screenshot.
 - [ ] **FastAPI RAG Backend Deployment Guide**: Instructions for running `rag-backend/main.py` in production (Uvicorn / Systemd / Docker).

@@ -87,6 +87,51 @@ export const getProductReviews = (productId) => {
   return productReviews.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
 };
 
+export const fetchProductReviewsFromApi = async (productId) => {
+  if (!productId) return [];
+  try {
+    const res = await fetch(`/wp-json/modena/v1/product-reviews?product_id=${productId}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const cleaned = data.map((r) => ({
+          id: r.id,
+          product_id: r.product_id || productId,
+          reviewer: decodeHtmlEntities(r.reviewer || r.author || 'Verified Customer'),
+          review: decodeHtmlEntities(r.review || r.content || r.comment || ''),
+          rating: Number(r.rating) || 5,
+          verified: Boolean(r.verified),
+          date_created: r.date_created || r.date || new Date().toISOString()
+        }));
+        return cleaned.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching API product reviews:', err);
+  }
+  return getProductReviews(productId);
+};
+
+export const deleteReviewApi = async (commentId, productId) => {
+  try {
+    await fetch('/wp-json/modena/v1/delete-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment_id: commentId, product_id: productId })
+    });
+  } catch (err) {
+    console.error('Error deleting review via API:', err);
+  }
+  // Clean fallback localStorage database
+  try {
+    const existing = getStoredReviews();
+    const updated = existing.filter((r) => String(r.id) !== String(commentId));
+    localStorage.setItem('modena_reviews_db', JSON.stringify(updated));
+  } catch {}
+  window.dispatchEvent(new Event('modena_reviews_updated'));
+  return true;
+};
+
 export const getProductRatingData = (item) => {
   if (!item) {
     return {
@@ -214,35 +259,6 @@ export const normalizeProduct = (item) => {
   });
 
   let itemCategories = Array.isArray(item.categories) && item.categories.length > 0 ? item.categories : [];
-  if (itemCategories.length === 0) {
-    const nameLower = (cleanName || '').toLowerCase();
-    const isElec =
-      nameLower.includes('mixer') ||
-      nameLower.includes('blender') ||
-      nameLower.includes('750w') ||
-      nameLower.includes('550w') ||
-      nameLower.includes('990w') ||
-      nameLower.includes('sindoor') ||
-      nameLower.includes('sujata') ||
-      nameLower.includes('karina') ||
-      nameLower.includes('preethi') ||
-      nameLower.includes('nutri');
-    if (isElec) {
-      itemCategories = [
-        { id: 106, name: 'Electronics', slug: 'electronics' },
-        { id: 107, name: 'Mixer Grinders', slug: 'mixer-grinders' },
-        { id: 100, name: 'Bestseller', slug: 'bestseller' },
-        { id: 103, name: 'Deal', slug: 'deal' }
-      ];
-    } else {
-      itemCategories = [
-        { id: 111, name: 'Utensils', slug: 'utensils' },
-        { id: 113, name: 'Tri-Ply Stainless Steel', slug: 'stainless-steel' },
-        { id: 100, name: 'Bestseller', slug: 'bestseller' },
-        { id: 103, name: 'Deal', slug: 'deal' }
-      ];
-    }
-  }
 
   const primaryCategory = itemCategories[0]?.name || 'General Cookware';
   const ratingData = getProductRatingData(item);

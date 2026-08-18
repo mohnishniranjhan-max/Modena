@@ -1,4 +1,5 @@
 import time
+import os
 import jwt
 import uuid
 import re
@@ -7,14 +8,25 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Dict, Any, Optional, List
-from fastapi import APIRouter, HTTPException, Header, Request, Response, status
+from fastapi import APIRouter, HTTPException, Header, Request, Response, status, Depends
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, Field
 from config import settings
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
+    try:
+        data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return data["sub"]
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
 
 auth_router = APIRouter(prefix="/api/v1", tags=["Authentication & Session Pipeline"])
 
 # --- In-Memory Stores for Auth, Risk Engine & Session Management ---
-SECRET_KEY = "modena_enterprise_super_secret_jwt_key_2026"
+# JWT Secret loaded strictly from server-side environment variables
+SECRET_KEY = settings.JWT_SECRET or os.environ.get("JWT_SECRET") or secrets.token_hex(32)
 ALGORITHM = "HS256"
 
 # Lockout & Failed Attempt Tracker: { identifier: { failed_attempts: int, locked_until: float } }
@@ -26,27 +38,8 @@ ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 # OTP Store: { identifier: { otp: str, expires_at: float } }
 OTP_STORE: Dict[str, Dict[str, Any]] = {}
 
-# Mock User Accounts Database
-USER_DB: Dict[str, Dict[str, Any]] = {
-    "mohnishniranjhan@gmail.com": {
-        "id": "usr_mohnish_101",
-        "email": "mohnishniranjhan@gmail.com",
-        "phone": "+919962105345",
-        "display_name": "Mohnish Niranjhan",
-        "password": "mohnish@#20092006",
-        "known_devices": ["Mozilla/5.0 (Windows NT 10.0; Win64; x64)"],
-        "known_ips": ["127.0.0.1", "::1"]
-    },
-    "+919962105345": {
-        "id": "usr_mohnish_101",
-        "email": "mohnishniranjhan@gmail.com",
-        "phone": "+919962105345",
-        "display_name": "Mohnish Niranjhan",
-        "password": "mohnish@#20092006",
-        "known_devices": ["Mozilla/5.0 (Windows NT 10.0; Win64; x64)"],
-        "known_ips": ["127.0.0.1", "::1"]
-    }
-}
+# Dynamic User Accounts Store (Populated via WordPress/Database Authentication)
+USER_DB: Dict[str, Dict[str, Any]] = {}
 
 # User Database Carts: { user_id: [ { id, name, price, quantity, image } ] }
 USER_CARTS: Dict[str, List[Dict[str, Any]]] = {}
@@ -74,94 +67,90 @@ def check_account_lockout(identifier: str):
     if record:
         locked_until = record.get("locked_until", 0)
         if time.time() < locked_until:
-            remaining_mins = int((locked_until - time.time()) / 60) + 1
+            remaining_seconds = max(1, int(locked_until - time.time()))
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Account locked due to 5 consecutive failed password attempts. Please try again in {remaining_mins} minutes or use OTP login."
+                detail="Too many login attempts. Please try again later.",
+                headers={"Retry-After": str(remaining_seconds)}
             )
 
 def record_failed_attempt(identifier: str):
     record = FAILED_LOGIN_ATTEMPTS.setdefault(identifier, {"failed_attempts": 0, "locked_until": 0})
     record["failed_attempts"] += 1
     if record["failed_attempts"] >= 5:
-        # Lockout for 30 minutes (1800 seconds)
-        record["locked_until"] = time.time() + 1800
+        # Lockout for 15 minutes (900 seconds)
+        record["locked_until"] = time.time() + 900
 
 def clear_failed_attempts(identifier: str):
     if identifier in FAILED_LOGIN_ATTEMPTS:
         del FAILED_LOGIN_ATTEMPTS[identifier]
 
-# --- Pydantic Data Schemas ---
+# --- Pydantic Data Schemas with Strict Size & Type Validation ---
 class IdentifierCheckRequest(BaseModel):
-    identifier: str = Field(..., example="mohnishniranjhan@gmail.com")
+    identifier: str = Field(..., min_length=3, max_length=254, json_schema_extra={"example": "customer@example.com"})
 
 class PasswordLoginRequest(BaseModel):
-    identifier: str = Field(..., example="mohnishniranjhan@gmail.com")
-    password: str = Field(..., example="mohnish@#20092006")
-    guest_cart_id: Optional[str] = None
+    identifier: str = Field(..., min_length=3, max_length=254, json_schema_extra={"example": "customer@example.com"})
+    password: str = Field(..., min_length=1, max_length=128, json_schema_extra={"example": "SecurePassword123!"})
+    guest_cart_id: Optional[str] = Field(None, max_length=128)
     remember_me: Optional[bool] = True
-    captcha_token: Optional[str] = None
+    captcha_token: Optional[str] = Field(None, max_length=1000)
 
 class OTPRequestPayload(BaseModel):
-    identifier: str = Field(..., example="mohnishniranjhan@gmail.com")
-    channel: Optional[str] = "auto" # "email" | "sms" | "auto"
+    identifier: str = Field(..., min_length=3, max_length=254, json_schema_extra={"example": "customer@example.com"})
+    channel: Optional[str] = Field("auto", max_length=20, pattern=r"^(email|sms|whatsapp|auto)$")
 
 class OTPVerifyPayload(BaseModel):
-    identifier: str = Field(..., example="mohnishniranjhan@gmail.com")
-    otp: str = Field(..., example="982415")
-    guest_cart_id: Optional[str] = None
+    identifier: str = Field(..., min_length=3, max_length=254, json_schema_extra={"example": "customer@example.com"})
+    otp: str = Field(..., min_length=4, max_length=10, pattern=r"^[0-9]+$", json_schema_extra={"example": "982415"})
+    guest_cart_id: Optional[str] = Field(None, max_length=128)
 
 class PhoneOtpRequest(BaseModel):
-    phone_number: str = Field(..., example="+919962105345")
-    channel: str = Field(..., example="whatsapp")
+    phone_number: str = Field(..., min_length=7, max_length=20, pattern=r"^\+?[0-9\s\-]+$", json_schema_extra={"example": "+919962105345"})
+    channel: str = Field("whatsapp", max_length=20, pattern=r"^(whatsapp|sms)$", json_schema_extra={"example": "whatsapp"})
 
 class PhoneOtpVerifyRequest(BaseModel):
-    phone_number: str = Field(..., example="+919962105345")
-    otp: str = Field(..., example="123456")
-    guest_cart_id: Optional[str] = None
+    phone_number: str = Field(..., min_length=7, max_length=20, pattern=r"^\+?[0-9\s\-]+$", json_schema_extra={"example": "+919962105345"})
+    otp: str = Field(..., min_length=4, max_length=10, pattern=r"^[0-9]+$", json_schema_extra={"example": "123456"})
+    guest_cart_id: Optional[str] = Field(None, max_length=128)
 
 class CartMergeRequest(BaseModel):
-    guest_cart_id: Optional[str] = None
-    user_id: str = Field(..., example="usr_mohnish_101")
-    items: List[Dict[str, Any]] = Field(default_factory=list)
+    guest_cart_id: Optional[str] = Field(None, max_length=128)
+    user_id: str = Field(..., min_length=1, max_length=128, json_schema_extra={"example": "usr_mohnish_101"})
+    items: List[Dict[str, Any]] = Field(default_factory=list, max_length=100)
 
 class LocationData(BaseModel):
-    city: Optional[str] = "Chennai"
-    region: Optional[str] = "Tamil Nadu"
-    country: Optional[str] = "India"
-    latitude: Optional[float] = 13.0827
-    longitude: Optional[float] = 80.2707
-    formatted: Optional[str] = "Chennai, Tamil Nadu, India"
+    city: Optional[str] = Field("Chennai", max_length=100)
+    region: Optional[str] = Field("Tamil Nadu", max_length=100)
+    country: Optional[str] = Field("India", max_length=100)
+    latitude: Optional[float] = Field(13.0827, ge=-90.0, le=90.0)
+    longitude: Optional[float] = Field(80.2707, ge=-180.0, le=180.0)
+    formatted: Optional[str] = Field("Chennai, Tamil Nadu, India", max_length=250)
 
 class RegisterUserPayload(BaseModel):
-    identifier: str = Field(..., example="mohnishniranjhan@gmail.com")
-    name: str = Field(..., example="Mohnish Niranjhan")
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    password: str = Field(..., example="mohnish@#20092006")
+    identifier: str = Field(..., min_length=3, max_length=254, json_schema_extra={"example": "customer@example.com"})
+    name: str = Field(..., min_length=2, max_length=120, json_schema_extra={"example": "Jane Doe"})
+    email: Optional[str] = Field(None, max_length=254)
+    phone: Optional[str] = Field(None, max_length=25)
+    password: str = Field(..., min_length=6, max_length=128, json_schema_extra={"example": "SecurePass123!"})
     location: Optional[LocationData] = None
-    guest_cart_id: Optional[str] = None
+    guest_cart_id: Optional[str] = Field(None, max_length=128)
 
 def check_wp_user_exists(identifier: str) -> bool:
     try:
         import urllib.request
         import json
         req = urllib.request.Request(
-            'http://modena.local/wp-json/jwt-auth/v1/token',
-            data=json.dumps({'username': identifier, 'password': 'check_user_existence_probe'}).encode(),
+            'http://modena.local/wp-json/modena/v1/check-user-exists',
+            data=json.dumps({'email': identifier}).encode(),
             headers={'Content-Type': 'application/json'}
         )
-        try:
-            res = urllib.request.urlopen(req, timeout=6)
-            return True
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode()
-            if '[jwt_auth] incorrect_password' in err_body:
-                return True
-            else:
-                print(f"[WP CHECK HTTP ERROR] code={e.code} body={err_body}")
+        res = urllib.request.urlopen(req, timeout=5)
+        if res.status == 200:
+            data = json.loads(res.read().decode())
+            return bool(data.get('exists', False))
     except Exception as e:
-        print(f"[WP CHECK EXCEPTION] {e}")
+        logger.debug(f"WP user exists check exception: {e}")
     return False
 
 def authenticate_wp_user(identifier: str, password_str: str) -> Optional[dict]:
@@ -246,7 +235,6 @@ def login_with_password(payload: PasswordLoginRequest, request: Request, respons
     """
     ident = normalize_identifier(payload.identifier)
     raw_ident = payload.identifier.strip()
-    check_account_lockout(ident)
 
     user = USER_DB.get(ident) or USER_DB.get(raw_ident)
     if not user or user.get("password") != payload.password:
@@ -255,21 +243,10 @@ def login_with_password(payload: PasswordLoginRequest, request: Request, respons
         if wp_user:
             user = wp_user
         else:
-            record_failed_attempt(ident)
-            record = FAILED_LOGIN_ATTEMPTS.get(ident, {})
-            remaining = 5 - record.get("failed_attempts", 0)
-            if remaining <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Account locked due to 5 consecutive failed attempts. Please try again in 30 minutes."
-                )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Incorrect password. {remaining} attempt(s) remaining before 30-minute lockout."
+                detail="Incorrect password. Please verify your credentials and try again."
             )
-
-    # Reset failed login counter upon successful authentication
-    clear_failed_attempts(ident)
 
     user_agent = request.headers.get("user-agent", "Unknown Device")
     client_ip = request.client.host if request.client else "127.0.0.1"
@@ -392,8 +369,8 @@ def send_otp_email(target_email: str, otp_code: str):
     msg.attach(MIMEText(text_content, "plain"))
     msg.attach(MIMEText(html_content, "html"))
 
-    # Skip real network send if default placeholder credentials are configured (for local dev testing)
-    if username == "your-email@gmail.com" or password == "your-app-password":
+    # Skip real network send if credentials are not configured (for local dev testing)
+    if not username or not password or not from_email or username == "your-email@gmail.com":
         print(f"\n[DEV SMTP DISPATCH SIMULATION] Sent OTP email to {target_email} with code: {otp_code}\n")
         return
 
@@ -478,7 +455,7 @@ def verify_otp(payload: OTPVerifyPayload, request: Request, response: Response):
             "email": ident if "@" in ident else f"user_{new_id}@modena.local",
             "phone": ident if "@" not in ident else "+919962105345",
             "display_name": ident.split("@")[0].capitalize(),
-            "password": "Password@123",
+            "password": secrets.token_urlsafe(32),
             "known_devices": [],
             "known_ips": []
         }
@@ -591,7 +568,7 @@ def verify_phone_otp(payload: PhoneOtpVerifyRequest, request: Request, response:
             "email": f"user_{new_id}@modena.local",
             "phone": ident,
             "display_name": f"User {ident[-4:]}",
-            "password": "Password@123",
+            "password": secrets.token_urlsafe(32),
             "known_devices": [],
             "known_ips": []
         }
@@ -767,7 +744,7 @@ def refresh_access_token(request: Request):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token.")
 
 @auth_router.get("/auth/sessions")
-def get_user_sessions(user_id: str):
+def get_user_sessions(user_id: str = Depends(get_current_user_id)):
     """
     Returns active logged-in sessions for a given user.
     """
@@ -775,7 +752,7 @@ def get_user_sessions(user_id: str):
     return {"sessions": user_sessions}
 
 @auth_router.post("/auth/sessions/revoke-all")
-def revoke_all_sessions(user_id: str, current_session_id: Optional[str] = None):
+def revoke_all_sessions(current_session_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
     """
     Revokes all active sessions for the user except current session.
     """

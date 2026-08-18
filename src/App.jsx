@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import ProductList from './ProductList';
+import ProductList from './components/Products/ProductList';
 import Home from './pages/Home';
 import Philosophy from './pages/Philosophy';
-import Chatbot from './Chatbot';
-import WhatsAppWidget from './components/WhatsAppWidget';
-import ZohoPayCheckout from './components/Checkout/ZohoPayCheckout';
+import CorporateGifting from './pages/CorporateGifting';
+import RecipesList from './pages/RecipesList';
+import RecipeDetail from './pages/RecipeDetail';
+import { fetchRecipeBySlug } from './hooks/useRecipes';
+import Chatbot from './components/Chatbot/Chatbot';
+import WhatsAppWidget from './components/Common/WhatsAppWidget';
+import CrackerSparksCanvas from './components/Common/CrackerSparksCanvas';
+import RazorpayCheckout from './components/Checkout/RazorpayCheckout';
 import ReviewForm from './components/Reviews/ReviewForm';
 import CompareModal from './components/Compare/CompareModal';
-import AuthModal from './components/Auth/AuthModal';
 import AmazonAuthModal from './components/Auth/AmazonAuthModal';
 import ReturnProofModal from './components/Account/ReturnProofModal';
+import AnnouncementBar from './components/Home/AnnouncementBar';
+import CartQuantityControl from './components/Common/CartQuantityControl';
 import logoMonoWhiteRed from '/modena_logo_mono-white_red.png';
 import logoBlackRed from '/modena_logo_black_red.png';
 import banner1 from './assets/hero/banner-1.png';
@@ -17,10 +23,11 @@ import banner2 from './assets/hero/banner-2.png';
 import banner3 from './assets/hero/banner-3.png';
 import banner4 from './assets/hero/banner-4.png';
 import StorePolicies from './components/Legal/StorePolicies';
-import { useProducts, getProductReviews, saveReviewToDb } from './hooks/useProducts';
+import { useProducts, getProductReviews, saveReviewToDb, fetchProductReviewsFromApi, deleteReviewApi } from './hooks/useProducts';
 import { useDebounce } from './hooks/useDebounce';
 import { useDisplayTopology } from './hooks/useDisplayTopology';
 import { generateInvoicePDF } from './utils/generateInvoicePDF';
+import { openWhatsAppDirect } from './utils/whatsapp';
 
 import {
   ShoppingBag,
@@ -73,6 +80,30 @@ import {
   ChevronUp,
   ArrowLeft
 } from 'lucide-react';
+
+const FacebookIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
+const InstagramIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+  </svg>
+);
+
+const YoutubeIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  </svg>
+);
+
+const TwitterXIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 const DealCountdownTimer = () => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
@@ -141,28 +172,54 @@ function App() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
+
   // Scroll detector for sticky navbar and floating cart pill button ('up' | 'down')
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollDirection, setScrollDirection] = useState('up');
   const lastScrollYRef = useRef(0);
+  const accumulatedDeltaRef = useRef(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      setIsScrolled(currentY > 10);
+    let ticking = false;
 
-      if (currentY > 80) {
-        if (currentY > lastScrollYRef.current + 4) {
-          setScrollDirection('down');
-        } else if (currentY < lastScrollYRef.current - 4) {
-          setScrollDirection('up');
-        }
-      } else {
-        setScrollDirection('up');
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = Math.max(0, window.scrollY);
+          const diff = currentY - lastScrollYRef.current;
+
+          setIsScrolled((prev) => {
+            if (!prev && currentY > 20) return true;
+            if (prev && currentY < 8) return false;
+            return prev;
+          });
+
+          // Near page top, always force center expanded view
+          if (currentY < 100) {
+            setScrollDirection('up');
+            accumulatedDeltaRef.current = 0;
+          } else {
+            // Reset accumulator when reversing scroll direction
+            if ((diff > 0 && accumulatedDeltaRef.current < 0) || (diff < 0 && accumulatedDeltaRef.current > 0)) {
+              accumulatedDeltaRef.current = 0;
+            }
+            accumulatedDeltaRef.current += diff;
+
+            // Require 18px continuous movement to change state to eliminate twitching
+            if (accumulatedDeltaRef.current > 18) {
+              setScrollDirection('down');
+            } else if (accumulatedDeltaRef.current < -18) {
+              setScrollDirection('up');
+            }
+          }
+
+          lastScrollYRef.current = currentY;
+          ticking = false;
+        });
+        ticking = true;
       }
-      lastScrollYRef.current = currentY;
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -195,14 +252,26 @@ function App() {
   }, [currentView]);
 
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleHashChange = async () => {
       const hash = window.location.hash.replace('#', '').trim();
-      if (hash) {
-        setCurrentView(hash);
-      } else {
+      if (!hash) {
         setCurrentView('home');
+      } else if (hash.startsWith('recipe/')) {
+        const slug = hash.replace('recipe/', '');
+        const found = await fetchRecipeBySlug(slug);
+        if (found) {
+          setSelectedRecipe(found);
+          setCurrentView('recipeDetail');
+        } else {
+          setCurrentView('recipes');
+        }
+      } else if (hash === 'recipes') {
+        setCurrentView('recipes');
+      } else {
+        setCurrentView(hash);
       }
     };
+    handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -221,11 +290,54 @@ function App() {
   // Modals state for Big Checkout & Login popups ('checkout' | 'login' | 'account' | 'reviews' | 'careGuide' | 'warranty' | null)
   const [activeModal, setActiveModal] = useState(null);
 
+  // Recipe Selected State
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+
+  const handleSelectRecipe = (recipe) => {
+    setSelectedRecipe(recipe);
+    setCurrentView('recipeDetail');
+    window.location.hash = `recipe/${recipe.slug || recipe.id}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Product Quick View Popup Modal state
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeProductImage, setActiveProductImage] = useState(null);
   const [productQuantity, setProductQuantity] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('description');
+
+  // Dynamic Product Reviews State for Selected Product Detail Page
+  const [activeProductReviews, setActiveProductReviews] = useState([]);
+  const [isReviewsLoading, setIsReviewsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedProduct?.id) {
+      setActiveProductReviews([]);
+      return;
+    }
+    let isMounted = true;
+    setIsReviewsLoading(true);
+
+    const loadProductReviews = async () => {
+      const reviews = await fetchProductReviewsFromApi(selectedProduct.id);
+      if (isMounted) {
+        setActiveProductReviews(reviews);
+        setIsReviewsLoading(false);
+      }
+    };
+
+    loadProductReviews();
+
+    const handleReviewsUpdated = () => {
+      loadProductReviews();
+    };
+
+    window.addEventListener('modena_reviews_updated', handleReviewsUpdated);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('modena_reviews_updated', handleReviewsUpdated);
+    };
+  }, [selectedProduct?.id]);
 
   // Automatic Scroll To Top on Page Navigation & Product Selection
   useEffect(() => {
@@ -256,7 +368,7 @@ function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [demoOtp, setDemoOtp] = useState('');
+
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [userDisplayName, setUserDisplayName] = useState(() => localStorage.getItem('user_display_name') || '');
@@ -302,7 +414,7 @@ function App() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordFormData, setPasswordFormData] = useState({ current: '', new: '', confirm: '' });
   const [isTwoStepEnabled, setIsTwoStepEnabled] = useState(false);
-  
+
   // Orders Search State
   const [ordersSearchQuery, setOrdersSearchQuery] = useState('');
 
@@ -319,7 +431,7 @@ function App() {
   const [returnReason, setReturnReason] = useState('');
   const [otherReasonText, setOtherReasonText] = useState('');
   const [resolutionType, setResolutionType] = useState('replace'); // 'replace' | 'refund'
-  const [refundMethod, setRefundMethod] = useState('zohopay'); // 'zohopay' | 'bank' | 'upi'
+  const [refundMethod, setRefundMethod] = useState('razorpay'); // 'razorpay' | 'bank' | 'upi'
   const [bankDetails, setBankDetails] = useState({ name: '', accNum: '', ifsc: '', upiId: '' });
   const [returnRequestsMap, setReturnRequestsMap] = useState({});
 
@@ -332,6 +444,32 @@ function App() {
 
   // Live WooCommerce API Products Integration via useProducts hook
   const { products: apiProducts, loading: isProductsLoading, error: productsError } = useProducts();
+
+  // Extract dynamic categories from WooCommerce products (strictly excluding internal sub-components like accessories)
+  const dynamicCategories = useMemo(() => {
+    if (!apiProducts || !Array.isArray(apiProducts)) return [];
+    
+    const uniqueMap = new Map();
+    apiProducts.forEach((p) => {
+      if (p.categories && Array.isArray(p.categories)) {
+        p.categories.forEach((cat) => {
+          if (cat.name && cat.slug && cat.slug !== 'uncategorized' && cat.slug !== 'accessories' && cat.slug !== 'out-of-stock') {
+            uniqueMap.set(cat.slug, cat.name);
+          }
+        });
+      }
+    });
+
+    const predefinedOrder = ['mixer-grinder', 'nutrimix', 'cookware'];
+    const cats = Array.from(uniqueMap.entries())
+      .filter(([slug]) => predefinedOrder.includes(slug))
+      .map(([slug, name]) => ({ id: slug, label: name.toUpperCase() }));
+    return cats.sort((a, b) => {
+      const indexA = predefinedOrder.indexOf(a.id);
+      const indexB = predefinedOrder.indexOf(b.id);
+      return indexA - indexB;
+    });
+  }, [apiProducts]);
 
   const bestsellers = useMemo(() => {
     if (!apiProducts || apiProducts.length === 0) return [];
@@ -439,26 +577,7 @@ function App() {
   // Store Policies Active Tab State
   const [activePolicyTab, setActivePolicyTab] = useState('shipping');
 
-  // Footer Intersection State for Floating Buttons Offset
-  const [isFooterInView, setIsFooterInView] = useState(false);
 
-  useEffect(() => {
-    const footerEl = document.getElementById('site-footer');
-    if (!footerEl) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsFooterInView(entry.isIntersecting);
-      },
-      {
-        root: null,
-        threshold: 0.05
-      }
-    );
-
-    observer.observe(footerEl);
-    return () => observer.disconnect();
-  }, []);
 
   const toggleCompare = (product) => {
     setCompareItems((prev) => {
@@ -655,14 +774,12 @@ function App() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setDemoOtp(data.demo_otp || '123456');
         setLoginStep(3); // OTP Verification Step
       } else {
         setLoginError(data.message || 'Failed to send OTP code.');
       }
     } catch {
-      setDemoOtp('123456');
-      setLoginStep(3);
+      setLoginError('Failed to send OTP due to network error.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -753,7 +870,7 @@ function App() {
     await handleJwtLoginInternal(loginEmail.trim(), loginPassword, '');
     setIsLoggingIn(false);
   };
-  
+
   const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod', 'card', 'upi', 'bacs'
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -768,9 +885,9 @@ function App() {
         bgImage: banner1,
         introText: 'Introducing Modena',
         titleDisplay: 'SINDOOR 990W',
-        tagline: 'Heavy COPPER. Peak PERFORMANCE.',
+        tagline: 'High POWER. Peak PERFORMANCE.',
         title: 'Modena Sindoor 990W Heavy Duty Mixer Grinder',
-        subtitle: 'Heavy duty 990W copper motor mixer grinder set',
+        subtitle: 'Heavy duty 990W mixer grinder set',
         price: '₹6,499.00',
         numericPrice: 6499,
         image: '/wp-content/uploads/2026/08/modena-sindoor-990W-mixer-grinder.webp',
@@ -783,7 +900,7 @@ function App() {
         titleDisplay: 'ARGENT CLASSIC',
         tagline: 'Double SAFETY. More CONFIDENCE.',
         title: 'Modena Tri-Ply Stainless Steel Heavy Cookware & Pressure Cookers',
-        subtitle: '100% food grade tri-ply stainless steel pressure cookers & kadai',
+        subtitle: 'Food-grade tri-ply stainless steel cookware with zero chemical coating',
         price: '₹3,299.00',
         numericPrice: 3299,
         image:
@@ -856,29 +973,29 @@ function App() {
 
       const matchedProduct = matched
         ? {
-            id: matched.id,
-            name: matched.name,
-            title: matched.name,
-            price: matched.price_html || matched.price,
-            numericPrice: matched.numericPrice || slide.numericPrice,
-            rating: matched.rating || slide.rating,
-            image: matched.image || slide.image,
-            images: matched.images || [slide.image],
-            description: matched.description || slide.subtitle,
-            category: matched.category || slide.badge
-          }
+          id: matched.id,
+          name: matched.name,
+          title: matched.name,
+          price: matched.price_html || matched.price,
+          numericPrice: matched.numericPrice || slide.numericPrice,
+          rating: matched.rating || slide.rating,
+          image: matched.image || slide.image,
+          images: matched.images || [slide.image],
+          description: matched.description || slide.subtitle,
+          category: matched.category || slide.badge
+        }
         : {
-            id: slide.id,
-            name: slide.title,
-            title: slide.title,
-            price: slide.price,
-            numericPrice: slide.numericPrice,
-            rating: slide.rating,
-            image: slide.image,
-            images: [slide.image],
-            description: slide.subtitle,
-            category: slide.badge
-          };
+          id: slide.id,
+          name: slide.title,
+          title: slide.title,
+          price: slide.price,
+          numericPrice: slide.numericPrice,
+          rating: slide.rating,
+          image: slide.image,
+          images: [slide.image],
+          description: slide.subtitle,
+          category: slide.badge
+        };
 
       return {
         ...slide,
@@ -968,8 +1085,8 @@ function App() {
   const triggerCheckoutFlow = () => {
     // Strictly check for email or token to ensure they actually logged in, ignoring old demo display names
     const loggedIn = Boolean(
-      userEmail || 
-      localStorage.getItem('user_email') || 
+      userEmail ||
+      localStorage.getItem('user_email') ||
       localStorage.getItem('modena_jwt_token')
     );
     if (!loggedIn) {
@@ -1151,7 +1268,7 @@ function App() {
         status: 'Processing',
         deliveryStatus: '🚚 Order Placed - Arriving Soon via BlueDart'
       };
-      
+
       setPlacedOrder(newOrder);
       setUserOrders((prev) => {
         const updated = [newOrder, ...prev];
@@ -1244,15 +1361,35 @@ function App() {
   const searchIntentInfo = getSearchIntent(debouncedSearchQuery || searchQuery);
 
   return (
-    <div className="min-h-screen bg-[#FAF8F6] text-[#2A2724] font-inter antialiased relative selection:bg-[#E60000] selection:text-white">
+    <div className="min-h-screen bg-[#F3F1ED] text-[#292725] font-inter antialiased relative selection:bg-[#C91F26] selection:text-white">
+      {/* TOP ANNOUNCEMENT & UTILITY BAR */}
+      <AnnouncementBar
+        onOrders={() => {
+          setSelectedProduct(null);
+          setOrdersTab('orders');
+          setCurrentView('yourOrders');
+          if (!userDisplayName) {
+            setActiveModal('auth');
+          }
+        }}
+        onReturns={() => {
+          setSelectedProduct(null);
+          setOrdersTab('returns');
+          setCurrentView('yourOrders');
+          if (!userDisplayName) {
+            setActiveModal('auth');
+          }
+        }}
+      />
+
       {/* MAIN STUCK TOP FLOATING ROUNDED NAVIGATION HEADER */}
-      <header className="sticky top-0 z-40 w-full max-w-[1720px] mx-auto px-3 sm:px-6 relative">
-        <div className={`text-white border px-6 sm:px-10 h-16 sm:h-18 flex items-center justify-between relative transition-all duration-300 ease-out rounded-[36px] border-[#2A2724]/80 ${isScrolled ? 'mt-0 shadow-2xl bg-[#2A2724]/70 backdrop-blur-2xl border-white/20' : 'mt-2.5 sm:mt-4 bg-[#2A2724]/95 backdrop-blur-xl shadow-md shadow-black/20'}`}>
+      <header className={`sticky top-0 z-40 w-full max-w-[1720px] mx-auto px-3 sm:px-6 relative transition-all duration-300 ease-out ${isScrolled ? 'pb-2.5 sm:pb-4' : ''}`}>
+        <div className={`border px-6 sm:px-10 h-16 sm:h-18 flex items-center justify-between relative transition-all duration-300 ease-out border-[#D8D4CD] transform-gpu ${isScrolled ? 'mt-0 rounded-t-none rounded-b-[36px] shadow-sm bg-[#F8F7F4]/95 backdrop-blur-2xl text-[#292725]' : 'mt-2.5 sm:mt-4 rounded-[36px] bg-[#F8F7F4]/90 backdrop-blur-xl shadow-xs text-[#292725]'}`}>
           {/* Left: Logo */}
           <div className="flex items-center gap-3.5">
             <button onClick={() => { setSelectedProduct(null); setCurrentView('home'); }} className="flex items-center group cursor-pointer flex-shrink-0">
               <img
-                src={logoMonoWhiteRed}
+                src={logoBlackRed}
                 alt="Modena Logo"
                 className="h-9 sm:h-11 md:h-12 w-auto object-contain transition-transform group-hover:scale-102 -translate-y-0.5"
               />
@@ -1261,33 +1398,61 @@ function App() {
 
           {/* Center: Desktop Navigation Anchors - Centered Vertically & Horizontally */}
           <nav className="hidden lg:flex items-center gap-8 font-label-caps text-xs sm:text-sm tracking-widest absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 uppercase">
-            {['home', 'mixer', 'grinder', 'nutrimix', 'cookware', 'kitchenware'].map((viewName) => (
+            {[
+              { id: 'home', label: 'HOME' },
+              ...dynamicCategories
+            ].map((item) => (
               <button
-                key={viewName}
-                onClick={() => { setSelectedProduct(null); setCurrentView(viewName); }}
-                className={`py-2 border-b-2 transition-all cursor-pointer font-semibold uppercase ${
-                  currentView === viewName && !selectedProduct ? 'text-[#E60000] border-[#E60000] font-bold scale-105' : 'text-gray-200 hover:text-[#E60000] border-transparent'
-                }`}
+                key={item.id}
+                onClick={() => { setSelectedProduct(null); setCurrentView(item.id); }}
+                className={`py-2 border-b-2 transition-all cursor-pointer font-semibold uppercase ${(currentView === item.id || ((item.id === 'mixer-grinder' || item.id === 'mixer') && ['mixer', 'mixer-grinder', 'mixer-grinders'].includes(currentView))) && !selectedProduct ? 'text-[#C91F26] border-[#C91F26] font-bold scale-105' : 'text-[#292725] hover:text-[#C91F26] border-transparent'
+                  }`}
               >
-                {viewName}
+                {item.label}
               </button>
             ))}
-            
-            <div className="relative group">
+
+            <div className="relative group py-2">
               <button
-                className={`py-2 border-b-2 transition-all cursor-pointer font-semibold uppercase flex items-center gap-1 ${
-                  currentView === 'about' && !selectedProduct ? 'text-[#E60000] border-[#E60000] font-bold scale-105' : 'text-gray-200 hover:text-[#E60000] border-transparent'
-                }`}
+                className={`border-b-2 transition-all cursor-pointer font-semibold uppercase flex items-center gap-1 ${['about', 'philosophy', 'contactUs'].includes(currentView) && !selectedProduct ? 'text-[#C91F26] border-[#C91F26] font-bold scale-105' : 'text-[#292725] hover:text-[#C91F26] border-transparent'
+                  }`}
               >
                 MORE <ChevronDown className="w-3 h-3" />
               </button>
-              <div className="absolute top-full left-0 mt-2 w-40 bg-[#1A1816] rounded-xl shadow-2xl border border-white/10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50 overflow-hidden">
-                <button
-                  onClick={() => { setSelectedProduct(null); setCurrentView('about'); }}
-                  className="w-full text-left px-5 py-3 hover:bg-[#E60000] transition-colors text-white uppercase text-xs tracking-wider cursor-pointer"
-                >
-                  ABOUT US
-                </button>
+              {/* Invisible padding area (pt-2) creates a continuous hover bridge */}
+              <div className="absolute top-[100%] left-[-20px] pt-2 w-56 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
+                <div className="bg-[#F8F7F4] rounded-xl shadow-xl border border-[#D8D4CD] flex flex-col relative text-[#292725]">
+                  <button
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setCurrentView('corporate-gifting');
+                      window.location.hash = 'corporate-gifting';
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="relative w-full text-left px-5 py-3.5 bg-gradient-to-r from-amber-100 to-[#F8F7F4] hover:from-amber-200 hover:to-gray-100 transition-all text-[#855B00] uppercase text-xs tracking-wider cursor-pointer font-bold border-b border-amber-200 flex items-center gap-2 rounded-t-xl z-20 overflow-visible"
+                  >
+                    <CrackerSparksCanvas isMobile={false} />
+                    <Sparkles className="w-4 h-4 text-[#855B00] relative z-10" />
+                    <span className="relative z-10">CORPORATE GIFTING</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setCurrentView('philosophy');
+                      window.location.hash = 'philosophy';
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-full text-left px-5 py-3 hover:bg-[#EAE7E1] transition-colors text-[#292725] hover:text-[#C91F26] uppercase text-xs tracking-wider cursor-pointer border-b border-[#D8D4CD] font-semibold"
+                  >
+                    ABOUT US
+                  </button>
+                  <button
+                    onClick={() => { setSelectedProduct(null); setCurrentView('contactUs'); }}
+                    className="w-full text-left px-5 py-3 hover:bg-[#EAE7E1] transition-colors text-[#292725] hover:text-[#C91F26] uppercase text-xs tracking-wider cursor-pointer font-semibold"
+                  >
+                    CONTACT US
+                  </button>
+                </div>
               </div>
             </div>
           </nav>
@@ -1295,12 +1460,12 @@ function App() {
           {/* Right Action Buttons */}
           <div className="flex items-center gap-4">
             <div ref={searchContainerRef} className="relative hidden md:block">
-              <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#2A2724] rounded-full px-4 py-2 border border-[#2A2724] focus-within:border-[#E60000] transition-colors relative">
+              <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#EAE7E1] rounded-full px-4 py-2 border border-[#D8D4CD] focus-within:border-[#C91F26] transition-colors relative">
                 <button type="submit" aria-label="Search" className="cursor-pointer">
                   {isDebouncing || isProductsLoading ? (
-                    <Loader2 className="w-4.5 h-4.5 text-[#E60000] animate-spin mr-2" />
+                    <Loader2 className="w-4.5 h-4.5 text-[#C91F26] animate-spin mr-2" />
                   ) : (
-                    <Search className="w-4.5 h-4.5 text-gray-400 hover:text-white mr-2" />
+                    <Search className="w-4.5 h-4.5 text-[#716D67] hover:text-[#292725] mr-2" />
                   )}
                 </button>
                 <input
@@ -1314,7 +1479,7 @@ function App() {
                     setSearchQuery(e.target.value);
                     setIsSearchOverlayOpen(true);
                   }}
-                  className="bg-transparent text-xs sm:text-sm text-white placeholder-gray-400 focus:outline-none w-36 focus:w-56 transition-all"
+                  className="bg-transparent text-xs sm:text-sm text-[#252525] placeholder-gray-500 focus:outline-none w-36 focus:w-56 transition-all font-medium"
                 />
                 {searchQuery && (
                   <button
@@ -1323,7 +1488,7 @@ function App() {
                       setSearchQuery('');
                       setIsSearchOverlayOpen(false);
                     }}
-                    className="text-gray-400 hover:text-white ml-1 cursor-pointer"
+                    className="text-gray-500 hover:text-[#252525] ml-1 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1413,16 +1578,16 @@ function App() {
               )}
             </div>
 
-            {/* Wishlist Trigger Button near Searchbar (Hidden on mobile, pushed to mobile menu drawer) */}
+            {/* Wishlist Trigger Button near Searchbar */}
             <button
               onClick={() => setIsWishlistModalOpen(true)}
-              className="hidden md:flex relative bg-[#2A2724] hover:bg-[#2A2724] text-white p-3 rounded-full transition-all duration-200 items-center justify-center border border-[#2A2724] hover:scale-105 cursor-pointer flex-shrink-0"
+              className="hidden md:flex relative bg-[#EAE7E1] hover:bg-[#D8D4CD] text-[#292725] p-3 rounded-full transition-all duration-200 items-center justify-center border border-[#D8D4CD] hover:scale-105 cursor-pointer flex-shrink-0"
               aria-label="Open Wishlist"
               title="View your wishlist"
             >
-              <Heart className={`w-5.5 h-5.5 transition-colors ${wishlist.length > 0 ? 'fill-[#E60000] text-[#E60000]' : 'text-gray-300 hover:text-white'}`} />
+              <Heart className={`w-5.5 h-5.5 transition-colors ${wishlist.length > 0 ? 'fill-[#C91F26] text-[#C91F26]' : 'text-[#716D67] hover:text-[#292725]'}`} />
               {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#E60000] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#2A2724]">
+                <span className="absolute -top-1 -right-1 bg-[#C91F26] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                   {wishlist.length}
                 </span>
               )}
@@ -1444,7 +1609,7 @@ function App() {
                 }}
                 aria-label="User Account"
                 title={userDisplayName ? `Account: ${userDisplayName}` : 'Sign In / Register'}
-                className="w-11 h-11 rounded-full bg-[#E60000] hover:bg-[#E60000] text-white flex items-center justify-center font-bold text-base shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer border border-[#E60000]/30 flex-shrink-0"
+                className="w-11 h-11 rounded-full bg-[#C91F26] hover:bg-[#A9181E] text-white flex items-center justify-center font-bold text-base shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer border border-[#C91F26]/30 flex-shrink-0"
               >
                 {userDisplayName ? (
                   getFirstName(userDisplayName).charAt(0).toUpperCase()
@@ -1480,7 +1645,7 @@ function App() {
                           <LayoutDashboard className="w-4 h-4" />
                         </div>
                         <div>
-                          <span className="block font-bold text-[#2A2724] group-hover:text-[#E60000]">Manage Account Hub</span>
+                          <span className="block font-bold text-[#292725] group-hover:text-[#C91F26]">My Account</span>
                           <span className="text-[10px] text-gray-400 font-normal block">Dashboard &amp; Settings</span>
                         </div>
                       </button>
@@ -1641,12 +1806,12 @@ function App() {
             {/* Cart Trigger Button */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative bg-[#E60000] hover:bg-[#E60000] text-white p-3 rounded-full transition-all duration-200 flex items-center justify-center shadow-[0_4px_12px_rgba(183,1,0,0.3)] hover:scale-105 cursor-pointer flex-shrink-0"
+              className="relative bg-[#C91F26] hover:bg-[#A9181E] text-white p-3 rounded-full transition-all duration-200 flex items-center justify-center shadow-sm hover:scale-105 cursor-pointer flex-shrink-0"
               aria-label="Open Shopping Cart"
             >
               <ShoppingBag className="w-5.5 h-5.5" />
               {totalItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-white text-[#E60000] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#2A2724]">
+                <span className="absolute -top-1 -right-1 bg-white text-[#C91F26] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#D8D4CD]">
                   {totalItemCount}
                 </span>
               )}
@@ -1655,62 +1820,33 @@ function App() {
             {/* Mobile Navigation Menu Toggle (Rightmost Item) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden bg-[#2A2724] hover:bg-[#2A2724] text-gray-300 hover:text-white p-2.5 rounded-full border border-[#2A2724] transition-all flex items-center justify-center focus:outline-none cursor-pointer flex-shrink-0 hover:scale-105"
+              className="lg:hidden bg-gray-100 hover:bg-gray-200 text-[#252525] p-2.5 rounded-full border border-gray-200 transition-all flex items-center justify-center focus:outline-none cursor-pointer flex-shrink-0 hover:scale-105"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-[#252525]" /> : <Menu className="w-5 h-5 text-[#252525]" />}
             </button>
           </div>
         </div>
 
-        {/* ABSOLUTELY POSITIONED ORDERS & RETURNS FLOATING BAR (ZERO LAYOUT SHIFT OVER HERO BANNER) */}
-        <div
-          className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 transition-all duration-500 ease-in-out pointer-events-auto ${
-            scrollDirection === 'down' && isScrolled
-              ? 'opacity-0 -translate-y-4 pointer-events-none'
-              : 'opacity-100 translate-y-0'
-          }`}
-        >
-          <div className="bg-[#2A2724]/95 backdrop-blur-2xl border border-[#2A2724] rounded-full px-5 py-1.5 shadow-2xl flex items-center gap-4 text-xs font-label-caps tracking-widest text-white">
-            <button
-              onClick={() => { setSelectedProduct(null); setCurrentView('yourOrders'); setOrdersTab('orders'); }}
-              className={`transition-all cursor-pointer font-semibold flex items-center gap-1.5 ${
-                currentView === 'yourOrders' && ordersTab === 'orders' ? 'text-[#E60000] font-bold scale-105' : 'text-gray-200 hover:text-white'
-              }`}
-            >
-              <Package className="w-3.5 h-3.5 text-[#E60000]" />
-              <span>ORDERS</span>
-            </button>
-            <span className="text-gray-600 font-bold">•</span>
-            <button
-              onClick={() => { setSelectedProduct(null); setCurrentView('yourOrders'); setOrdersTab('returns'); }}
-              className={`transition-all cursor-pointer font-semibold flex items-center gap-1.5 ${
-                currentView === 'yourOrders' && ordersTab === 'returns' ? 'text-[#E60000] font-bold scale-105' : 'text-gray-200 hover:text-white'
-              }`}
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-[#E60000]" />
-              <span>RETURNS</span>
-            </button>
-          </div>
-        </div>
 
-        {/* Mobile Navigation Floating Overlay Drawer (Positioned Absolute so page content doesn't move) */}
+
+        {/* Mobile Navigation Floating Overlay Drawer */}
         {mobileMenuOpen && (
           <>
             <div
-              className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
+              className="lg:hidden fixed inset-0 z-40 bg-black/20 backdrop-blur-xs transition-opacity duration-300"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="lg:hidden absolute top-full left-3 right-3 sm:left-6 sm:right-6 mt-2 z-50 bg-[#2A2724]/98 backdrop-blur-2xl border border-[#2A2724] rounded-3xl p-4 flex flex-col gap-3 font-inter text-xs shadow-[0_20px_50px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-3 duration-300 ease-out max-h-[85vh] overflow-y-auto scrollbar-thin">
+            <div className="lg:hidden absolute top-full left-3 right-3 sm:left-6 sm:right-6 mt-2 z-50 bg-[#F8F7F4] backdrop-blur-2xl border border-[#D8D4CD] rounded-3xl p-4 flex flex-col gap-3 font-inter text-xs shadow-xl animate-in fade-in slide-in-from-top-3 duration-300 ease-out max-h-[85vh] overflow-y-auto scrollbar-thin text-[#292725]">
               {/* 1. Mobile Search Input */}
               <form
                 onSubmit={(e) => {
                   handleSearchSubmit(e);
                   setMobileMenuOpen(false);
                 }}
-                className="relative flex items-center bg-[#2A2724] rounded-2xl px-3.5 py-2.5 border border-[#2A2724] focus-within:border-[#E60000] transition-all"
+                className="relative flex items-center bg-[#EAE7E1] rounded-2xl px-3.5 py-2.5 border border-[#D8D4CD] focus-within:border-[#C91F26] transition-all"
               >
-                <Search className="w-4 h-4 text-gray-400 mr-2.5 flex-shrink-0" />
+                <Search className="w-4 h-4 text-[#716D67] mr-2.5 flex-shrink-0" />
                 <input
                   type="text"
                   placeholder="Search products..."
@@ -1720,7 +1856,7 @@ function App() {
                     setIsSearchOverlayOpen(true);
                   }}
                   onFocus={() => setIsSearchOverlayOpen(true)}
-                  className="bg-transparent text-xs text-white placeholder-gray-400 focus:outline-none w-full"
+                  className="bg-transparent text-xs text-[#292725] placeholder-[#716D67] focus:outline-none w-full font-medium"
                 />
                 {searchQuery && (
                   <button
@@ -1729,7 +1865,7 @@ function App() {
                       setSearchQuery('');
                       setIsSearchOverlayOpen(false);
                     }}
-                    className="text-gray-400 hover:text-white ml-2 cursor-pointer p-0.5"
+                    className="text-[#716D67] hover:text-[#292725] ml-2 cursor-pointer p-0.5"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1738,38 +1874,83 @@ function App() {
 
               {/* 2. Simple Main Navigation Anchors */}
               <nav className="flex flex-col gap-1 pt-1 font-label-caps text-xs">
-                {['home', 'mixer', 'grinder', 'nutrimix', 'cookware', 'kitchenware'].map((viewName) => (
+                {[
+                  { id: 'home', label: 'HOME' },
+                  ...dynamicCategories
+                ].map((item) => (
                   <button
-                    key={viewName}
+                    key={item.id}
                     onClick={() => {
                       setSelectedProduct(null);
-                      setCurrentView(viewName);
+                      setCurrentView(item.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase ${
-                      currentView === viewName
-                        ? 'bg-[#E60000] text-white shadow-md'
-                        : 'text-gray-200 hover:bg-white/5 hover:text-white'
-                    }`}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase ${currentView === item.id || ((item.id === 'mixer-grinder' || item.id === 'mixer') && ['mixer', 'mixer-grinder', 'mixer-grinders'].includes(currentView))
+                      ? 'bg-[#C91F26] text-white shadow-xs'
+                      : 'text-[#292725] hover:bg-[#EAE7E1] hover:text-[#C91F26]'
+                      }`}
                   >
-                    <span>{viewName}</span>
+                    <span>{item.label}</span>
                   </button>
                 ))}
 
-                <button
-                  onClick={() => {
-                    setSelectedProduct(null);
-                    setCurrentView('about');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase ${
-                    currentView === 'about'
-                      ? 'bg-[#E60000] text-white shadow-md'
-                      : 'text-gray-200 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  <span>ABOUT US</span>
-                </button>
+                <details className="group">
+                  <summary className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase list-none ${['about', 'philosophy', 'contactUs'].includes(currentView)
+                    ? 'bg-[#C91F26] text-white shadow-xs'
+                    : 'text-[#292725] hover:bg-[#EAE7E1] hover:text-[#C91F26]'
+                    }`}>
+                    <span>MORE</span>
+                    <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="pl-4 pr-2 py-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setCurrentView('corporate-gifting');
+                        window.location.hash = 'corporate-gifting';
+                        setMobileMenuOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="relative overflow-visible w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left text-[#F9DE8B] bg-gradient-to-r from-[#4A3B18] to-transparent border border-[#D4AF37]/40"
+                    >
+                      <CrackerSparksCanvas isMobile={true} />
+                      <span className="flex items-center gap-2 text-[11px] relative z-10">
+                        <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        CORPORATE GIFTING
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setCurrentView('philosophy');
+                        window.location.hash = 'philosophy';
+                        setMobileMenuOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase text-[11px] ${['about', 'philosophy'].includes(currentView)
+                        ? 'bg-[#C91F26] text-white shadow-md'
+                        : 'text-[#292725] hover:bg-[#EAE7E1] hover:text-[#C91F26]'
+                        }`}
+                    >
+                      <span>ABOUT US</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setCurrentView('contactUs');
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase text-[11px] ${currentView === 'contactUs'
+                        ? 'bg-[#E60000] text-white shadow-md'
+                        : 'text-gray-200 hover:bg-white/5 hover:text-white'
+                        }`}
+                    >
+                      <span>CONTACT US</span>
+                    </button>
+                  </div>
+                </details>
 
                 {/* 3. Wishlist Anchor pushed into menu drawer */}
                 <button
@@ -1894,11 +2075,10 @@ function App() {
                             key={idx}
                             type="button"
                             onClick={() => setActiveProductImage(imgUrl)}
-                            className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all p-1 cursor-pointer bg-white flex-shrink-0 ${
-                              isCurrent
-                                ? 'border-[#E60000] ring-2 ring-[#E2DCD7] scale-105 shadow-md'
-                                : 'border-[#E2DCD7] opacity-60 hover:opacity-100'
-                            }`}
+                            className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all p-1 cursor-pointer bg-white flex-shrink-0 ${isCurrent
+                              ? 'border-[#E60000] ring-2 ring-[#E2DCD7] scale-105 shadow-md'
+                              : 'border-[#E2DCD7] opacity-60 hover:opacity-100'
+                              }`}
                           >
                             <img
                               src={imgUrl}
@@ -1942,11 +2122,10 @@ function App() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.round(Number(selectedProduct.average_rating || 0))
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'text-gray-300'
-                          }`}
+                          className={`w-4 h-4 ${i < Math.round(Number(selectedProduct.average_rating || 0))
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-gray-300'
+                            }`}
                         />
                       ))}
                     </div>
@@ -2007,19 +2186,43 @@ function App() {
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200/80">
                     <Flame className="w-4 h-4 text-[#E60000]" />
-                    <span className="font-medium text-gray-800">Heavy Copper Motor</span>
+                    <span className="font-medium text-gray-800">
+                      {(() => {
+                        const pCats = (selectedProduct.categories || []).map(c => typeof c === 'string' ? c.toLowerCase() : (c.slug || '').toLowerCase());
+                        const isCookware = pCats.includes('cookware') || pCats.includes('utensils');
+                        if (isCookware) return "Heavy-Gauge Build";
+                        return "High Performance";
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200/80">
                     <ShieldCheck className="w-4 h-4 text-[#E60000]" />
-                    <span className="font-medium text-gray-800">2-Year Warranty</span>
+                    <span className="font-medium text-gray-800">
+                      {(() => {
+                        const pName = (selectedProduct.name || '').toLowerCase();
+                        const pCats = (selectedProduct.categories || []).map(c => typeof c === 'string' ? c.toLowerCase() : (c.slug || '').toLowerCase());
+                        const isMixer = pCats.includes('mixer-grinder') || pCats.includes('mixer') || pName.includes('mixer');
+                        const isBlender = pCats.includes('personal-blender') || pCats.includes('nutri') || pName.includes('nutri');
+                        if (isMixer) return "5-Year Motor Warranty";
+                        if (isBlender) return "2-Year Motor Warranty";
+                        return "Mfg. Defect Warranty";
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200/80">
                     <Sparkles className="w-4 h-4 text-[#E60000]" />
-                    <span className="font-medium text-gray-800">Food-Grade Steel</span>
+                    <span className="font-medium text-gray-800 text-[10px] sm:text-xs">
+                      {(() => {
+                        const pName = (selectedProduct.name || '').toLowerCase();
+                        if (pName.includes('non-stick') || pName.includes('nonstick')) return "Food-Grade Coating";
+                        if (pName.includes('cast iron')) return "Natural Cast Iron";
+                        return "Zero Chemical Coating";
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200/80">
                     <Truck className="w-4 h-4 text-[#E60000]" />
-                    <span className="font-medium text-gray-800">Free Express Shipping</span>
+                    <span className="font-medium text-gray-800 text-[10px] sm:text-xs">Free Shipping {'>'} ₹2,999</span>
                   </div>
                 </div>
               </div>
@@ -2093,11 +2296,10 @@ function App() {
                       }
                     >
                       <Heart
-                        className={`w-5 h-5 ${
-                          isWishlisted(selectedProduct.id)
-                            ? 'fill-[#E60000] text-[#E60000]'
-                            : 'text-gray-600'
-                        }`}
+                        className={`w-5 h-5 ${isWishlisted(selectedProduct.id)
+                          ? 'fill-[#E60000] text-[#E60000]'
+                          : 'text-gray-600'
+                          }`}
                       />
                     </button>
 
@@ -2152,16 +2354,6 @@ function App() {
                       <span>BUY NOW</span>
                     </button>
 
-                    <a
-                      href={`https://wa.me/919326641825?text=${encodeURIComponent(`Hello Modena Team, I am interested in inquiring about ${selectedProduct.name}.`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-[#25D366] hover:bg-[#20bd5a] text-white py-4 px-5 rounded-xl text-xs sm:text-sm font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                      title="Chat on WhatsApp about this product"
-                    >
-                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                      <span className="hidden sm:inline">WHATSAPP</span>
-                    </a>
                   </div>
                 );
               })()}
@@ -2196,9 +2388,6 @@ function App() {
                       selectedProduct.description ||
                       'Engineered with industrial precision and domestic warmth. Designed for commercial home chefs and culinary enthusiasts who demand reliable power, food safety, and ergonomic durability.'}
                   </p>
-                  <p>
-                    Features high torque copper winding for continuous heavy grinding without overheating. Stainless steel leak-proof jars are equipped with razor-sharp hardened steel blades that handle tough spices, batters, and smoothies with ease.
-                  </p>
                 </div>
               )}
             </div>
@@ -2223,10 +2412,54 @@ function App() {
               {openAccordion === 'usp' && (
                 <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
                   <ul className="list-disc pl-5 space-y-1.5">
-                    <li>100% Pure Copper Motor Winding for long motor life</li>
-                    <li>Auto Overload Circuit Breaker for thermal safety</li>
-                    <li>Food-Grade AISI 304 Stainless Steel Jars &amp; Blades</li>
-                    <li>Anti-Skid Suction Rubber Feet for high stability</li>
+                    {(() => {
+                      const pName = (selectedProduct.name || '').toLowerCase();
+                      const isNonStick = pName.includes('non-stick') || pName.includes('nonstick');
+                      const isCastIron = pName.includes('cast iron') || pName.includes('tawa') || pName.includes('kadai') || pName.includes('pan');
+                      const isMixer = pName.includes('mixer') || pName.includes('grinder') || pName.includes('jar');
+
+                      if (isNonStick) {
+                        return (
+                          <>
+                            <li>Heavy-gauge uniform heat distribution on gas stoves</li>
+                            <li>Premium scratch-resistant food-safe surface</li>
+                            <li>Ergonomic heat-resistant wooden handle for comfortable grip</li>
+                            <li>Effortless cooking and low-oil meal preparation</li>
+                          </>
+                        );
+                      }
+
+                      if (isCastIron) {
+                        return (
+                          <>
+                            <li>Pre-seasoned with 100% natural vegetable oils</li>
+                            <li>Zero chemical coating — no plastic or Teflon coating where food particles touch.</li>
+                            <li>Heavy-gauge virgin cast iron for superior heat retention</li>
+                            <li>Naturally enriches iron and enhances traditional slow cooking</li>
+                          </>
+                        );
+                      }
+
+                      if (isMixer) {
+                        return (
+                          <>
+                            <li>High-performance motor engineered for tough daily grinding</li>
+                            <li>Food-Grade Stainless Steel Jars &amp; Blades</li>
+                            <li>Zero chemical coating — no plastic or Teflon coating where food particles touch.</li>
+                            <li>Thermal overload circuit breaker for maximum motor protection</li>
+                          </>
+                        );
+                      }
+
+                      return (
+                        <>
+                          <li>Food-Grade Stainless Steel construction for maximum durability</li>
+                          <li>Zero chemical coating — no plastic or Teflon coating where food particles touch.</li>
+                          <li>Multi-layered heat-conductive base for uniform cooking</li>
+                          <li>Non-reactive surfaces that protect natural taste and nutrition</li>
+                        </>
+                      );
+                    })()}
                   </ul>
                 </div>
               )}
@@ -2255,7 +2488,15 @@ function App() {
                     <strong>Care &amp; Cleaning Instructions:</strong> Always unplug before cleaning. Wipe motor unit with a damp cloth. Jars are hand-wash safe with mild detergent. Do not submerge motor base in water.
                   </p>
                   <p>
-                    <strong>Warranty Type:</strong> 2-Year Domestic On-Site &amp; Off-Site Motor Warranty.
+                    <strong>Warranty Type:</strong> {(() => {
+                      const pName = (selectedProduct.name || '').toLowerCase();
+                      const pCats = (selectedProduct.categories || []).map(c => typeof c === 'string' ? c.toLowerCase() : (c.slug || '').toLowerCase());
+                      const isMixer = pCats.includes('mixer-grinder') || pCats.includes('mixer') || pName.includes('mixer');
+                      const isBlender = pCats.includes('personal-blender') || pCats.includes('nutri') || pName.includes('nutri');
+                      if (isMixer) return "5-Year Domestic Motor Warranty.";
+                      if (isBlender) return "2-Year Domestic Motor Warranty.";
+                      return "Warranty against manufacturing defects.";
+                    })()}
                   </p>
                 </div>
               )}
@@ -2369,7 +2610,7 @@ function App() {
                     <strong>Country of Origin:</strong> India
                   </p>
                   <p>
-                    <strong>Customer Support:</strong> support@modena.store | +91 1800-MODENA-CARE
+                    <strong>Customer Support:</strong> support@modenahome.in | +91 93266 41825
                   </p>
                 </div>
               )}
@@ -2435,28 +2676,36 @@ function App() {
           {/* Customer Reviews & Ratings */}
           <div className="pt-8 border-t border-gray-200 space-y-8">
             {(() => {
-              const currentReviews = getProductReviews(selectedProduct.id);
+              const currentReviews = activeProductReviews;
+              const reviewCount = currentReviews.length;
+              const totalSum = currentReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+              const avgRating = reviewCount > 0 ? parseFloat((totalSum / reviewCount).toFixed(1)) : 0;
+
               return (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-gray-200 pb-4">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 font-inter flex items-center gap-2">
                         <span>Customer Reviews &amp; Ratings</span>
-                        {currentReviews.length > 0 && (
-                          <span className="text-xs font-extrabold bg-[#E60000] text-white px-2.5 py-0.5 rounded-full">
-                            {currentReviews.length}
+                        {reviewCount > 0 && (
+                          <span className="text-xs font-extrabold bg-[#C91F26] text-white px-2.5 py-0.5 rounded-full">
+                            {reviewCount}
                           </span>
                         )}
                       </h3>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {currentReviews.length > 0
-                          ? 'Real customer reviews from verified buyers, sorted by highest rating first.'
-                          : 'No reviews submitted for this product yet.'}
+                      <p className="text-xs text-gray-500 font-medium mt-1">
+                        {reviewCount > 0
+                          ? `★ ${avgRating.toFixed(1)} average rating across ${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'} for this product.`
+                          : 'No reviews yet for this product.'}
                       </p>
                     </div>
                   </div>
 
-                  {currentReviews.length > 0 ? (
+                  {isReviewsLoading ? (
+                    <div className="py-6 text-center text-xs text-gray-400 font-medium animate-pulse">
+                      Loading real product reviews...
+                    </div>
+                  ) : reviewCount > 0 ? (
                     <div className="space-y-4">
                       {currentReviews.map((rev, idx) => (
                         <div
@@ -2469,11 +2718,10 @@ function App() {
                                 {[...Array(5)].map((_, i) => (
                                   <Star
                                     key={i}
-                                    className={`w-4 h-4 ${
-                                      i < Math.round(Number(rev.rating) || 5)
-                                        ? 'fill-amber-400 text-amber-400'
-                                        : 'text-gray-300'
-                                    }`}
+                                    className={`w-4 h-4 ${i < Math.round(Number(rev.rating) || 5)
+                                      ? 'fill-amber-400 text-amber-400'
+                                      : 'text-gray-300'
+                                      }`}
                                   />
                                 ))}
                               </div>
@@ -2482,7 +2730,7 @@ function App() {
                               </span>
                             </div>
                             <span className="text-[10px] font-bold text-gray-400">
-                              {rev.date_created ? new Date(rev.date_created).toLocaleDateString('en-IN') : 'Verified Customer'}
+                              {rev.formatted_date_created || (rev.date_created ? new Date(rev.date_created).toLocaleDateString('en-IN') : 'Verified Customer')}
                             </span>
                           </div>
 
@@ -2490,14 +2738,33 @@ function App() {
                             "{rev.review || rev.comment || rev.text}"
                           </p>
 
-                          <div className="flex items-center gap-2 pt-1 text-xs">
-                            <span className="font-bold text-[#2A2724]">
-                              {rev.reviewer || rev.author || 'Verified Buyer'}
-                            </span>
-                            <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>Verified Purchaser</span>
-                            </span>
+                          <div className="flex items-center justify-between pt-1 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#2A2724]">
+                                {rev.reviewer || rev.author || 'Verified Buyer'}
+                              </span>
+                              {rev.verified && (
+                                <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Verified Purchaser</span>
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to delete this review?')) {
+                                  await deleteReviewApi(rev.id, selectedProduct.id);
+                                  const updated = await fetchProductReviewsFromApi(selectedProduct.id);
+                                  setActiveProductReviews(updated);
+                                  window.dispatchEvent(new Event('modena_reviews_updated'));
+                                }
+                              }}
+                              className="text-gray-400 hover:text-red-600 font-semibold flex items-center gap-1 text-[11px] cursor-pointer transition-colors"
+                              title="Delete review"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -2510,9 +2777,9 @@ function App() {
                         ))}
                       </div>
                       <div className="text-xs font-bold text-gray-400">☆☆☆☆☆ 0.0 (0 Reviews)</div>
-                      <h4 className="font-extrabold text-base text-[#2A2724]">No reviews</h4>
+                      <h4 className="font-extrabold text-base text-[#2A2724]">No reviews yet</h4>
                       <p className="text-xs text-gray-500 max-w-md mx-auto">
-                        No customer reviews have been written for this product yet. Be the first to share your experience below!
+                        No reviews yet for this product. Be the first to share your experience below!
                       </p>
                     </div>
                   )}
@@ -2525,19 +2792,7 @@ function App() {
                     )}
                     onReviewSubmitted={(newReview) => {
                       saveReviewToDb(newReview);
-                      // Update selectedProduct rating dynamically
-                      const updatedReviews = getProductReviews(selectedProduct.id);
-                      const count = updatedReviews.length;
-                      const avg = updatedReviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / count;
-                      setSelectedProduct((prev) => ({
-                        ...prev,
-                        average_rating: parseFloat(avg.toFixed(1)),
-                        rating_count: count,
-                        review_count: count,
-                        hasReviews: true,
-                        ratingText: `${avg.toFixed(1)} (${count} Reviews)`,
-                        displayRating: `★ ${avg.toFixed(1)} (${count})`
-                      }));
+                      window.dispatchEvent(new Event('modena_reviews_updated'));
                     }}
                   />
                 </div>
@@ -2565,6 +2820,8 @@ function App() {
               setSelectedProduct={setSelectedProduct}
               setProductQuantity={setProductQuantity}
               handleAddToCart={handleAddToCart}
+              cart={cart}
+              updateQuantity={updateQuantity}
               wishlist={wishlist}
               toggleWishlist={toggleWishlist}
               isWishlisted={isWishlisted}
@@ -2579,2398 +2836,2220 @@ function App() {
                 setActivePolicyTab(tabId);
                 setCurrentView('storePolicies');
               }}
+              onSelectRecipe={handleSelectRecipe}
             />
           )}
 
-      {/* 3.5. PRODUCTS STORE CATALOG PAGE */}
-      {currentView === 'products' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          <div className="bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] text-white p-8 md:p-12 rounded-3xl mb-12 shadow-xl border border-[#333]">
-            <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-bold px-3.5 py-1.5 rounded-full mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>FULL STORE CATALOG</span>
+          {/* 3.5. PRODUCTS & CATEGORY PAGES */}
+          {['products', 'bestseller', 'deal', 'electronics', 'utensils', 'mixer', 'grinder', 'mixer-grinder', 'mixer-grinders', 'nutrimix', 'cookware', 'kitchenware'].includes(currentView) && (
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4">
+              <ProductList
+                onAddToCart={handleAddToCart}
+                onUpdateQuantity={updateQuantity}
+                cart={cart}
+                onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+                searchQuery=""
+                selectedCategoryName={currentView}
+                wishlist={wishlist}
+                onToggleWishlist={toggleWishlist}
+              />
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-3 tracking-tight">All Signature Products</h1>
-            <p className="text-gray-300 text-sm md:text-base max-w-2xl font-medium">
-              Explore our complete collection of commercial 990W mixer grinders, tri-ply stainless steel cookware, and heirloom cast iron kitchenware.
-            </p>
-          </div>
+          )}
 
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery="" selectedCategoryName="all" wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
+          {/* 3.6. CORPORATE GIFTING PAGE */}
+          {(currentView === 'corporate-gifting' || currentView === 'corporateGifting') && (
+            <CorporateGifting
+              setCurrentView={setCurrentView}
+              onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+              onAddToCart={handleAddToCart}
+              onUpdateQuantity={updateQuantity}
+              cart={cart}
+            />
+          )}
 
-      {/* 4. BESTSELLER DEMO PAGE */}
-      {currentView === 'bestseller' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          <div className="bg-gradient-to-r from-[#2A2724] to-[#2A2724] text-white p-8 md:p-12 rounded-2xl mb-12 shadow-xl border border-[#333]">
-            <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-label-caps px-3 py-1 rounded-full mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>TOP RATED COLLECTION</span>
-            </div>
-            <h1 className="font-display-lg text-4xl md:text-5xl text-white mb-3">Modena Bestsellers</h1>
-            <p className="font-body-lg text-[#EFEAE6] text-base max-w-2xl">
-              Discover the most-loved heritage cookware and heavy-duty appliances chosen by thousands of culinary enthusiasts.
-            </p>
-          </div>
+          {/* 3.7. ABOUT US / PHILOSOPHY PAGE */}
+          {(currentView === 'philosophy' || currentView === 'about') && (
+            <Philosophy setCurrentView={setCurrentView} />
+          )}
 
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery="" selectedCategoryName="bestseller" wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
+          {/* 3.8. RECIPES LIST / ARCHIVE PAGE */}
+          {currentView === 'recipes' && (
+            <RecipesList
+              setCurrentView={setCurrentView}
+              onSelectRecipe={handleSelectRecipe}
+            />
+          )}
 
-      {/* 5. DEAL DEMO PAGE */}
-      {currentView === 'deal' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          <div className="bg-[#E60000] text-white p-8 md:p-12 rounded-2xl mb-12 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-amber-400 text-black text-xs font-bold font-label-caps px-3 py-1 rounded-full mb-3">
-                <Zap className="w-3.5 h-3.5 fill-black" />
-                <span>FLASH SALE ENDS SOON</span>
-              </div>
-              <h1 className="font-display-lg text-4xl md:text-5xl text-white mb-2">Culinary Deals & Discounts</h1>
-              <p className="font-body-lg text-white/90 text-base max-w-xl">
-                Limited-time price cuts on heavy mixer grinders and heritage cookware. Save up to 40% today.
-              </p>
-            </div>
-            <div className="bg-black/40 backdrop-blur-md border border-white/20 p-6 rounded-xl text-center min-w-[240px]">
-              <span className="text-xs font-label-caps text-amber-300 block mb-1">OFFER EXPIRES IN</span>
-              <DealCountdownTimer />
-            </div>
-          </div>
+          {/* 3.9. RECIPE DETAIL PAGE */}
+          {currentView === 'recipeDetail' && (
+            <RecipeDetail
+              recipe={selectedRecipe}
+              onBack={() => {
+                setCurrentView('recipes');
+                window.location.hash = 'recipes';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              setCurrentView={setCurrentView}
+              onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+              allProducts={apiProducts}
+            />
+          )}
 
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery="" selectedCategoryName="deal" wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
+          {/* 3.10. STORE & LEGAL POLICIES PAGE */}
+          {currentView === 'storePolicies' && (
+            <StorePolicies
+              activeTab={activePolicyTab}
+              setActiveTab={setActivePolicyTab}
+              setCurrentView={setCurrentView}
+            />
+          )}
 
-      {/* 7. ELECTRONICS DEMO PAGE */}
-      {currentView === 'electronics' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          <div className="bg-[#2A2724] text-white p-8 md:p-12 rounded-2xl mb-12 shadow-xl border border-[#514C48]">
-            <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-label-caps px-3 py-1 rounded-full mb-3">
-              <Zap className="w-3.5 h-3.5" />
-              <span>HEAVY APPLIANCES ENGINE</span>
-            </div>
-            <h1 className="font-display-lg text-4xl md:text-5xl text-white mb-2">Culinary Electronics</h1>
-            <p className="font-body-lg text-[#EFEAE6] text-base max-w-2xl">
-              High-torque 990W copper motors, thermal overload circuit breakers, and precision induction electronics engineered for professional kitchens.
-            </p>
-          </div>
 
-          <div className="bg-white rounded-2xl border border-[#EFEAE6] p-6 md:p-8 shadow-sm mb-12">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
-              <div>
-                <span className="text-xs font-extrabold text-[#E60000] tracking-widest uppercase block mb-1">
-                  COLLECTION STANDARDS &amp; HIGHLIGHTS
-                </span>
-                <h2 className="font-headline-md text-2xl font-extrabold text-[#2A2724] tracking-tight">
-                  Electronics Collection Standards
-                </h2>
-              </div>
-              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full self-start sm:self-auto">
-                ⚡ Commercial Kitchen Grade
-              </span>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-5 bg-[#FAF8F6] rounded-xl border border-[#E2DCD7]/50 flex flex-col justify-between hover:border-[#E60000]/40 transition-all">
-                <div>
-                  <h3 className="font-bold text-base text-[#E60000] mb-2 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-[#E60000]" />
-                    <span>High-Performance Motors</span>
-                  </h3>
-                  <p className="text-xs text-[#514C48] leading-relaxed">
-                    Commercial-grade copper winding engineered across all Modena kitchen appliances for continuous high-torque operation without power drop-off.
-                  </p>
-                </div>
+
+          {/* ========================================== */}
+          {/* 10. YOUR ACCOUNT MAIN DASHBOARD HUB VIEW */}
+          {/* ========================================== */}
+          {/* ========================================== */}
+          {/* 10. YOUR ACCOUNT MAIN DASHBOARD HUB VIEW */}
+          {/* ========================================== */}
+          {currentView === 'yourAccount' && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 animate-in fade-in duration-300 font-inter">
+              <div className="mb-8 border-b border-gray-200/80 pb-6">
+                <span className="text-xs font-bold text-[#C91F26] uppercase tracking-wider">MODENA ACCOUNT</span>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#292725] tracking-tight mt-1">Your Account</h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-xl">Manage your orders, personal security settings, delivery addresses, and store policies.</p>
               </div>
 
-              <div className="p-5 bg-[#FAF8F6] rounded-xl border border-[#E2DCD7]/50 flex flex-col justify-between hover:border-[#E60000]/40 transition-all">
-                <div>
-                  <h3 className="font-bold text-base text-[#E60000] mb-2 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#E60000]" />
-                    <span>Intelligent Thermal Protection</span>
-                  </h3>
-                  <p className="text-xs text-[#514C48] leading-relaxed">
-                    Advanced airflow ventilation and automatic overload cut-out breakers built into every appliance to prevent heat buildup during tough tasks.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 bg-[#FAF8F6] rounded-xl border border-[#E2DCD7]/50 flex flex-col justify-between hover:border-[#E60000]/40 transition-all">
-                <div>
-                  <h3 className="font-bold text-base text-[#E60000] mb-2 flex items-center gap-2">
-                    <SlidersHorizontal className="w-4 h-4 text-[#E60000]" />
-                    <span>Multi-Speed Precision Controls</span>
-                  </h3>
-                  <p className="text-xs text-[#514C48] leading-relaxed">
-                    Ergonomic metallic dials and instant pulse control integrated across our electronic range for granular mastery over food preparation.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery="" selectedCategoryName="electronics" wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
-
-      {/* 8. UTENSILS DEMO PAGE */}
-      {currentView === 'utensils' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          <div className="bg-[#2A2724] text-white p-8 md:p-12 rounded-2xl mb-12 shadow-xl border border-[#222]">
-            <div className="inline-flex items-center gap-2 bg-[#EFEAE6] text-[#111] text-xs font-label-caps px-3 py-1 rounded-full mb-3">
-              <Award className="w-3.5 h-3.5" />
-              <span>HERITAGE COOKWARE & KNIVES</span>
-            </div>
-            <h1 className="font-display-lg text-4xl md:text-5xl text-white mb-2">Culinary Utensils & Cookware</h1>
-            <p className="font-body-lg text-[#E2DCD7] text-base max-w-2xl">
-              Forged steel knives, pre-seasoned cast iron skillets, and 5-ply stainless steel cookware crafted for lifetime retentivity.
-            </p>
-          </div>
-
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery="" selectedCategoryName="utensils" wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
-
-      {/* 9. GENERIC CATEGORY PAGES */}
-      {['mixer', 'grinder', 'nutrimix', 'cookware', 'kitchenware'].includes(currentView) && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          <div className="bg-[#2A2724] text-white p-8 md:p-12 rounded-2xl mb-12 shadow-xl border border-[#222]">
-            <h1 className="font-display-lg text-4xl md:text-5xl text-white mb-2 uppercase">{currentView}</h1>
-          </div>
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery="" selectedCategoryName={currentView} wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
-
-      {/* 10. ABOUT US PAGE VIEW */}
-      {currentView === 'about' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          {/* Hero Banner */}
-          <div className="bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] text-white p-8 md:p-16 rounded-3xl mb-16 shadow-2xl border border-[#514C48] relative overflow-hidden">
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 pointer-events-none hidden md:block">
-              <img src="/modena_logo_mono-white_red.png" alt="Modena Heritage" className="w-full h-full object-contain" />
-            </div>
-            <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-label-caps px-4 py-1.5 rounded-full mb-6 tracking-widest shadow-md">
-                <Flame className="w-3.5 h-3.5" />
-                <span>OUR HERITAGE & CRAFTSMANSHIP</span>
-              </div>
-              <h1 className="font-display-lg text-4xl md:text-6xl text-white mb-6 leading-tight">
-                Crafting Culinary Excellence <span className="text-[#EFEAE6] italic font-serif">Since 1998</span>
-              </h1>
-              <p className="font-body-lg text-[#E2DCD7] text-base md:text-lg mb-8 leading-relaxed">
-                At Modena, we engineer heavy-duty commercial kitchen appliances and heirloom-quality cast iron cookware built to endure generations of Indian culinary mastery.
-              </p>
-              <div className="flex flex-wrap items-center gap-4">
-                <button
-                  onClick={() => setCurrentView('bestseller')}
-                  className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-label-caps px-6 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-red-950/50 flex items-center gap-2 cursor-pointer"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                {/* Section 1: Your Orders */}
+                <div
+                  onClick={() => setCurrentView('yourOrders')}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between hover:border-gray-400 transition-colors cursor-pointer group shadow-xs"
                 >
-                  <span>EXPLORE BESTSELLERS</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setCurrentView('utensils')}
-                  className="bg-[#2A2724] hover:bg-[#2A2724] text-white text-xs font-label-caps px-6 py-3.5 rounded-xl border border-[#444] transition-colors cursor-pointer"
-                >
-                  VIEW COOKWARE
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-            <div className="bg-[#2A2724]/30 border border-[#FAF8F6] p-6 rounded-2xl text-center">
-              <div className="font-display-lg text-3xl md:text-4xl text-[#E60000] font-bold mb-1">25+</div>
-              <div className="text-xs font-label-caps text-[#514C48] tracking-wider">Years of Mastery</div>
-            </div>
-            <div className="bg-[#2A2724]/30 border border-[#FAF8F6] p-6 rounded-2xl text-center">
-              <div className="font-display-lg text-3xl md:text-4xl text-[#E60000] font-bold mb-1">500,000+</div>
-              <div className="text-xs font-label-caps text-[#514C48] tracking-wider">Happy Indian Kitchens</div>
-            </div>
-            <div className="bg-[#2A2724]/30 border border-[#FAF8F6] p-6 rounded-2xl text-center">
-              <div className="font-display-lg text-3xl md:text-4xl text-[#E60000] font-bold mb-1">4.9 / 5</div>
-              <div className="text-xs font-label-caps text-[#514C48] tracking-wider">Customer Rating</div>
-            </div>
-            <div className="bg-[#2A2724]/30 border border-[#FAF8F6] p-6 rounded-2xl text-center">
-              <div className="font-display-lg text-3xl md:text-4xl text-[#E60000] font-bold mb-1">100%</div>
-              <div className="text-xs font-label-caps text-[#514C48] tracking-wider">Copper Motors & Heavy Iron</div>
-            </div>
-          </div>
-
-          {/* Core Brand Pillars */}
-          <div className="mb-16">
-            <div className="text-center mb-12">
-              <span className="text-[#E60000] text-xs font-label-caps tracking-widest block mb-2">WHY CHOOSE MODENA</span>
-              <h2 className="font-display-lg text-3xl md:text-4xl text-[#2A2724]">Uncompromising Culinary Engineering</h2>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white border border-[#FAF8F6] p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-[#FAF8F6] text-[#E60000] rounded-xl flex items-center justify-center mb-6">
-                  <Flame className="w-6 h-6" />
-                </div>
-                <h3 className="font-headline-md text-xl text-[#2A2724] mb-3 font-bold">Lava-Fired Cast Iron</h3>
-                <p className="font-body-md text-sm text-[#514C48] leading-relaxed">
-                  Pre-seasoned with 100% natural cold-pressed oils. Our heavy-grade virgin cast iron retains maximum heat for authentic Indian slow cooking.
-                </p>
-              </div>
-
-              <div className="bg-white border border-[#FAF8F6] p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-[#FAF8F6] text-[#E60000] rounded-xl flex items-center justify-center mb-6">
-                  <Zap className="w-6 h-6" />
-                </div>
-                <h3 className="font-headline-md text-xl text-[#2A2724] mb-3 font-bold">100% Copper Motors</h3>
-                <p className="font-body-md text-sm text-[#514C48] leading-relaxed">
-                  Commercial-grade 990W heavy duty copper winding with dual airflow cooling systems engineered to handle tough Indian batters and spices effortlessly.
-                </p>
-              </div>
-
-              <div className="bg-white border border-[#FAF8F6] p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-[#FAF8F6] text-[#E60000] rounded-xl flex items-center justify-center mb-6">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="font-headline-md text-xl text-[#2A2724] mb-3 font-bold">Lifetime Protection</h3>
-                <p className="font-body-md text-sm text-[#514C48] leading-relaxed">
-                  Backed by comprehensive warranty coverage, pan-India express logistics, and dedicated customer support for complete peace of mind.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* ========================================== */}
-      {/* 10. YOUR ACCOUNT MAIN DASHBOARD HUB VIEW */}
-      {/* ========================================== */}
-      {currentView === 'yourAccount' && (
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300">
-          <div className="mb-8">
-            <span className="text-xs text-gray-500 font-medium">Your Account</span>
-            <h1 className="text-3xl font-bold text-[#2A2724] mt-1 font-inter">Your Account</h1>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Card 1: Your Orders */}
-            <div
-              onClick={() => setCurrentView('yourOrders')}
-              className="bg-white rounded-2xl border border-gray-200 p-5 flex items-start gap-4 hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer group"
-            >
-              <div className="w-16 h-16 bg-[#FAF8F6] rounded-2xl flex items-center justify-center text-[#E60000] flex-shrink-0 group-hover:scale-105 transition-transform">
-                <Package className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#2A2724] group-hover:text-[#E60000] transition-colors">Your Orders</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Track, return, or buy things again</p>
-              </div>
-            </div>
-
-            {/* Card 2: Login & security */}
-            <div
-              onClick={() => setCurrentView('loginSecurity')}
-              className="bg-white rounded-2xl border border-gray-200 p-5 flex items-start gap-4 hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer group"
-            >
-              <div className="w-16 h-16 bg-[#FAF8F6] rounded-2xl flex items-center justify-center text-[#E60000] flex-shrink-0 group-hover:scale-105 transition-transform">
-                <Lock className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#2A2724] group-hover:text-[#E60000] transition-colors">Login &amp; security</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Edit login, name, email, and mobile number</p>
-              </div>
-            </div>
-
-            {/* Card 3: Your Addresses */}
-            <div
-              onClick={() => setCurrentView('yourAddresses')}
-              className="bg-white rounded-2xl border border-gray-200 p-5 flex items-start gap-4 hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer group"
-            >
-              <div className="w-16 h-16 bg-[#FAF8F6] rounded-2xl flex items-center justify-center text-[#E60000] flex-shrink-0 group-hover:scale-105 transition-transform">
-                <MapPin className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#2A2724] group-hover:text-[#E60000] transition-colors">Your Addresses</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Edit addresses for orders and gifts</p>
-              </div>
-            </div>
-
-            {/* Card 4: Contact Us */}
-            <div
-              onClick={() => setCurrentView('contactUs')}
-              className="bg-white rounded-2xl border border-gray-200 p-5 flex items-start gap-4 hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer group"
-            >
-              <div className="w-16 h-16 bg-[#FAF8F6] rounded-2xl flex items-center justify-center text-[#E60000] flex-shrink-0 group-hover:scale-105 transition-transform">
-                <Headphones className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#2A2724] group-hover:text-[#E60000] transition-colors">Contact Us</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Contact our customer service via phone or chat</p>
-              </div>
-            </div>
-
-            {/* Card 5: Store & Legal Policies */}
-            <div
-              onClick={() => setCurrentView('storePolicies')}
-              className="bg-white rounded-2xl border border-gray-200 p-5 flex items-start gap-4 hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer group"
-            >
-              <div className="w-16 h-16 bg-[#FAF8F6] rounded-2xl flex items-center justify-center text-[#E60000] flex-shrink-0 group-hover:scale-105 transition-transform">
-                <FileText className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#2A2724] group-hover:text-[#E60000] transition-colors">Store &amp; Legal Policies</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Terms, Privacy, Returns, Shipping &amp; Warranty Policy</p>
-              </div>
-            </div>
-
-            {/* Card 6: Modena Philosophy & Craftsmanship */}
-            <div
-              onClick={() => setCurrentView('philosophy')}
-              className="bg-[#2A2724] text-white rounded-2xl border border-[#514C48] p-5 flex items-start gap-4 hover:border-[#E60000] hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden"
-            >
-              <div className="w-16 h-16 bg-[#E60000] rounded-2xl flex items-center justify-center text-white flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
-                <Award className="w-8 h-8" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-[10px] font-bold bg-[#E60000] text-white px-2 py-0.5 rounded-full uppercase tracking-wider">MODENA BRAND</span>
-                </div>
-                <h3 className="text-lg font-bold text-white group-hover:text-[#EFEAE6] transition-colors">Culinary Philosophy</h3>
-                <p className="text-xs text-gray-300 mt-1 leading-relaxed">Lifelong Retentivity &amp; Precision Engineering</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODENA PHILOSOPHY PAGE VIEW */}
-      {currentView === 'philosophy' && (
-        <Philosophy setCurrentView={setCurrentView} />
-      )}
-
-      {/* STORE POLICIES VIEW */}
-      {currentView === 'storePolicies' && (
-        <StorePolicies initialTab={activePolicyTab || 'shipping'} onBack={() => setCurrentView('yourAccount')} />
-      )}
-
-      {/* ========================================== */}
-      {/* 11. YOUR ORDERS VIEW */}
-      {/* ========================================== */}
-      {currentView === 'yourOrders' && (
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-            <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#E60000] cursor-pointer">Your Account</button>
-            <span>›</span>
-            <span className="text-[#E60000] font-semibold">Your Orders</span>
-          </div>
-
-          <h1 className="text-3xl font-bold text-[#2A2724] font-inter mb-6">Your Orders</h1>
-
-          {/* Tabs: Orders | Buy Again | Returns */}
-          <div className="border-b border-gray-200 flex gap-8 text-sm font-medium mb-6">
-            <button
-              onClick={() => setOrdersTab('orders')}
-              className={`py-3 transition-colors cursor-pointer border-b-2 font-bold ${
-                ordersTab === 'orders' ? 'text-[#E60000] border-[#E60000]' : 'text-gray-500 border-transparent hover:text-black'
-              }`}
-            >
-              Orders
-            </button>
-            <button
-              onClick={() => setOrdersTab('buyAgain')}
-              className={`py-3 transition-colors cursor-pointer border-b-2 font-bold ${
-                ordersTab === 'buyAgain' ? 'text-[#E60000] border-[#E60000]' : 'text-gray-500 border-transparent hover:text-black'
-              }`}
-            >
-              Buy Again
-            </button>
-            <button
-              onClick={() => setOrdersTab('returns')}
-              className={`py-3 transition-colors cursor-pointer border-b-2 font-bold ${
-                ordersTab === 'returns' ? 'text-[#E60000] border-[#E60000]' : 'text-gray-500 border-transparent hover:text-black'
-              }`}
-            >
-              Return / Replace
-            </button>
-          </div>
-
-          {/* Tab 1: ORDERS */}
-          {ordersTab === 'orders' && (() => {
-            const allOrdersList = [...userOrders];
-            if (placedOrder && !allOrdersList.some((o) => o.orderNumber === placedOrder.orderNumber)) {
-              allOrdersList.unshift(placedOrder);
-            }
-
-            return (
-              <div className="space-y-6">
-                <p className="text-xs text-gray-500">Track, return, or buy items again from your recent orders.</p>
-
-                {/* Orders Search & Filter */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                  <div className="flex items-center gap-2 flex-1 w-full relative">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3" />
-                    <input
-                      type="text"
-                      placeholder="Search all orders by item name or order ID..."
-                      value={ordersSearchQuery}
-                      onChange={(e) => setOrdersSearchQuery(e.target.value)}
-                      className="w-full bg-white border border-gray-300 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000]"
-                    />
-                  </div>
-                  <button className="bg-[#2A2724] text-white text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer hover:bg-black transition-colors whitespace-nowrap">
-                    Search Orders
-                  </button>
-                </div>
-
-                {isOrdersLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-44 bg-gray-100 animate-pulse rounded-2xl border border-gray-200" />
-                    ))}
-                  </div>
-                ) : allOrdersList.length === 0 ? (
-                  <div className="py-16 px-4 text-center bg-white rounded-3xl border border-gray-200 shadow-sm space-y-4 max-w-md mx-auto my-6">
-                    <div className="w-16 h-16 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center mx-auto shadow-inner">
-                      <Package className="w-8 h-8" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 text-[#C91F26] flex items-center justify-center flex-shrink-0 group-hover:bg-[#C91F26] group-hover:text-white transition-colors">
+                      <Package className="w-5 h-5" />
                     </div>
-                    <h3 className="font-bold text-lg text-gray-900 font-inter">No orders found</h3>
-                    <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
-                      You haven't placed any orders yet. Explore our premium kitchenware collection and place your first order today!
-                    </p>
-                    <button
-                      onClick={() => setCurrentView('utensils')}
-                      className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold px-6 py-3 rounded-xl transition-colors cursor-pointer shadow-md inline-flex items-center gap-2"
-                    >
-                      <span>EXPLORE PRODUCTS</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#C91F26] transition-colors">Your Orders</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Track, return, or buy things again</p>
+                    </div>
                   </div>
-                ) : (
-                  allOrdersList.map((ord) => (
-                    <div key={ord.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                      <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-wrap justify-between items-center text-xs text-gray-600 gap-4">
-                        <div>
-                          <span className="block text-[10px] uppercase font-bold text-gray-400">Order Placed</span>
-                          <span className="font-semibold text-gray-900">{ord.date}</span>
-                        </div>
-                        <div>
-                          <span className="block text-[10px] uppercase font-bold text-gray-400">Total</span>
-                          <span className="font-semibold text-gray-900">₹{typeof ord.total === 'number' ? ord.total.toFixed(2) : ord.total}</span>
-                        </div>
-                        <div>
-                          <span className="block text-[10px] uppercase font-bold text-gray-400">Ship To</span>
-                          <span className="font-semibold text-gray-900">{ord.customer?.firstName || ord.customer || getFirstName(userDisplayName)}</span>
-                        </div>
-                        <div>
-                          <span className="block text-[10px] uppercase font-bold text-gray-400">Order #</span>
-                          <span className="font-mono font-bold text-gray-900">{ord.orderNumber}</span>
-                        </div>
-                        <div>
-                          <button
-                            onClick={() => generateInvoicePDF(ord, formData)}
-                            className="bg-[#E60000] hover:bg-[#E60000] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-lg cursor-pointer transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download Invoice</span>
-                          </button>
-                        </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#C91F26] transition-colors flex-shrink-0" />
+                </div>
+
+                {/* Section 2: Login & Security */}
+                <div
+                  onClick={() => setCurrentView('loginSecurity')}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between hover:border-gray-400 transition-colors cursor-pointer group shadow-xs"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 text-[#C91F26] flex items-center justify-center flex-shrink-0 group-hover:bg-[#C91F26] group-hover:text-white transition-colors">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#C91F26] transition-colors">Login &amp; Security</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Edit login, name, email, and mobile number</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#C91F26] transition-colors flex-shrink-0" />
+                </div>
+
+                {/* Section 3: Your Addresses */}
+                <div
+                  onClick={() => setCurrentView('yourAddresses')}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between hover:border-gray-400 transition-colors cursor-pointer group shadow-xs"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 text-[#C91F26] flex items-center justify-center flex-shrink-0 group-hover:bg-[#C91F26] group-hover:text-white transition-colors">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#C91F26] transition-colors">Your Addresses</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Edit addresses for orders and gifts</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#C91F26] transition-colors flex-shrink-0" />
+                </div>
+
+                {/* Section 4: Contact Us */}
+                <div
+                  onClick={() => setCurrentView('contactUs')}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between hover:border-gray-400 transition-colors cursor-pointer group shadow-xs"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 text-[#C91F26] flex items-center justify-center flex-shrink-0 group-hover:bg-[#C91F26] group-hover:text-white transition-colors">
+                      <Headphones className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#C91F26] transition-colors">Contact Us</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Contact customer service via available support methods</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#C91F26] transition-colors flex-shrink-0" />
+                </div>
+
+                {/* Section 5: Store & Legal Policies */}
+                <div
+                  onClick={() => setCurrentView('storePolicies')}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between hover:border-gray-400 transition-colors cursor-pointer group shadow-xs"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 text-[#C91F26] flex items-center justify-center flex-shrink-0 group-hover:bg-[#C91F26] group-hover:text-white transition-colors">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#C91F26] transition-colors">Store &amp; Legal Policies</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Terms, Privacy, Returns, Shipping &amp; Warranty Policy</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#C91F26] transition-colors flex-shrink-0" />
+                </div>
+
+                {/* Section 6: MODENA BRAND / Culinary Philosophy */}
+                <div
+                  onClick={() => setCurrentView('philosophy')}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between hover:border-gray-400 transition-colors cursor-pointer group shadow-xs"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 text-[#C91F26] flex items-center justify-center flex-shrink-0 group-hover:bg-[#C91F26] group-hover:text-white transition-colors">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#C91F26] transition-colors">Culinary Philosophy</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">MODENA BRAND — Lifelong Retentivity &amp; Craftsmanship</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#C91F26] transition-colors flex-shrink-0" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODENA PHILOSOPHY PAGE VIEW */}
+          {(currentView === 'philosophy' || currentView === 'about') && (
+            <Philosophy setCurrentView={setCurrentView} />
+          )}
+
+          {/* STORE POLICIES VIEW */}
+          {currentView === 'storePolicies' && (
+            <StorePolicies initialTab={activePolicyTab || 'shipping'} onBack={() => setCurrentView('yourAccount')} />
+          )}
+
+          {/* ========================================== */}
+          {/* 11. YOUR ORDERS VIEW */}
+          {/* ========================================== */}
+          {currentView === 'yourOrders' && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 animate-in fade-in duration-300 font-inter">
+              {/* Breadcrumbs */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#C91F26] cursor-pointer">Your Account</button>
+                <span>›</span>
+                <span className="text-[#C91F26] font-semibold">Your Orders</span>
+              </div>
+
+              <div className="mb-6">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#292725] tracking-tight">Your Orders</h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">Track, return, or buy items again from your recent orders.</p>
+              </div>
+
+              {/* Tabs: Orders | Buy Again | Returns */}
+              <div className="border-b border-gray-200/80 flex gap-8 text-xs sm:text-sm font-semibold mb-6">
+                <button
+                  onClick={() => setOrdersTab('orders')}
+                  className={`pb-3 transition-colors cursor-pointer border-b-2 font-bold ${ordersTab === 'orders' ? 'text-[#C91F26] border-[#C91F26]' : 'text-gray-500 border-transparent hover:text-gray-900'
+                    }`}
+                >
+                  Orders
+                </button>
+                <button
+                  onClick={() => setOrdersTab('buyAgain')}
+                  className={`py-3 transition-colors cursor-pointer border-b-2 font-bold ${ordersTab === 'buyAgain' ? 'text-[#E60000] border-[#E60000]' : 'text-gray-500 border-transparent hover:text-black'
+                    }`}
+                >
+                  Buy Again
+                </button>
+                <button
+                  onClick={() => setOrdersTab('returns')}
+                  className={`py-3 transition-colors cursor-pointer border-b-2 font-bold ${ordersTab === 'returns' ? 'text-[#E60000] border-[#E60000]' : 'text-gray-500 border-transparent hover:text-black'
+                    }`}
+                >
+                  Return / Replace
+                </button>
+              </div>
+
+              {/* Tab 1: ORDERS */}
+              {ordersTab === 'orders' && (() => {
+                const allOrdersList = [...userOrders];
+                if (placedOrder && !allOrdersList.some((o) => o.orderNumber === placedOrder.orderNumber)) {
+                  allOrdersList.unshift(placedOrder);
+                }
+
+                return (
+                  <div className="space-y-6">
+                    <p className="text-xs text-gray-500">Track, return, or buy items again from your recent orders.</p>
+
+                    {/* Orders Search & Filter */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                      <div className="flex items-center gap-2 flex-1 w-full relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3" />
+                        <input
+                          type="text"
+                          placeholder="Search all orders by item name or order ID..."
+                          value={ordersSearchQuery}
+                          onChange={(e) => setOrdersSearchQuery(e.target.value)}
+                          className="w-full bg-white border border-gray-300 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000] focus:ring-1 focus:ring-[#E60000]"
+                        />
                       </div>
+                      <button className="bg-[#2A2724] text-white text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer hover:bg-black transition-colors whitespace-nowrap">
+                        Search Orders
+                      </button>
+                    </div>
 
-                      <div className="p-0">
-                        <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-4 border-b border-emerald-100">
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-600" />
-                            <span>{ord.deliveryStatus || '🚚 Order Placed - Processing & Delivery Requested'}</span>
-                          </div>
+                    {isOrdersLoading ? (
+                      <div className="space-y-4">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="h-44 bg-gray-100 animate-pulse rounded-2xl border border-gray-200" />
+                        ))}
+                      </div>
+                    ) : allOrdersList.length === 0 ? (
+                      <div className="py-16 px-4 text-center bg-white rounded-3xl border border-gray-200 shadow-sm space-y-4 max-w-md mx-auto my-6">
+                        <div className="w-16 h-16 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center mx-auto shadow-inner">
+                          <Package className="w-8 h-8" />
                         </div>
+                        <h3 className="font-bold text-lg text-gray-900 font-inter">No orders found</h3>
+                        <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                          You haven't placed any orders yet. Explore our premium kitchenware collection and place your first order today!
+                        </p>
+                        <button
+                          onClick={() => setCurrentView('utensils')}
+                          className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold px-6 py-3 rounded-xl transition-colors cursor-pointer shadow-md inline-flex items-center gap-2"
+                        >
+                          <span>EXPLORE PRODUCTS</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      allOrdersList.map((ord) => (
+                        <div key={ord.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-wrap justify-between items-center text-xs text-gray-600 gap-4">
+                            <div>
+                              <span className="block text-[10px] uppercase font-bold text-gray-400">Order Placed</span>
+                              <span className="font-semibold text-gray-900">{ord.date}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[10px] uppercase font-bold text-gray-400">Total</span>
+                              <span className="font-semibold text-gray-900">₹{typeof ord.total === 'number' ? ord.total.toFixed(2) : ord.total}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[10px] uppercase font-bold text-gray-400">Ship To</span>
+                              <span className="font-semibold text-gray-900">{ord.customer?.firstName || ord.customer || getFirstName(userDisplayName)}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[10px] uppercase font-bold text-gray-400">Order #</span>
+                              <span className="font-mono font-bold text-gray-900">{ord.orderNumber}</span>
+                            </div>
+                            <div>
+                              <button
+                                onClick={() => generateInvoicePDF(ord, formData)}
+                                className="bg-[#E60000] hover:bg-[#E60000] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-lg cursor-pointer transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Download Invoice</span>
+                              </button>
+                            </div>
+                          </div>
 
-                        {ord.items?.map((item) => (
-                          <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-gray-100 first:border-0">
-                            <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setSelectedProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
-                              <img src={item.image} alt={item.name} className="w-20 h-20 object-contain bg-gray-50 p-1 rounded-xl border border-gray-200 transition-transform group-hover:scale-105" />
-                              <div>
-                                <h4 className="font-bold text-sm text-[#E60000] group-hover:underline">{item.name}</h4>
-                                <span className="text-xs text-gray-500 block mb-1">Qty: {item.quantity || 1} • {item.price_html || `₹${item.price}`}</span>
-                                <div className="flex items-center gap-3">
-                                  <button onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }} className="bg-[#E60000] hover:bg-[#E60000] text-white text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer">
-                                    Buy it again
+                          <div className="p-0">
+                            <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-4 border-b border-emerald-100">
+                              <div className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-emerald-600" />
+                                <span>{ord.deliveryStatus || '🚚 Order Placed - Processing & Delivery Requested'}</span>
+                              </div>
+                              <span className="text-[10px] text-emerald-600 font-normal bg-emerald-100 px-2 py-1 rounded-full">
+                                Cancellation allowed within 2 hours or before dispatch
+                              </span>
+                            </div>
+
+                            {ord.items?.map((item) => (
+                              <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-gray-100 first:border-0">
+                                <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setSelectedProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
+                                  <img src={item.image} alt={item.name} className="w-20 h-20 object-contain bg-gray-50 p-1 rounded-xl border border-gray-200 transition-transform group-hover:scale-105" />
+                                  <div>
+                                    <h4 className="font-bold text-sm text-[#E60000] group-hover:underline">{item.name}</h4>
+                                    <span className="text-xs text-gray-500 block mb-1">Qty: {item.quantity || 1} • {item.price_html || `₹${item.price}`}</span>
+                                    <div className="flex items-center gap-3">
+                                      <button onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }} className="bg-[#E60000] hover:bg-[#E60000] text-white text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer">
+                                        Buy it again
+                                      </button>
+                                      <button className="border border-gray-300 hover:bg-gray-50 text-gray-700 text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer">
+                                        View item
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2 w-full sm:w-48 text-xs font-bold">
+                                  <button
+                                    onClick={() => setActiveTrackOrder({ orderNumber: ord.orderNumber, date: ord.date, status: ord.deliveryStatus || 'In Transit', item })}
+                                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 py-2 rounded-xl text-center cursor-pointer transition-colors w-full shadow-sm hover:border-gray-400"
+                                  >
+                                    Track package
                                   </button>
-                                  <button className="border border-gray-300 hover:bg-gray-50 text-gray-700 text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer">
-                                    View item
+                                  <button
+                                    onClick={() => generateInvoicePDF(ord, formData)}
+                                    className="bg-gray-900 hover:bg-black text-white py-2 rounded-xl text-center cursor-pointer transition-colors w-full shadow-sm flex items-center justify-center gap-1.5"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>PDF Invoice</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSellerFeedbackForm({ rating: 5, comment: '', submitted: false });
+                                      setActiveFeedbackOrder({ orderNumber: ord.orderNumber, item });
+                                    }}
+                                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 py-2 rounded-xl text-center cursor-pointer transition-colors w-full shadow-sm hover:border-gray-400"
+                                  >
+                                    Leave seller feedback
                                   </button>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex flex-col gap-2 w-full sm:w-48 text-xs font-bold">
-                              <button
-                                onClick={() => setActiveTrackOrder({ orderNumber: ord.orderNumber, date: ord.date, status: ord.deliveryStatus || 'In Transit', item })}
-                                className="border border-gray-300 hover:bg-gray-50 text-gray-800 py-2 rounded-xl text-center cursor-pointer transition-colors w-full shadow-sm hover:border-gray-400"
-                              >
-                                Track package
-                              </button>
-                              <button
-                                onClick={() => generateInvoicePDF(ord, formData)}
-                                className="bg-gray-900 hover:bg-black text-white py-2 rounded-xl text-center cursor-pointer transition-colors w-full shadow-sm flex items-center justify-center gap-1.5"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                                <span>PDF Invoice</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSellerFeedbackForm({ rating: 5, comment: '', submitted: false });
-                                  setActiveFeedbackOrder({ orderNumber: ord.orderNumber, item });
-                                }}
-                                className="border border-gray-300 hover:bg-gray-50 text-gray-800 py-2 rounded-xl text-center cursor-pointer transition-colors w-full shadow-sm hover:border-gray-400"
-                              >
-                                Leave seller feedback
-                              </button>
-                            </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            );
-          })()}
-
-          {/* Tab 2: BUY AGAIN */}
-          {ordersTab === 'buyAgain' && (() => {
-            const allOrdersList = [...userOrders];
-            if (placedOrder && !allOrdersList.some((o) => o.orderNumber === placedOrder.orderNumber)) {
-              allOrdersList.unshift(placedOrder);
-            }
-
-            const buyAgainMap = new Map();
-            allOrdersList.forEach((ord) => {
-              (ord.items || []).forEach((item) => {
-                if (!buyAgainMap.has(item.id)) {
-                  buyAgainMap.set(item.id, {
-                    ...item,
-                    lastBought: `Purchased ${ord.date || 'Recently'}`
-                  });
-                }
-              });
-            });
-
-            const buyAgainItems = Array.from(buyAgainMap.values());
-
-            if (buyAgainItems.length === 0) {
-              return (
-                <div className="py-16 px-4 text-center bg-white rounded-3xl border border-gray-200 shadow-sm space-y-4 max-w-md mx-auto">
-                  <div className="w-16 h-16 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center mx-auto shadow-inner">
-                    <ShoppingBag className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-900 font-inter">No previous items</h3>
-                  <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
-                    Items you purchase will appear here for quick 1-click reordering!
-                  </p>
-                  <button
-                    onClick={() => setCurrentView('utensils')}
-                    className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold px-6 py-3 rounded-xl transition-colors cursor-pointer shadow-md inline-flex items-center gap-2"
-                  >
-                    <span>BROWSE STORE PRODUCTS</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            }
-
-            return (
-              <div className="space-y-4">
-                <p className="text-xs text-gray-500">Items you previously purchased on Modena. Quick re-order with 1 click:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {buyAgainItems.map((item, idx) => (
-                    <div key={idx} className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
-                      <div className="group cursor-pointer" onClick={() => setSelectedProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
-                        <div className="w-full h-44 bg-gray-50 rounded-xl overflow-hidden mb-4 p-3 flex items-center justify-center border border-gray-100 group-hover:border-[#E60000]/30 transition-colors">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-contain transition-transform group-hover:scale-105" />
                         </div>
-                        <span className="text-[10px] font-bold text-gray-400 block mb-1 uppercase tracking-wider">{item.lastBought}</span>
-                        <h4 className="font-bold text-sm text-gray-900 capitalize mb-1 group-hover:text-[#E60000] transition-colors">{item.name}</h4>
-                        <span className="text-sm font-extrabold text-[#E60000] block mb-4">{item.price_html || `₹${item.price}`}</span>
+                      ))
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Tab 2: BUY AGAIN */}
+              {ordersTab === 'buyAgain' && (() => {
+                const allOrdersList = [...userOrders];
+                if (placedOrder && !allOrdersList.some((o) => o.orderNumber === placedOrder.orderNumber)) {
+                  allOrdersList.unshift(placedOrder);
+                }
+
+                const buyAgainMap = new Map();
+                allOrdersList.forEach((ord) => {
+                  (ord.items || []).forEach((item) => {
+                    if (!buyAgainMap.has(item.id)) {
+                      buyAgainMap.set(item.id, {
+                        ...item,
+                        lastBought: `Purchased ${ord.date || 'Recently'}`
+                      });
+                    }
+                  });
+                });
+
+                const buyAgainItems = Array.from(buyAgainMap.values());
+
+                if (buyAgainItems.length === 0) {
+                  return (
+                    <div className="py-16 px-4 text-center bg-white rounded-3xl border border-gray-200 shadow-sm space-y-4 max-w-md mx-auto">
+                      <div className="w-16 h-16 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center mx-auto shadow-inner">
+                        <ShoppingBag className="w-8 h-8" />
                       </div>
+                      <h3 className="font-bold text-lg text-gray-900 font-inter">No previous items</h3>
+                      <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                        Items you purchase will appear here for quick 1-click reordering!
+                      </p>
                       <button
-                        onClick={() => handleAddToCart(item)}
-                        className="w-full bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold py-3 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                        onClick={() => setCurrentView('utensils')}
+                        className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold px-6 py-3 rounded-xl transition-colors cursor-pointer shadow-md inline-flex items-center gap-2"
                       >
-                        <Plus className="w-4 h-4" />
-                        <span>BUY AGAIN</span>
+                        <span>BROWSE STORE PRODUCTS</span>
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+                  );
+                }
 
-          {/* Tab 3: RETURNS / REPLACE */}
-          {ordersTab === 'returns' && (() => {
-            const allOrdersList = [...userOrders];
-            if (placedOrder && !allOrdersList.some((o) => o.orderNumber === placedOrder.orderNumber)) {
-              allOrdersList.unshift(placedOrder);
-            }
-
-            const returnList = [];
-            allOrdersList.forEach((ord) => {
-              (ord.items || []).forEach((item) => {
-                returnList.push({
-                  id: `ret-${ord.orderNumber}-${item.id}`,
-                  orderNumber: ord.orderNumber,
-                  date: ord.date || 'Recently',
-                  itemName: item.name,
-                  price: item.price_html || `₹${item.price}`,
-                  image: item.image,
-                  returnEligibleUntil: '30-Day Return Window Open'
-                });
-              });
-            });
-
-            if (returnList.length === 0) {
-              return (
-                <div className="py-16 px-4 text-center bg-white rounded-3xl border border-gray-200 shadow-sm space-y-4 max-w-md mx-auto">
-                  <div className="w-16 h-16 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center mx-auto shadow-inner">
-                    <ShieldCheck className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-900 font-inter">No returns eligible</h3>
-                  <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
-                    You have no active orders eligible for return or exchange at this time.
-                  </p>
-                </div>
-              );
-            }
-
-            return (
-              <div className="space-y-6">
-                <p className="text-xs text-gray-500">Manage your return requests, replacements, or direct Zoho Pay refunds:</p>
-
-                {returnList.map((ret) => {
-                  const requestData = returnRequestsMap[ret.id];
-                  return (
-                    <div key={ret.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-6 space-y-4">
-                      <div className="flex items-center justify-between border-b border-gray-100 pb-4 flex-wrap gap-2">
-                        <div>
-                          <span className="text-[10px] font-bold text-gray-400 uppercase block">Order #{ret.orderNumber}</span>
-                          <span className="text-xs text-gray-700">Placed on {ret.date}</span>
-                        </div>
-                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                          {ret.returnEligibleUntil}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setSelectedProduct({ id: 31, name: ret.itemName, price: 1450, price_html: ret.price, image: ret.image })}>
-                          <img src={ret.image} alt={ret.itemName} className="w-16 h-16 object-contain bg-gray-50 p-1 rounded-xl border border-gray-200 transition-transform group-hover:scale-105" />
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">{ret.itemName}</h4>
-                            <span className="text-xs text-gray-500">Price: {ret.price}</span>
-                          </div>
-                        </div>
-
-                        {requestData ? (
-                          <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs p-4 rounded-2xl space-y-2 flex-1 max-w-md">
-                            <div className="flex items-center gap-2 text-emerald-800 font-bold">
-                              <Check className="w-4 h-4 text-emerald-600" />
-                              <span>Return Request Received ({requestData.resolutionType === 'replace' ? '🔄 Replacement Dispatched on Pickup' : '💳 Zoho Pay Refund Scheduled'})</span>
+                return (
+                  <div className="space-y-4">
+                    <p className="text-xs text-gray-500">Items you previously purchased on Modena. Quick re-order with 1 click:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                      {buyAgainItems.map((item, idx) => (
+                        <div key={idx} className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                          <div className="group cursor-pointer" onClick={() => setSelectedProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
+                            <div className="w-full h-44 bg-gray-50 rounded-xl overflow-hidden mb-4 p-3 flex items-center justify-center border border-gray-100 group-hover:border-[#E60000]/30 transition-colors">
+                              <img src={item.image} alt={item.name} className="w-full h-full object-contain transition-transform group-hover:scale-105" />
                             </div>
-                            <p className="text-[11px] text-gray-600"><strong>Reason:</strong> {requestData.reasonLabel} {requestData.otherReasonText && `("${requestData.otherReasonText}")`}</p>
-                            <p className="text-[11px] text-emerald-800 font-medium">{requestData.policyNote}</p>
+                            <span className="text-[10px] font-bold text-gray-400 block mb-1 uppercase tracking-wider">{item.lastBought}</span>
+                            <h4 className="font-bold text-sm text-gray-900 capitalize mb-1 group-hover:text-[#E60000] transition-colors">{item.name}</h4>
+                            <span className="text-sm font-extrabold text-[#E60000] block mb-4">{item.price_html || `₹${item.price}`}</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => setActiveTrackOrder({ orderNumber: ret.orderNumber, date: ret.date, status: 'Out for Delivery / Pickup Scheduled', item: { name: ret.itemName, image: ret.image } })}
-                              className="border border-gray-300 hover:bg-gray-50 text-gray-800 text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-sm"
-                            >
-                              Track package
-                            </button>
-                            <button
-                              onClick={() => setActiveReturnModalItem(ret)}
-                              className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-colors cursor-pointer shadow-md"
-                            >
-                              Request Return / Exchange
-                            </button>
-                          </div>
-                        )}
+                          <button
+                            onClick={() => handleAddToCart(item)}
+                            className="w-full bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold py-3 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>BUY AGAIN</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Tab 3: RETURNS / REPLACE */}
+              {ordersTab === 'returns' && (() => {
+                const allOrdersList = [...userOrders];
+                if (placedOrder && !allOrdersList.some((o) => o.orderNumber === placedOrder.orderNumber)) {
+                  allOrdersList.unshift(placedOrder);
+                }
+
+                const returnList = [];
+                allOrdersList.forEach((ord) => {
+                  (ord.items || []).forEach((item) => {
+                    returnList.push({
+                      id: `ret-${ord.orderNumber}-${item.id}`,
+                      orderNumber: ord.orderNumber,
+                      date: ord.date || 'Recently',
+                      itemName: item.name,
+                      price: item.price_html || `₹${item.price}`,
+                      image: item.image,
+                      returnEligibleUntil: '7-Day Return Window Open'
+                    });
+                  });
+                });
+
+                if (returnList.length === 0) {
+                  return (
+                    <div className="py-16 px-4 text-center bg-white rounded-3xl border border-gray-200 shadow-sm space-y-4 max-w-md mx-auto">
+                      <div className="w-16 h-16 rounded-full bg-red-50 text-[#E60000] flex items-center justify-center mx-auto shadow-inner">
+                        <ShieldCheck className="w-8 h-8" />
                       </div>
+                      <h3 className="font-bold text-lg text-gray-900 font-inter">No returns eligible</h3>
+                      <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                        You have no active orders eligible for return or exchange at this time.
+                      </p>
                     </div>
                   );
-                })}
-              </div>
-            );
-          })()}
-        </div>
-      )}
+                }
 
-      {/* 12. LOGIN & SECURITY VIEW */}
-      {currentView === 'loginSecurity' && (
-        <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-            <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#E60000] cursor-pointer">Your Account</button>
-            <span>›</span>
-            <span className="text-[#E60000] font-semibold">Login &amp; Security</span>
-          </div>
+                return (
+                  <div className="space-y-6">
+                    <p className="text-xs text-gray-500">Manage your return requests, replacements, or direct Razorpay refunds:</p>
 
-          <h1 className="text-3xl font-bold text-[#2A2724] mb-6 font-inter">Login &amp; Security</h1>
+                    {returnList.map((ret) => {
+                      const requestData = returnRequestsMap[ret.id];
+                      return (
+                        <div key={ret.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-6 space-y-4">
+                          <div className="flex items-center justify-between border-b border-gray-100 pb-4 flex-wrap gap-2">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Order #{ret.orderNumber}</span>
+                              <span className="text-xs text-gray-700">Placed on {ret.date}</span>
+                            </div>
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                              {ret.returnEligibleUntil}
+                            </span>
+                          </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-200 text-sm">
-            {/* Item 1: Name */}
-            <div className="p-5 flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <span className="font-bold text-gray-900 block mb-0.5">Name:</span>
-                {editingField === 'name' ? (
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="text"
-                      value={fieldEditValue}
-                      onChange={(e) => setFieldEditValue(e.target.value)}
-                      className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-[#E60000]"
-                    />
-                    <button
-                      onClick={() => {
-                        if (fieldEditValue.trim()) {
-                          setUserDisplayName(fieldEditValue.trim());
-                          localStorage.setItem('user_display_name', fieldEditValue.trim());
-                        }
-                        setEditingField(null);
-                      }}
-                      className="bg-[#E60000] text-white text-xs px-3 py-1.5 rounded-xl font-bold"
-                    >
-                      Save
-                    </button>
-                    <button onClick={() => setEditingField(null)} className="text-xs text-gray-500">Cancel</button>
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setSelectedProduct({ id: 31, name: ret.itemName, price: 1450, price_html: ret.price, image: ret.image })}>
+                              <img src={ret.image} alt={ret.itemName} className="w-16 h-16 object-contain bg-gray-50 p-1 rounded-xl border border-gray-200 transition-transform group-hover:scale-105" />
+                              <div>
+                                <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">{ret.itemName}</h4>
+                                <span className="text-xs text-gray-500">Price: {ret.price}</span>
+                              </div>
+                            </div>
+
+                            {requestData ? (
+                              <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs p-4 rounded-2xl space-y-2 flex-1 max-w-md">
+                                <div className="flex items-center gap-2 text-emerald-800 font-bold">
+                                  <Check className="w-4 h-4 text-emerald-600" />
+                                  <span>Return Request Received ({requestData.resolutionType === 'replace' ? '🔄 Replacement Dispatched on Pickup' : '💳 Razorpay Refund Scheduled'})</span>
+                                </div>
+                                <p className="text-[11px] text-gray-600"><strong>Reason:</strong> {requestData.reasonLabel} {requestData.otherReasonText && `("${requestData.otherReasonText}")`}</p>
+                                <p className="text-[11px] text-emerald-800 font-medium">{requestData.policyNote}</p>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => setActiveTrackOrder({ orderNumber: ret.orderNumber, date: ret.date, status: 'Out for Delivery / Pickup Scheduled', item: { name: ret.itemName, image: ret.image } })}
+                                  className="border border-gray-300 hover:bg-gray-50 text-gray-800 text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-sm"
+                                >
+                                  Track package
+                                </button>
+                                <button
+                                  onClick={() => setActiveReturnModalItem(ret)}
+                                  className="bg-[#E60000] hover:bg-[#E60000] text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-colors cursor-pointer shadow-md"
+                                >
+                                  Request Return / Exchange
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ) : (
-                  <span className="text-gray-700">{userDisplayName || 'Mohnish Niranjhan'}</span>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setEditingField('name');
-                  setFieldEditValue(userDisplayName || 'Mohnish Niranjhan');
-                }}
-                className="border border-gray-300 hover:bg-gray-50 text-gray-900 px-6 py-1.5 rounded-full text-xs font-bold cursor-pointer"
-              >
-                Edit
-              </button>
+                );
+              })()}
             </div>
+          )}
 
-            {/* Item 2: E-mail */}
-            <div className="p-5 flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <span className="font-bold text-gray-900 block mb-0.5">E-mail:</span>
-                {editingField === 'email' ? (
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="email"
-                      value={fieldEditValue}
-                      onChange={(e) => setFieldEditValue(e.target.value)}
-                      className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-[#E60000]"
-                    />
-                    <button
-                      onClick={() => {
-                        if (fieldEditValue.trim()) {
-                          setUserEmail(fieldEditValue.trim());
-                          localStorage.setItem('user_email', fieldEditValue.trim());
-                        }
-                        setEditingField(null);
-                      }}
-                      className="bg-[#E60000] text-white text-xs px-3 py-1.5 rounded-xl font-bold"
-                    >
-                      Save
-                    </button>
-                    <button onClick={() => setEditingField(null)} className="text-xs text-gray-500">Cancel</button>
+          {/* 12. LOGIN & SECURITY VIEW */}
+          {currentView === 'loginSecurity' && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 animate-in fade-in duration-300 font-inter">
+              {/* Breadcrumbs */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#C91F26] cursor-pointer">Your Account</button>
+                <span>›</span>
+                <span className="text-[#C91F26] font-semibold">Login &amp; Security</span>
+              </div>
+
+              <div className="mb-6">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#292725] tracking-tight">Login &amp; Security</h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">Edit login, name, email, and mobile number.</p>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200/80 divide-y divide-gray-100 overflow-hidden shadow-xs text-xs sm:text-sm">
+                {/* Item 1: Name */}
+                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <span className="font-bold text-gray-900 block mb-0.5">Name</span>
+                    {editingField === 'name' ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="text"
+                          value={fieldEditValue}
+                          onChange={(e) => setFieldEditValue(e.target.value)}
+                          className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-[#C91F26]"
+                        />
+                        <button
+                          onClick={() => {
+                            if (fieldEditValue.trim()) {
+                              setUserDisplayName(fieldEditValue.trim());
+                              localStorage.setItem('user_display_name', fieldEditValue.trim());
+                            }
+                            setEditingField(null);
+                          }}
+                          className="bg-[#C91F26] text-white text-xs px-3.5 py-1.5 rounded-xl font-bold hover:bg-[#A8181E] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button onClick={() => setEditingField(null)} className="text-xs text-gray-500 hover:text-gray-900">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-600">{userDisplayName || 'Mohnish Niranjhan'}</span>
+                    )}
                   </div>
-                ) : (
-                  <span className="text-gray-700">{userEmail || 'mohnishniranjhan@gmail.com'}</span>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setEditingField('email');
-                  setFieldEditValue(userEmail || 'mohnishniranjhan@gmail.com');
-                }}
-                className="border border-gray-300 hover:bg-gray-50 text-gray-900 px-6 py-1.5 rounded-full text-xs font-bold cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
-
-            {/* Item 3: Primary mobile number */}
-            <div className="p-5 flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <span className="font-bold text-gray-900 block mb-0.5">Primary mobile number:</span>
-                {editingField === 'phone' ? (
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="text"
-                      value={fieldEditValue}
-                      onChange={(e) => setFieldEditValue(e.target.value)}
-                      className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-[#E60000]"
-                    />
-                    <button
-                      onClick={() => {
-                        if (fieldEditValue.trim()) {
-                          setUserPhone(fieldEditValue.trim());
-                          localStorage.setItem('user_phone', fieldEditValue.trim());
-                        }
-                        setEditingField(null);
-                      }}
-                      className="bg-[#E60000] text-white text-xs px-3 py-1.5 rounded-xl font-bold"
-                    >
-                      Save
-                    </button>
-                    <button onClick={() => setEditingField(null)} className="text-xs text-gray-500">Cancel</button>
-                  </div>
-                ) : (
-                  <>
-                    <span className="text-gray-700 block">{userPhone}</span>
-                    <span className="text-xs text-gray-500 block mt-1">Quickly sign in, easily recover passwords, and receive security notifications with this mobile number.</span>
-                  </>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setEditingField('phone');
-                  setFieldEditValue(userPhone);
-                }}
-                className="border border-gray-300 hover:bg-gray-50 text-gray-900 px-6 py-1.5 rounded-full text-xs font-bold cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
-
-            {/* Item 4: Password */}
-            <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex-1">
-                <span className="font-bold text-gray-900 block mb-0.5">Password:</span>
-                <span className="text-gray-700 block">********</span>
-                <div className="flex items-center gap-2 mt-2 text-xs text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200 w-fit">
-                  <span>⚠️ To better protect your account, keep your password updated regularly.</span>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 mt-3 sm:mt-0 w-full sm:w-auto">
-                <button
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className="border border-gray-300 hover:bg-gray-50 text-gray-900 px-6 py-1.5 rounded-full text-xs font-bold cursor-pointer w-full"
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-
-            {/* Item 5: 2-step verification */}
-            <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex-1">
-                <span className="font-bold text-gray-900 block mb-0.5">2-step verification:</span>
-                <div className="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200 w-fit">
-                  <span>⚠️ Require an additional layer of security when signing in</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsTwoStepEnabled(!isTwoStepEnabled)}
-                className={`border border-gray-300 px-6 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors w-full sm:w-auto mt-3 sm:mt-0 ${
-                  isTwoStepEnabled ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200' : 'hover:bg-gray-50 text-gray-900'
-                }`}
-              >
-                {isTwoStepEnabled ? 'Turn off' : 'Turn on'}
-              </button>
-            </div>
-
-            {/* Item 6: Delete account */}
-            <div className="p-5 flex items-center justify-between gap-4 bg-red-50/50">
-              <div className="flex-1">
-                <span className="font-bold text-red-900 block mb-0.5">Delete account</span>
-                <span className="text-xs text-red-700 block">Permanently close your Modena account and delete all associated user data</span>
-              </div>
-              <button
-                onClick={() => {
-                  if (confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) {
-                    handleLogout();
-                    setCurrentView('home');
-                    alert('Your account has been successfully deleted.');
-                  }
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors shadow-sm"
-              >
-                Delete Account
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* 13. YOUR ADDRESSES VIEW */}
-      {/* ========================================== */}
-      {currentView === 'yourAddresses' && (
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-            <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#E60000] cursor-pointer">Your Account</button>
-            <span>›</span>
-            <span className="text-[#E60000] font-semibold">Your Addresses</span>
-          </div>
-
-          <h1 className="text-3xl font-bold text-[#2A2724] mb-6 font-inter">Your Addresses</h1>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {/* Add Address Box */}
-            <div
-              onClick={() => setIsAddressModalOpen(true)}
-              className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#E60000] hover:bg-red-50/20 transition-all min-h-[260px] group"
-            >
-              <Plus className="w-12 h-12 text-gray-300 group-hover:text-[#E60000] mb-2 transition-colors" />
-              <span className="text-xl font-bold text-gray-700 group-hover:text-[#E60000] transition-colors">Add address</span>
-            </div>
-
-            {/* Address Cards */}
-            {userAddresses.map((addr, idx) => (
-              <div key={addr.id} className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col justify-between shadow-sm relative min-h-[260px]">
-                {addr.isDefault && (
-                  <span className="text-[10px] font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3 block">
-                    Default: <strong className="text-gray-900 uppercase">Modena</strong>
-                  </span>
-                )}
-                <div className="space-y-1 text-xs text-gray-800 leading-relaxed">
-                  <h4 className="font-bold text-sm text-gray-900">{addr.name}</h4>
-                  <p>{addr.line1}</p>
-                  <p>{addr.line2}</p>
-                  <p className="uppercase">{addr.city}, {addr.state} {addr.postcode}</p>
-                  <p>{addr.country}</p>
-                  <p className="text-gray-500 pt-1">Phone number: {addr.phone}</p>
-                  <button className="text-[#E60000] font-semibold hover:underline block pt-1 cursor-pointer">Add delivery instructions</button>
-                </div>
-
-                <div className="pt-4 border-t border-gray-100 flex items-center gap-4 text-xs font-bold text-[#E60000]">
-                  <button onClick={() => {
-                    setAddressFormData(addr);
-                    setIsAddressModalOpen(true);
-                  }} className="hover:underline cursor-pointer">Edit</button>
-                  <span className="text-gray-300">|</span>
                   <button
                     onClick={() => {
-                      setUserAddresses((prev) => prev.filter((_, i) => i !== idx));
+                      setEditingField('name');
+                      setFieldEditValue(userDisplayName || 'Mohnish Niranjhan');
                     }}
-                    className="hover:underline cursor-pointer"
+                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 px-5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
                   >
-                    Remove
+                    Edit
+                  </button>
+                </div>
+
+                {/* Item 2: E-mail */}
+                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <span className="font-bold text-gray-900 block mb-0.5">E-mail</span>
+                    {editingField === 'email' ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="email"
+                          value={fieldEditValue}
+                          onChange={(e) => setFieldEditValue(e.target.value)}
+                          className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-[#C91F26]"
+                        />
+                        <button
+                          onClick={() => {
+                            if (fieldEditValue.trim()) {
+                              setUserEmail(fieldEditValue.trim());
+                              localStorage.setItem('user_email', fieldEditValue.trim());
+                            }
+                            setEditingField(null);
+                          }}
+                          className="bg-[#C91F26] text-white text-xs px-3.5 py-1.5 rounded-xl font-bold hover:bg-[#A8181E] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button onClick={() => setEditingField(null)} className="text-xs text-gray-500 hover:text-gray-900">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-600">{userEmail || 'mohnishniranjhan@gmail.com'}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingField('email');
+                      setFieldEditValue(userEmail || 'mohnishniranjhan@gmail.com');
+                    }}
+                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 px-5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {/* Item 3: Primary mobile number */}
+                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <span className="font-bold text-gray-900 block mb-0.5">Primary Mobile Number</span>
+                    {editingField === 'phone' ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="text"
+                          value={fieldEditValue}
+                          onChange={(e) => setFieldEditValue(e.target.value)}
+                          className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-[#C91F26]"
+                        />
+                        <button
+                          onClick={() => {
+                            if (fieldEditValue.trim()) {
+                              setUserPhone(fieldEditValue.trim());
+                              localStorage.setItem('user_phone', fieldEditValue.trim());
+                            }
+                            setEditingField(null);
+                          }}
+                          className="bg-[#C91F26] text-white text-xs px-3.5 py-1.5 rounded-xl font-bold hover:bg-[#A8181E] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button onClick={() => setEditingField(null)} className="text-xs text-gray-500 hover:text-gray-900">Cancel</button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-gray-600 block">{userPhone}</span>
+                        <span className="text-xs text-gray-400 block mt-0.5">Sign in, password recovery, and security notifications.</span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingField('phone');
+                      setFieldEditValue(userPhone);
+                    }}
+                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 px-5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {/* Item 4: Password */}
+                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <span className="font-bold text-gray-900 block mb-0.5">Password</span>
+                    <span className="text-gray-600 block">••••••••</span>
+                  </div>
+                  <button
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 px-5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {/* Item 5: 2-step verification */}
+                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <span className="font-bold text-gray-900 block mb-0.5">2-Step Verification</span>
+                    <span className="text-xs text-gray-500 block">Add an extra layer of security to your account.</span>
+                  </div>
+                  <button
+                    onClick={() => setIsTwoStepEnabled(!isTwoStepEnabled)}
+                    className={`border px-5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${isTwoStepEnabled ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'border-gray-300 hover:bg-gray-50 text-gray-800'
+                      }`}
+                  >
+                    {isTwoStepEnabled ? 'Enabled' : 'Turn On'}
+                  </button>
+                </div>
+
+                {/* Item 6: Delete account */}
+                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-red-50/30">
+                  <div className="flex-1">
+                    <span className="font-bold text-red-900 block mb-0.5">Delete Account</span>
+                    <span className="text-xs text-red-600/80 block">Permanently close your Modena account and remove account data.</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) {
+                        handleLogout();
+                        setCurrentView('home');
+                        alert('Your account has been successfully deleted.');
+                      }
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                  >
+                    Delete Account
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* ========================================== */}
-      {/* 14. CONTACT US VIEW */}
-      {/* ========================================== */}
-      {currentView === 'contactUs' && (
-        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-            <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#E60000] cursor-pointer">Your Account</button>
-            <span>›</span>
-            <span className="text-[#E60000] font-semibold">Contact Us</span>
-          </div>
+          {/* ========================================== */}
+          {/* 13. YOUR ADDRESSES VIEW */}
+          {/* ========================================== */}
+          {currentView === 'yourAddresses' && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 animate-in fade-in duration-300 font-inter">
+              {/* Breadcrumbs */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#C91F26] cursor-pointer">Your Account</button>
+                <span>›</span>
+                <span className="text-[#C91F26] font-semibold">Your Addresses</span>
+              </div>
 
-          <h1 className="text-3xl font-bold text-[#2A2724] mb-2 font-inter">Contact Us</h1>
-          <p className="text-sm text-gray-600 mb-8">We're here to help! Reach out to our customer service team via phone, email, or direct inquiry.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            <div className="md:col-span-5 space-y-4">
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
-                <div className="flex items-center gap-3 text-[#E60000]">
-                  <Headphones className="w-6 h-6" />
-                  <h3 className="font-bold text-base text-gray-900">Customer &amp; Grievance Support</h3>
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-extrabold text-[#292725] tracking-tight">Your Addresses</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Edit addresses for orders and gifts.</p>
                 </div>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Operated by <strong>Kimatsu India Pvt. Ltd.</strong> Our customer service &amp; technical specialists are available Monday through Saturday, 10:00 AM to 6:00 PM IST.
-                </p>
-                <div className="pt-2 text-xs space-y-2 border-t border-gray-100 font-medium">
-                  <p className="text-gray-900">
-                    📞 <strong>Customer Care &amp; WhatsApp:</strong> <a href="https://wa.me/919326641825" target="_blank" rel="noopener noreferrer" className="text-[#E60000] hover:underline font-bold">+91 93266 41825</a> <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">💬 WhatsApp Available</span>
-                  </p>
-                  <p className="text-gray-900">
-                    📞 <strong>DPDP Grievance Officer:</strong> <a href="tel:+919136669608" className="text-[#E60000] hover:underline font-bold">+91 91366 69608</a> (Anurag Yadav)
-                  </p>
-                  <p className="text-gray-900">
-                    ✉️ <strong>Support Email:</strong> <a href="mailto:support@modenahome.in" className="text-[#E60000] hover:underline font-bold">support@modenahome.in</a>
-                  </p>
-                  <p className="text-gray-900">
-                    ✉️ <strong>Grievance Email:</strong> <a href="mailto:grievance@modenahome.in" className="text-[#E60000] hover:underline font-bold">grievance@modenahome.in</a>
-                  </p>
-                  <p className="text-gray-900">
-                    📍 <strong>Registered Office:</strong> <span className="text-gray-600">201–202 Tirupati Udyog, I.B. Patel Road, Goregaon East, Mumbai – 400063, Maharashtra, India</span>
-                  </p>
-                  <p className="text-gray-900 pt-1 border-t border-gray-100">
-                    🏷️ <strong>GSTIN:</strong> <span className="font-mono text-gray-700">27AAFCK9795E1ZZ</span>
-                  </p>
+                <button
+                  onClick={() => setIsAddressModalOpen(true)}
+                  className="bg-[#C91F26] hover:bg-[#A8181E] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-2 shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>ADD ADDRESS</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                {/* Address Cards */}
+                {userAddresses.map((addr, idx) => (
+                  <div key={addr.id} className="bg-white rounded-2xl border border-gray-200/80 p-5 flex flex-col justify-between shadow-xs relative min-h-[220px]">
+                    {addr.isDefault && (
+                      <span className="text-[10px] font-bold text-[#C91F26] bg-red-50 border border-red-100 px-2 py-0.5 rounded-full w-fit mb-2">
+                        DEFAULT ADDRESS
+                      </span>
+                    )}
+                    <div className="space-y-1 text-xs text-gray-700 leading-relaxed">
+                      <h4 className="font-bold text-sm text-gray-900">{addr.name}</h4>
+                      <p>{addr.line1}</p>
+                      {addr.line2 && <p>{addr.line2}</p>}
+                      <p className="uppercase">{addr.city}, {addr.state} {addr.postcode}</p>
+                      <p className="text-gray-500 pt-1">Phone: {addr.phone}</p>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-gray-100 flex items-center gap-3 text-xs font-semibold text-[#C91F26]">
+                      <button onClick={() => {
+                        setAddressFormData(addr);
+                        setIsAddressModalOpen(true);
+                      }} className="hover:underline cursor-pointer">Edit</button>
+                      <span className="text-gray-300">|</span>
+                      <button
+                        onClick={() => {
+                          setUserAddresses((prev) => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="hover:underline cursor-pointer text-gray-500 hover:text-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* 14. CONTACT US VIEW */}
+          {/* ========================================== */}
+          {currentView === 'contactUs' && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 animate-in fade-in duration-300 font-inter">
+              {/* Breadcrumbs */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                <button onClick={() => setCurrentView('yourAccount')} className="hover:text-[#C91F26] cursor-pointer">Your Account</button>
+                <span>›</span>
+                <span className="text-[#C91F26] font-semibold">Contact Us</span>
+              </div>
+
+              <div className="mb-8">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#292725] tracking-tight">Contact Us</h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-xl">Contact customer service via the available support methods or send us a message below.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                {/* Left Column: Direct Support Channels */}
+                <div className="md:col-span-5 space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4 text-xs text-gray-700">
+                    <div>
+                      <h3 className="font-bold text-sm text-gray-900 mb-1">Customer Support</h3>
+                      <p className="text-gray-500 leading-relaxed">Operated by <strong>Kimatsu India Pvt. Ltd.</strong></p>
+                      <p className="text-gray-500">Mon–Sat, 10:00 AM – 6:00 PM IST</p>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 space-y-3 font-medium">
+                      <div>
+                        <span className="text-gray-400 block text-[10px] font-bold uppercase">Customer Care &amp; WhatsApp</span>
+                        <a href="whatsapp://send?phone=919326641825" onClick={(e) => openWhatsAppDirect('919326641825', '', e)} className="text-[#C91F26] hover:underline font-bold text-sm">+91 93266 41825</a>
+                      </div>
+
+                      <div>
+                        <span className="text-gray-400 block text-[10px] font-bold uppercase">Support Email</span>
+                        <a href="mailto:support@modenahome.in" className="text-[#C91F26] hover:underline font-bold">support@modenahome.in</a>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100">
+                        <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Registered Office</span>
+                        <p className="text-gray-600 leading-relaxed">201–202 Tirupati Udyog, I.B. Patel Road, Goregaon East, Mumbai – 400063</p>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-gray-500">
+                        <span>GSTIN:</span>
+                        <span className="font-mono font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded">27AAFCK9795E1ZZ</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Contact Message Form */}
+                <div className="md:col-span-7">
+                  <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200/80 shadow-xs">
+                    <h3 className="font-bold text-base text-gray-900 mb-4">Send Us a Message</h3>
+
+                    {contactSuccessMsg && (
+                      <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-medium">
+                        ✓ Message received! Our support team will get back to you within 24 hours.
+                      </div>
+                    )}
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        setContactSuccessMsg(true);
+                        setContactForm({ name: '', email: '', subject: '', message: '' });
+                      }}
+                      className="space-y-4 text-xs"
+                    >
+                      <div>
+                        <label className="block font-bold text-gray-700 mb-1">Your Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm((prev) => ({ ...prev, name: e.target.value }))}
+                          placeholder="Mohnish Niranjhan"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#C91F26]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-gray-700 mb-1">Email Address</label>
+                        <input
+                          type="email"
+                          required
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
+                          placeholder="mohnishniranjhan@gmail.com"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#C91F26]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-gray-700 mb-1">Subject</label>
+                        <input
+                          type="text"
+                          required
+                          value={contactForm.subject}
+                          onChange={(e) => setContactForm((prev) => ({ ...prev, subject: e.target.value }))}
+                          placeholder="Order status / Product inquiry"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#C91F26]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-gray-700 mb-1">Message</label>
+                        <textarea
+                          rows={4}
+                          required
+                          value={contactForm.message}
+                          onChange={(e) => setContactForm((prev) => ({ ...prev, message: e.target.value }))}
+                          placeholder="How can we help you today?"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#C91F26]"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full bg-[#C91F26] hover:bg-[#A8181E] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+                      >
+                        Send Message
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
 
-            <div className="md:col-span-7">
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-sm">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Send Us a Message</h3>
-
-                {contactSuccessMsg && (
-                  <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-medium">
-                    ✓ Message received! Our support team will get back to you within 24 hours.
-                  </div>
-                )}
-
+          {/* ADD ADDRESS POPUP MODAL */}
+          {isAddressModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div onClick={() => setIsAddressModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+              <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#2A2724]">
+                <button onClick={() => setIsAddressModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+                <h3 className="text-xl font-bold text-gray-900 mb-4 font-inter">Add a new address</h3>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    setContactSuccessMsg(true);
-                    setContactForm({ name: '', email: '', subject: '', message: '' });
+                    if (addressFormData.id) {
+                      // Edit Existing Address
+                      setUserAddresses(prev => prev.map(a => a.id === addressFormData.id ? { ...addressFormData } : a));
+                    } else {
+                      // Add New Address
+                      setUserAddresses((prev) => [
+                        ...prev,
+                        {
+                          id: Date.now(),
+                          name: addressFormData.name || 'Mohnish Niranjhan',
+                          line1: addressFormData.line1,
+                          line2: addressFormData.line2,
+                          city: addressFormData.city,
+                          state: addressFormData.state,
+                          postcode: addressFormData.postcode,
+                          country: 'India',
+                          phone: addressFormData.phone || '9962105345',
+                          isDefault: false
+                        }
+                      ]);
+                    }
+                    setIsAddressModalOpen(false);
+                    setAddressFormData({ id: null, name: '', line1: '', line2: '', city: '', state: '', postcode: '', phone: '' });
+                  }}
+                  className="space-y-3 text-xs"
+                >
+                  <div>
+                    <label className="block font-bold text-gray-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Mohnish Niranjhan"
+                      value={addressFormData.name}
+                      onChange={(e) => setAddressFormData((p) => ({ ...p, name: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-gray-700 mb-1">Address Line 1</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="12/A Jayalakshmi nagar, puzhuthivakkam"
+                      value={addressFormData.line1}
+                      onChange={(e) => setAddressFormData((p) => ({ ...p, line1: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-gray-700 mb-1">Address Line 2</label>
+                    <input
+                      type="text"
+                      placeholder="Jayalakshmi nagar, puzhuthivakkam"
+                      value={addressFormData.line2}
+                      onChange={(e) => setAddressFormData((p) => ({ ...p, line2: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block font-bold text-gray-700 mb-1">City</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="CHENNAI"
+                        value={addressFormData.city}
+                        onChange={(e) => setAddressFormData((p) => ({ ...p, city: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 mb-1">State</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="TAMIL NADU"
+                        value={addressFormData.state}
+                        onChange={(e) => setAddressFormData((p) => ({ ...p, state: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block font-bold text-gray-700 mb-1">PIN Code</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="600091"
+                        value={addressFormData.postcode}
+                        onChange={(e) => setAddressFormData((p) => ({ ...p, postcode: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 mb-1">Phone Number</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="9962105345"
+                        value={addressFormData.phone}
+                        onChange={(e) => setAddressFormData((p) => ({ ...p, phone: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider mt-2 cursor-pointer shadow-md hover:bg-[#E60000]"
+                  >
+                    {addressFormData.id ? 'Save Changes' : 'Add Address'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* PASSWORD EDIT MODAL */}
+          {isPasswordModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div onClick={() => setIsPasswordModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+              <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#2A2724]">
+                <button onClick={() => setIsPasswordModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+                <h3 className="text-xl font-bold text-gray-900 mb-2 font-inter">Change Password</h3>
+                <p className="text-xs text-gray-500 mb-6">Create a new, strong password that you don't use for other websites.</p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (passwordFormData.new !== passwordFormData.confirm) {
+                      alert('New passwords do not match. Please try again.');
+                      return;
+                    }
+                    alert('Your password has been successfully updated!');
+                    setIsPasswordModalOpen(false);
+                    setPasswordFormData({ current: '', new: '', confirm: '' });
                   }}
                   className="space-y-4 text-xs"
                 >
                   <div>
-                    <label className="block font-bold text-gray-700 uppercase mb-1">Your Name</label>
+                    <label className="block font-bold text-gray-700 mb-1">Current Password</label>
                     <input
-                      type="text"
+                      type="password"
                       required
-                      value={contactForm.name}
-                      onChange={(e) => setContactForm((prev) => ({ ...prev, name: e.target.value }))}
-                      placeholder="Mohnish Niranjhan"
+                      value={passwordFormData.current}
+                      onChange={(e) => setPasswordFormData(p => ({ ...p, current: e.target.value }))}
                       className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-gray-700 uppercase mb-1">Email Address</label>
+                    <label className="block font-bold text-gray-700 mb-1">New Password</label>
                     <input
-                      type="email"
+                      type="password"
                       required
-                      value={contactForm.email}
-                      onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
-                      placeholder="mohnishniranjhan@gmail.com"
+                      value={passwordFormData.new}
+                      onChange={(e) => setPasswordFormData(p => ({ ...p, new: e.target.value }))}
                       className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-gray-700 uppercase mb-1">Subject</label>
+                    <label className="block font-bold text-gray-700 mb-1">Re-enter New Password</label>
                     <input
-                      type="text"
+                      type="password"
                       required
-                      value={contactForm.subject}
-                      onChange={(e) => setContactForm((prev) => ({ ...prev, subject: e.target.value }))}
-                      placeholder="Order status / Product inquiry"
+                      value={passwordFormData.confirm}
+                      onChange={(e) => setPasswordFormData(p => ({ ...p, confirm: e.target.value }))}
                       className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
                     />
                   </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 uppercase mb-1">Message</label>
-                    <textarea
-                      rows={4}
-                      required
-                      value={contactForm.message}
-                      onChange={(e) => setContactForm((prev) => ({ ...prev, message: e.target.value }))}
-                      placeholder="How can we help you today?"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                  >
-                    Send Message
+                  <button type="submit" className="w-full bg-[#E60000] hover:bg-[#E60000] text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 cursor-pointer">
+                    Save Changes
                   </button>
                 </form>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ADD ADDRESS POPUP MODAL */}
-      {isAddressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div onClick={() => setIsAddressModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#2A2724]">
-            <button onClick={() => setIsAddressModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full cursor-pointer">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-bold text-gray-900 mb-4 font-inter">Add a new address</h3>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (addressFormData.id) {
-                  // Edit Existing Address
-                  setUserAddresses(prev => prev.map(a => a.id === addressFormData.id ? { ...addressFormData } : a));
-                } else {
-                  // Add New Address
-                  setUserAddresses((prev) => [
-                    ...prev,
-                    {
-                      id: Date.now(),
-                      name: addressFormData.name || 'Mohnish Niranjhan',
-                      line1: addressFormData.line1,
-                      line2: addressFormData.line2,
-                      city: addressFormData.city,
-                      state: addressFormData.state,
-                      postcode: addressFormData.postcode,
-                      country: 'India',
-                      phone: addressFormData.phone || '9962105345',
-                      isDefault: false
-                    }
-                  ]);
-                }
-                setIsAddressModalOpen(false);
-                setAddressFormData({ id: null, name: '', line1: '', line2: '', city: '', state: '', postcode: '', phone: '' });
-              }}
-              className="space-y-3 text-xs"
-            >
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Mohnish Niranjhan"
-                  value={addressFormData.name}
-                  onChange={(e) => setAddressFormData((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Address Line 1</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="12/A Jayalakshmi nagar, puzhuthivakkam"
-                  value={addressFormData.line1}
-                  onChange={(e) => setAddressFormData((p) => ({ ...p, line1: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Address Line 2</label>
-                <input
-                  type="text"
-                  placeholder="Jayalakshmi nagar, puzhuthivakkam"
-                  value={addressFormData.line2}
-                  onChange={(e) => setAddressFormData((p) => ({ ...p, line2: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="CHENNAI"
-                    value={addressFormData.city}
-                    onChange={(e) => setAddressFormData((p) => ({ ...p, city: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">State</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="TAMIL NADU"
-                    value={addressFormData.state}
-                    onChange={(e) => setAddressFormData((p) => ({ ...p, state: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">PIN Code</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="600091"
-                    value={addressFormData.postcode}
-                    onChange={(e) => setAddressFormData((p) => ({ ...p, postcode: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="9962105345"
-                    value={addressFormData.phone}
-                    onChange={(e) => setAddressFormData((p) => ({ ...p, phone: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#E60000]"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-[#E60000] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider mt-2 cursor-pointer shadow-md hover:bg-[#E60000]"
-              >
-                {addressFormData.id ? 'Save Changes' : 'Add Address'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* PASSWORD EDIT MODAL */}
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div onClick={() => setIsPasswordModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#2A2724]">
-            <button onClick={() => setIsPasswordModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full cursor-pointer">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 font-inter">Change Password</h3>
-            <p className="text-xs text-gray-500 mb-6">Create a new, strong password that you don't use for other websites.</p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (passwordFormData.new !== passwordFormData.confirm) {
-                  alert('New passwords do not match. Please try again.');
-                  return;
-                }
-                alert('Your password has been successfully updated!');
-                setIsPasswordModalOpen(false);
-                setPasswordFormData({ current: '', new: '', confirm: '' });
-              }}
-              className="space-y-4 text-xs"
-            >
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Current Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordFormData.current}
-                  onChange={(e) => setPasswordFormData(p => ({ ...p, current: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">New Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordFormData.new}
-                  onChange={(e) => setPasswordFormData(p => ({ ...p, new: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Re-enter New Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordFormData.confirm}
-                  onChange={(e) => setPasswordFormData(p => ({ ...p, confirm: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#E60000]"
-                />
-              </div>
-              <button type="submit" className="w-full bg-[#E60000] hover:bg-[#E60000] text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 cursor-pointer">
-                Save Changes
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* 9. SEARCH RESULTS PAGE VIEW */}
-      {currentView === 'searchResults' && (
-        <div className="max-w-[1440px] mx-auto px-6 py-12">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-[#2A2724] via-[#2A2724] to-[#2A2724] text-white p-8 md:p-12 rounded-2xl mb-12 shadow-xl border border-[#333] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-label-caps px-3 py-1 rounded-full mb-3">
-                <Search className="w-3.5 h-3.5" />
-                <span>SEARCH RESULTS PAGE</span>
-              </div>
-              <h1 className="font-display-lg text-3xl md:text-5xl text-white mb-2">
-                Search Results for: <span className="text-[#EFEAE6] italic font-serif">"{submittedQuery}"</span>
-              </h1>
-              <p className="font-body-lg text-[#E2DCD7] text-sm max-w-xl">
-                Displaying store products matching your search query. Bestseller products are prioritized first.
-              </p>
+          )}
+          {/* 9. SEARCH RESULTS PAGE VIEW */}
+          {currentView === 'searchResults' && (
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4">
+              <ProductList
+                onAddToCart={handleAddToCart}
+                onUpdateQuantity={updateQuantity}
+                cart={cart}
+                onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+                searchQuery={submittedQuery}
+                selectedCategoryName="searchResults"
+                wishlist={wishlist}
+                onToggleWishlist={toggleWishlist}
+              />
             </div>
+          )}
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSubmittedQuery('');
-                  setCurrentView('home');
-                }}
-                className="bg-[#2A2724] hover:bg-[#333] text-white text-xs font-label-caps px-5 py-3 rounded-lg border border-[#444] transition-colors cursor-pointer"
-              >
-                CLEAR SEARCH &amp; RETURN HOME
-              </button>
-            </div>
-          </div>
-
-          {/* Product Catalog Grid (Filtered with Bestsellers First) */}
-          <ProductList onAddToCart={handleAddToCart} onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }} searchQuery={submittedQuery} wishlist={wishlist} onToggleWishlist={toggleWishlist} />
-        </div>
-      )}
-
-      {/* 10. MINI CART QUICK DRAWER */}
-      {isCartOpen && (
-        <>
-          <div
-            onClick={() => setIsCartOpen(false)}
-            className="fixed inset-0 bg-[#2A2724]/60 backdrop-blur-md z-40 transition-opacity duration-300"
-            aria-hidden="true"
-          />
-
-          <div className="fixed inset-y-0 right-0 w-full sm:max-w-md md:w-[440px] bg-[#FAF8F6] shadow-[0_0_40px_rgba(0,0,0,0.2)] z-50 flex flex-col transform transition-transform duration-300 translate-x-0">
-            {/* Drawer Header */}
-            <div className="bg-[#2A2724] text-white flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-[#2A2724]">
-              <h2 className="font-headline-md text-lg sm:text-xl tracking-tight font-extrabold flex items-center gap-2.5">
-                <ShoppingBag className="w-5 h-5 text-[#E60000]" />
-                <span>Your Cart ({totalItemCount})</span>
-              </h2>
-              <button
+          {/* 10. MINI CART QUICK DRAWER */}
+          {isCartOpen && (
+            <>
+              <div
                 onClick={() => setIsCartOpen(false)}
-                className="text-gray-300 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Close cart drawer"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+                className="fixed inset-0 bg-[#2A2724]/60 backdrop-blur-md z-40 transition-opacity duration-300"
+                aria-hidden="true"
+              />
 
-            {/* Cart Drawer Items */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center py-12 px-4">
-                  <ShoppingBag className="w-16 h-16 text-[#E2DCD7] mb-4 stroke-1" />
-                  <h3 className="font-headline-md text-lg font-bold text-[#2A2724]">Your cart is empty</h3>
-                  <p className="font-body-md text-xs text-[#514C48] mt-1.5 max-w-xs leading-relaxed">
-                    Add premium Modena kitchenware from our collection to populate your cart.
-                  </p>
+              <div className="fixed inset-y-0 right-0 w-full sm:max-w-md md:w-[440px] bg-[#FAF8F6] shadow-[0_0_40px_rgba(0,0,0,0.2)] z-50 flex flex-col transform transition-transform duration-300 translate-x-0">
+                {/* Drawer Header */}
+                <div className="bg-[#2A2724] text-white flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-[#2A2724]">
+                  <h2 className="font-headline-md text-lg sm:text-xl tracking-tight font-extrabold flex items-center gap-2.5">
+                    <ShoppingBag className="w-5 h-5 text-[#E60000]" />
+                    <span>Your Cart ({totalItemCount})</span>
+                  </h2>
                   <button
                     onClick={() => setIsCartOpen(false)}
-                    className="mt-6 bg-[#E60000] hover:bg-[#E60000] text-white py-3 px-6 rounded-xl text-xs font-bold tracking-wider cursor-pointer shadow-md transition-all"
+                    className="text-gray-300 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                    aria-label="Close cart drawer"
                   >
-                    BROWSE PRODUCTS
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
-              ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex gap-3 sm:gap-4 bg-white border border-[#EFEAE6] rounded-2xl p-3.5 sm:p-4 items-start shadow-xs hover:border-[#E60000]/30 transition-all"
-                  >
-                    {/* Item Image */}
-                    <div className="w-20 h-20 sm:w-22 sm:h-22 bg-[#FAF8F6]/60 rounded-xl flex-shrink-0 overflow-hidden relative border border-[#FAF8F6] p-1.5 flex items-center justify-center">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="object-contain w-full h-full rounded"
-                      />
+
+                {/* Cart Drawer Items */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                  {cart.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center py-12 px-4">
+                      <ShoppingBag className="w-16 h-16 text-[#E2DCD7] mb-4 stroke-1" />
+                      <h3 className="font-headline-md text-lg font-bold text-[#2A2724]">Your cart is empty</h3>
+                      <p className="font-body-md text-xs text-[#514C48] mt-1.5 max-w-xs leading-relaxed">
+                        Add premium Modena kitchenware from our collection to populate your cart.
+                      </p>
+                      <button
+                        onClick={() => setIsCartOpen(false)}
+                        className="mt-6 bg-[#E60000] hover:bg-[#E60000] text-white py-3 px-6 rounded-xl text-xs font-bold tracking-wider cursor-pointer shadow-md transition-all"
+                      >
+                        BROWSE PRODUCTS
+                      </button>
                     </div>
-
-                    {/* Item Details */}
-                    <div className="flex-1 flex flex-col justify-between min-w-0 min-h-[80px]">
-                      <div>
-                        <h3 className="font-headline-md text-xs sm:text-sm text-[#2A2724] font-bold tracking-tight leading-snug line-clamp-2 mb-1">
-                          {item.name}
-                        </h3>
-                        <div
-                          className="font-body-md text-xs font-extrabold text-[#E60000]"
-                          dangerouslySetInnerHTML={{
-                            __html: item.price_html || `${currencySymbol}${item.price.toFixed(2)}`
-                          }}
-                        />
-                      </div>
-
-                      {/* Quantity & Trash Control Bar */}
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                        {/* Quantity Buttons */}
-                        <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
-                          <button
-                            onClick={() => updateQuantity(item.id, -1)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:text-[#E60000] transition-colors cursor-pointer active:scale-95"
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus className="w-3 h-3 stroke-[2.5]" />
-                          </button>
-                          <span className="w-7 text-center font-body-md text-xs font-extrabold text-[#2A2724]">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.id, 1)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:text-[#E60000] transition-colors cursor-pointer active:scale-95"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="w-3 h-3 stroke-[2.5]" />
-                          </button>
+                  ) : (
+                    cart.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex gap-3 sm:gap-4 bg-white border border-[#EFEAE6] rounded-2xl p-3.5 sm:p-4 items-start shadow-xs hover:border-[#E60000]/30 transition-all"
+                      >
+                        {/* Item Image */}
+                        <div className="w-20 h-20 sm:w-22 sm:h-22 bg-[#FAF8F6]/60 rounded-xl flex-shrink-0 overflow-hidden relative border border-[#FAF8F6] p-1.5 flex items-center justify-center">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="object-contain w-full h-full rounded"
+                          />
                         </div>
 
-                        {/* Delete Button */}
+                        {/* Item Details */}
+                        <div className="flex-1 flex flex-col justify-between min-w-0 min-h-[80px]">
+                          <div>
+                            <h3 className="font-headline-md text-xs sm:text-sm text-[#2A2724] font-bold tracking-tight leading-snug line-clamp-2 mb-1">
+                              {item.name}
+                            </h3>
+                            <div
+                              className="font-body-md text-xs font-extrabold text-[#E60000]"
+                              dangerouslySetInnerHTML={{
+                                __html: item.price_html || `${currencySymbol}${item.price.toFixed(2)}`
+                              }}
+                            />
+                          </div>
+
+                          {/* Quantity & Trash Control Bar */}
+                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                            {/* Quantity Buttons */}
+                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+                              <button
+                                onClick={() => updateQuantity(item.id, -1)}
+                                className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:text-[#E60000] transition-colors cursor-pointer active:scale-95"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="w-3 h-3 stroke-[2.5]" />
+                              </button>
+                              <span className="w-7 text-center font-body-md text-xs font-extrabold text-[#2A2724]">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQuantity(item.id, 1)}
+                                className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:text-[#E60000] transition-colors cursor-pointer active:scale-95"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="w-3 h-3 stroke-[2.5]" />
+                              </button>
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="text-gray-400 hover:text-[#E60000] p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider"
+                              title="Remove item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">REMOVE</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Cart Drawer Footer */}
+                {cart.length > 0 && (
+                  <div className="p-4 sm:p-6 bg-white border-t border-[#EFEAE6] flex flex-col gap-3.5 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                    {/* Coupon Code Input Form */}
+                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Coupon (MODENA10, WELCOME500)"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-[#E60000] focus:bg-white uppercase font-mono font-bold text-[#2A2724] placeholder:normal-case placeholder:font-sans placeholder:text-gray-400"
+                      />
+                      <button
+                        type="submit"
+                        className="bg-[#2A2724] hover:bg-black text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition-colors cursor-pointer shadow-xs whitespace-nowrap active:scale-95"
+                      >
+                        APPLY
+                      </button>
+                    </form>
+
+                    {appliedDiscount && (
+                      <div className="flex items-center justify-between text-xs bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-200 font-bold">
+                        <span>🎉 {appliedDiscount.label}</span>
                         <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-gray-400 hover:text-[#E60000] p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider"
-                          title="Remove item"
+                          type="button"
+                          onClick={() => setAppliedDiscount(null)}
+                          className="text-emerald-700 hover:text-emerald-900 font-bold ml-2 text-[10px] underline"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">REMOVE</span>
+                          REMOVE
                         </button>
                       </div>
+                    )}
+
+                    {couponError && (
+                      <p className="text-[11px] text-red-600 font-bold">{couponError}</p>
+                    )}
+
+                    <div className="space-y-1.5 pt-2 border-t border-gray-100">
+                      <div className="flex justify-between text-xs text-gray-500 font-medium">
+                        <span>Subtotal</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
+                      </div>
+                      {appliedDiscount && (
+                        <div className="flex justify-between text-xs text-emerald-700 font-bold">
+                          <span>Discount ({appliedDiscount.code})</span>
+                          <span>-₹{discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-end text-[#2A2724] pt-1">
+                        <span className="font-bold text-sm text-[#2A2724]">Total Amount</span>
+                        <span className="font-headline-md text-2xl leading-none font-extrabold text-[#E60000]">
+                          ₹{finalTotal.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
 
-            {/* Cart Drawer Footer */}
-            {cart.length > 0 && (
-              <div className="p-4 sm:p-6 bg-white border-t border-[#EFEAE6] flex flex-col gap-3.5 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                {/* Coupon Code Input Form */}
-                <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Coupon (MODENA10, WELCOME500)"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-[#E60000] focus:bg-white uppercase font-mono font-bold text-[#2A2724] placeholder:normal-case placeholder:font-sans placeholder:text-gray-400"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-[#2A2724] hover:bg-black text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition-colors cursor-pointer shadow-xs whitespace-nowrap active:scale-95"
-                  >
-                    APPLY
-                  </button>
-                </form>
-
-                {appliedDiscount && (
-                  <div className="flex items-center justify-between text-xs bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-200 font-bold">
-                    <span>🎉 {appliedDiscount.label}</span>
                     <button
-                      type="button"
-                      onClick={() => setAppliedDiscount(null)}
-                      className="text-emerald-700 hover:text-emerald-900 font-bold ml-2 text-[10px] underline"
+                      onClick={() => {
+                        setIsCartOpen(false);
+                        triggerCheckoutFlow();
+                      }}
+                      className="w-full bg-[#E60000] hover:bg-[#E60000] active:scale-[0.99] text-white py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-lg shadow-red-900/20 transition-all duration-200 tracking-wide text-center cursor-pointer flex items-center justify-center gap-2"
                     >
-                      REMOVE
+                      <span>PROCEED TO CHECKOUT</span>
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 )}
+              </div>
+            </>
+          )}
 
-                {couponError && (
-                  <p className="text-[11px] text-red-600 font-bold">{couponError}</p>
-                )}
+          {/* 9. BIG INDIVIDUAL POPUP MODAL: BILLING & ADDRESS POPUP */}
+          {activeModal === 'checkout' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              {/* Backdrop Blur */}
+              <div
+                onClick={() => setActiveModal(null)}
+                className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md transition-opacity duration-300"
+                aria-hidden="true"
+              />
 
-                <div className="space-y-1.5 pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-xs text-gray-500 font-medium">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
+              {/* Big Individual Popup Dialog Box */}
+              <div className="relative w-full max-w-4xl bg-[#FAF8F6] rounded-2xl shadow-2xl overflow-hidden border border-[#EFEAE6] z-50 my-auto flex flex-col lg:flex-row max-h-[90vh]">
+                {/* Close Button */}
+                <button
+                  onClick={() => setActiveModal(null)}
+                  className="absolute top-4 right-4 z-20 bg-[#2A2724] text-white p-2 rounded-full hover:bg-black transition-colors"
+                  aria-label="Close checkout modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Left Side: Billing & Address Form */}
+                <div className="lg:w-7/12 p-6 sm:p-8 overflow-y-auto space-y-6">
+                  <div>
+                    <h2 className="font-display-lg text-2xl sm:text-3xl text-[#2A2724]">
+                      Billing Details &amp; Address
+                    </h2>
+                    <p className="font-body-md text-xs text-[#514C48] mt-1">
+                      Please enter your contact and shipping information to complete your order.
+                    </p>
                   </div>
-                  {appliedDiscount && (
-                    <div className="flex justify-between text-xs text-emerald-700 font-bold">
-                      <span>Discount ({appliedDiscount.code})</span>
-                      <span>-₹{discountAmount.toFixed(2)}</span>
+
+                  {placedOrder ? (
+                    /* Order Confirmation Screen inside Big Popup */
+                    <div className="text-center py-8 space-y-4">
+                      <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-10 h-10" />
+                      </div>
+                      <span className="font-label-caps text-[#E60000] text-xs">ORDER CONFIRMED</span>
+                      <h3 className="font-display-lg text-2xl text-[#2A2724]">
+                        Thank You, {placedOrder.customer.firstName}!
+                      </h3>
+                      <p className="font-body-md text-xs text-[#514C48] max-w-md mx-auto">
+                        Order <span className="font-semibold text-[#2A2724]">{placedOrder.orderNumber}</span> has been successfully placed. Order confirmation sent to {placedOrder.customer.email}.
+                      </p>
+                      <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7] text-left text-xs space-y-2 max-w-md mx-auto">
+                        <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
+                          <span className="text-[#514C48]">Total Paid:</span>
+                          <span className="font-semibold text-[#2A2724]">{currencySymbol}{placedOrder.total.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
+                          <span className="text-[#514C48]">Payment Method:</span>
+                          <span className="uppercase text-[#2A2724] font-semibold">{placedOrder.paymentMethod}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#514C48]">Delivery To:</span>
+                          <span className="text-[#2A2724] font-medium">
+                            {placedOrder.customer.address}, {placedOrder.customer.city}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setPlacedOrder(null);
+                          setActiveModal(null);
+                        }}
+                        className="mt-4 bg-[#2A2724] text-white py-3 px-8 rounded text-xs font-label-caps tracking-widest hover:bg-black transition-colors"
+                      >
+                        CLOSE POPUP
+                      </button>
                     </div>
+                  ) : (
+                    /* Billing & Address Inputs Form */
+                    <form onSubmit={handlePlaceOrder} className="space-y-6">
+                      {/* 1. Contact Info */}
+                      <div className="space-y-3">
+                        <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
+                          <User className="w-4 h-4 text-[#E60000]" />
+                          <span>1. Customer &amp; Billing Contact</span>
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">First Name</label>
+                            <input
+                              type="text"
+                              name="firstName"
+                              value={formData.firstName}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Last Name</label>
+                            <input
+                              type="text"
+                              name="lastName"
+                              value={formData.lastName}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Email Address</label>
+                            <input
+                              type="email"
+                              name="email"
+                              value={formData.email}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Phone Number</label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              value={formData.phone}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 2. Shipping Address */}
+                      <div className="space-y-3 pt-3 border-t border-[#FAF8F6]">
+                        <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
+                          <Building className="w-4 h-4 text-[#E60000]" />
+                          <span>2. Shipping Address</span>
+                        </h3>
+                        <div>
+                          <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Street Address</label>
+                          <input
+                            type="text"
+                            name="address"
+                            placeholder="House No., Building Name, Street"
+                            value={formData.address}
+                            onChange={handleFormChange}
+                            required
+                            className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">City</label>
+                            <input
+                              type="text"
+                              name="city"
+                              value={formData.city}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">State</label>
+                            <input
+                              type="text"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Pincode</label>
+                            <input
+                              type="text"
+                              name="postcode"
+                              value={formData.postcode}
+                              onChange={handleFormChange}
+                              required
+                              className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. Payment Option */}
+                      <div className="space-y-3 pt-3 border-t border-[#FAF8F6]">
+                        <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-[#E60000]" />
+                          <span>3. Select Payment Method</span>
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: 'razorpay', label: 'Cards, NetBanking, Wallets', icon: CreditCard, highlight: true },
+                            { id: 'upi', label: 'Direct UPI App', icon: Wallet },
+                            { id: 'bacs', label: 'Direct Bank Transfer', icon: Building }
+                          ].map((pm) => {
+                            const IconComp = pm.icon;
+                            const isSelected = paymentMethod === pm.id || (!paymentMethod && pm.id === 'razorpay');
+                            return (
+                              <button
+                                key={pm.id}
+                                type="button"
+                                onClick={() => setPaymentMethod(pm.id)}
+                                className={`p-3 rounded-md border text-left flex items-center gap-2 text-xs transition-colors ${isSelected
+                                  ? 'border-[#E60000] bg-[#FAF8F6] text-[#E60000] font-semibold ring-1 ring-[#E60000]'
+                                  : 'border-[#EFEAE6] bg-white text-[#514C48]'
+                                  }`}
+                              >
+                                <IconComp className="w-4 h-4 flex-shrink-0 text-[#E60000]" />
+                                <span className="truncate">{pm.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {(paymentMethod === 'razorpay' || !paymentMethod) ? (
+                        <RazorpayCheckout
+                          amount={finalTotal}
+                          customerName={`${formData.firstName} ${formData.lastName}`.trim()}
+                          customerEmail={formData.email}
+                          customerPhone={formData.phone}
+                          onPaymentSuccess={async (paymentRes) => {
+                            if (isSubmittingOrder) return;
+                            setIsSubmittingOrder(true);
+                            const orderNumber = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+                            const customerDetails = {
+                              firstName: formData.firstName || getFirstName(userDisplayName) || 'Valued Customer',
+                              lastName: formData.lastName || '',
+                              name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || userDisplayName || 'Valued Customer',
+                              email: formData.email || userEmail || '',
+                              phone: formData.phone || userPhone || '',
+                              address: formData.address || '',
+                              city: formData.city || '',
+                              state: formData.state || '',
+                              postcode: formData.postcode || ''
+                            };
+
+                            try {
+                              const response = await fetch('/wp-json/modena/v1/create-wc-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  order_number: orderNumber,
+                                  items: cart,
+                                  customer: customerDetails,
+                                  paymentMethod: `Razorpay (${paymentRes.paymentId})`,
+                                  total: finalTotal
+                                })
+                              });
+                              const data = await response.json();
+                              const realOrderNumber = data.success ? data.order_number : orderNumber;
+                              setPlacedOrder({
+                                orderNumber: realOrderNumber,
+                                total: finalTotal,
+                                paymentMethod: `Razorpay (${paymentRes.paymentId})`,
+                                customer: customerDetails
+                              });
+                            } catch {
+                              setPlacedOrder({
+                                orderNumber,
+                                total: finalTotal,
+                                paymentMethod: `Razorpay (${paymentRes.paymentId})`,
+                                customer: customerDetails
+                              });
+                            } finally {
+                              setCart([]);
+                              setIsSubmittingOrder(false);
+                            }
+                          }}
+                          buttonText={`Pay ₹${finalTotal.toFixed(2)} with Razorpay`}
+                        />
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={isSubmittingOrder || !cart || cart.length === 0}
+                          className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-4 px-6 rounded-md font-headline-md text-base shadow-lg transition-all tracking-wide text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isSubmittingOrder ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin text-white" />
+                              <span>Processing Order...</span>
+                            </>
+                          ) : (
+                            <span>Confirm &amp; Place Order ({currencySymbol}{subtotal.toFixed(2)})</span>
+                          )}
+                        </button>
+                      )}
+                    </form>
+
                   )}
-                  <div className="flex justify-between items-end text-[#2A2724] pt-1">
-                    <span className="font-bold text-sm text-[#2A2724]">Total Amount</span>
-                    <span className="font-headline-md text-2xl leading-none font-extrabold text-[#E60000]">
-                      ₹{finalTotal.toFixed(2)}
+                </div>
+
+                {/* Right Side: Order Summary Column */}
+                <div className="lg:w-5/12 bg-[#2A2724] text-white p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
+                  <div>
+                    <h3 className="font-headline-md text-lg text-white border-b border-[#333] pb-4 mb-4 flex items-center justify-between">
+                      <span>Order Summary</span>
+                      <span className="text-xs font-label-caps text-[#EFEAE6]">{cart.length} Items</span>
+                    </h3>
+
+                    {cart.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">No items in cart.</p>
+                    ) : (
+                      <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
+                        {cart.map((item) => (
+                          <div key={item.id} className="flex gap-3 items-center justify-between text-xs">
+                            <div className="flex items-center gap-3 truncate">
+                              <img src={item.image} alt={item.name} className="w-10 h-10 object-contain bg-white rounded p-1 flex-shrink-0" />
+                              <div className="truncate">
+                                <span className="block text-white font-medium truncate">{item.name}</span>
+                                <span className="text-gray-400">Qty: {item.quantity}</span>
+                              </div>
+                            </div>
+                            <span className="font-semibold text-white flex-shrink-0">
+                              {currencySymbol}{(item.price * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-6 border-t border-[#333] space-y-3 mt-6">
+                    <div className="flex justify-between text-xs text-gray-300">
+                      <span>Subtotal</span>
+                      <span>{currencySymbol}{subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-300">
+                      <span>Shipping</span>
+                      <span className="text-emerald-400 font-medium">FREE</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-headline-md font-bold text-white pt-2 border-t border-[#333]">
+                      <span>Total Amount</span>
+                      <span className="text-[#EFEAE6]">{currencySymbol}{subtotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FULLSCREEN LIGHTBOX IMAGE ZOOM MODAL WITH MULTI-PICTURE GALLERY */}
+          {zoomedImage && (() => {
+            const galleryImages = selectedProduct && Array.isArray(selectedProduct.images) && selectedProduct.images.length > 0
+              ? selectedProduct.images
+              : [zoomedImage];
+            const currentIdx = galleryImages.indexOf(zoomedImage) !== -1 ? galleryImages.indexOf(zoomedImage) : 0;
+
+            return (
+              <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-8 animate-in fade-in duration-200">
+                {/* Top Control Bar */}
+                <div className="w-full max-w-5xl flex items-center justify-between z-10 text-white pb-4 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider bg-[#E60000] px-3 py-1 rounded-full">
+                      Fullscreen Image Inspector ({currentIdx + 1}/{galleryImages.length})
+                    </span>
+                    <span className="text-xs text-gray-400 hidden sm:inline">
+                      Click image or use controls to zoom
                     </span>
                   </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Zoom Out */}
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale((s) => Math.max(1, s - 0.5))}
+                      disabled={zoomScale <= 1}
+                      className="bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white p-2 rounded-full transition-colors cursor-pointer"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-5 h-5" />
+                    </button>
+
+                    {/* Zoom Percentage */}
+                    <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1.5 rounded-lg">
+                      {Math.round(zoomScale * 100)}%
+                    </span>
+
+                    {/* Zoom In */}
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale((s) => Math.min(3, s + 0.5))}
+                      disabled={zoomScale >= 3}
+                      className="bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white p-2 rounded-full transition-colors cursor-pointer"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-5 h-5" />
+                    </button>
+
+                    {/* Close Lightbox */}
+                    <button
+                      type="button"
+                      onClick={() => setZoomedImage(null)}
+                      className="bg-[#E60000] hover:bg-red-700 text-white p-2 rounded-full transition-colors cursor-pointer ml-2 shadow-lg"
+                      title="Close Zoom View"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setIsCartOpen(false);
-                    triggerCheckoutFlow();
-                  }}
-                  className="w-full bg-[#E60000] hover:bg-[#E60000] active:scale-[0.99] text-white py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-lg shadow-red-900/20 transition-all duration-200 tracking-wide text-center cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>PROCEED TO CHECKOUT</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                {/* Centered Zoom Image Container with Navigation Arrows */}
+                <div className="w-full flex-1 flex items-center justify-center overflow-auto p-4 relative my-auto">
+                  {galleryImages.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const prevIdx = (currentIdx - 1 + galleryImages.length) % galleryImages.length;
+                          setZoomedImage(galleryImages[prevIdx]);
+                        }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors cursor-pointer z-20 shadow-xl border border-white/20"
+                        title="Previous Picture"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
 
-      {/* 9. BIG INDIVIDUAL POPUP MODAL: BILLING & ADDRESS POPUP */}
-      {activeModal === 'checkout' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          {/* Backdrop Blur */}
-          <div
-            onClick={() => setActiveModal(null)}
-            className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md transition-opacity duration-300"
-            aria-hidden="true"
-          />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextIdx = (currentIdx + 1) % galleryImages.length;
+                          setZoomedImage(galleryImages[nextIdx]);
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors cursor-pointer z-20 shadow-xl border border-white/20"
+                        title="Next Picture"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                    </>
+                  )}
 
-          {/* Big Individual Popup Dialog Box */}
-          <div className="relative w-full max-w-4xl bg-[#FAF8F6] rounded-2xl shadow-2xl overflow-hidden border border-[#EFEAE6] z-50 my-auto flex flex-col lg:flex-row max-h-[90vh]">
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 z-20 bg-[#2A2724] text-white p-2 rounded-full hover:bg-black transition-colors"
-              aria-label="Close checkout modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Left Side: Billing & Address Form */}
-            <div className="lg:w-7/12 p-6 sm:p-8 overflow-y-auto space-y-6">
-              <div>
-                <span className="font-label-caps text-[#E60000] text-xs tracking-widest block mb-1">
-                  SECURE CHECKOUT POPUP
-                </span>
-                <h2 className="font-display-lg text-2xl sm:text-3xl text-[#2A2724]">
-                  Billing Details &amp; Address
-                </h2>
-                <p className="font-body-md text-xs text-[#514C48] mt-1">
-                  Please enter your contact and shipping information to complete your order.
-                </p>
-              </div>
-
-              {placedOrder ? (
-                /* Order Confirmation Screen inside Big Popup */
-                <div className="text-center py-8 space-y-4">
-                  <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-10 h-10" />
-                  </div>
-                  <span className="font-label-caps text-[#E60000] text-xs">ORDER CONFIRMED</span>
-                  <h3 className="font-display-lg text-2xl text-[#2A2724]">
-                    Thank You, {placedOrder.customer.firstName}!
-                  </h3>
-                  <p className="font-body-md text-xs text-[#514C48] max-w-md mx-auto">
-                    Order <span className="font-semibold text-[#2A2724]">{placedOrder.orderNumber}</span> has been successfully placed. Order confirmation sent to {placedOrder.customer.email}.
-                  </p>
-                  <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7] text-left text-xs space-y-2 max-w-md mx-auto">
-                    <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
-                      <span className="text-[#514C48]">Total Paid:</span>
-                      <span className="font-semibold text-[#2A2724]">{currencySymbol}{placedOrder.total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
-                      <span className="text-[#514C48]">Payment Method:</span>
-                      <span className="uppercase text-[#2A2724] font-semibold">{placedOrder.paymentMethod}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#514C48]">Delivery To:</span>
-                      <span className="text-[#2A2724] font-medium">
-                        {placedOrder.customer.address}, {placedOrder.customer.city}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setPlacedOrder(null);
-                      setActiveModal(null);
+                  <img
+                    src={zoomedImage}
+                    alt="Zoomed Product View"
+                    style={{ transform: `scale(${zoomScale})` }}
+                    onClick={() => setZoomScale((s) => (s === 1 ? 1.8 : s === 1.8 ? 2.5 : 1))}
+                    className="max-w-full max-h-[70vh] object-contain transition-transform duration-300 shadow-2xl rounded-2xl bg-white/5 border border-white/10 p-2 cursor-zoom-in"
+                    onError={(e) => {
+                      e.target.src =
+                        'https://images.unsplash.com/photo-1584992236310-6edddc08acff?q=80&w=800&auto=format&fit=crop';
                     }}
-                    className="mt-4 bg-[#2A2724] text-white py-3 px-8 rounded text-xs font-label-caps tracking-widest hover:bg-black transition-colors"
-                  >
-                    CLOSE POPUP
-                  </button>
+                  />
                 </div>
-              ) : (
-                /* Billing & Address Inputs Form */
-                <form onSubmit={handlePlaceOrder} className="space-y-6">
-                  {/* 1. Contact Info */}
-                  <div className="space-y-3">
-                    <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
-                      <User className="w-4 h-4 text-[#E60000]" />
-                      <span>1. Customer &amp; Billing Contact</span>
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">First Name</label>
-                        <input
-                          type="text"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Last Name</label>
-                        <input
-                          type="text"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Email Address</label>
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Phone Number</label>
-                        <input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 2. Shipping Address */}
-                  <div className="space-y-3 pt-3 border-t border-[#FAF8F6]">
-                    <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
-                      <Building className="w-4 h-4 text-[#E60000]" />
-                      <span>2. Shipping Address</span>
-                    </h3>
-                    <div>
-                      <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Street Address</label>
-                      <input
-                        type="text"
-                        name="address"
-                        placeholder="House No., Building Name, Street"
-                        value={formData.address}
-                        onChange={handleFormChange}
-                        required
-                        className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">City</label>
-                        <input
-                          type="text"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">State</label>
-                        <input
-                          type="text"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-label-caps text-[#514C48] block mb-1">Pincode</label>
-                        <input
-                          type="text"
-                          name="postcode"
-                          value={formData.postcode}
-                          onChange={handleFormChange}
-                          required
-                          className="w-full p-3 text-xs bg-white border border-[#EFEAE6] rounded-md focus:outline-none focus:border-[#E60000]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3. Payment Option */}
-                  <div className="space-y-3 pt-3 border-t border-[#FAF8F6]">
-                    <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-[#E60000]" />
-                      <span>3. Select Payment Method</span>
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { id: 'zohopay', label: 'Zoho Pay (UPI, Cards, NetBanking)', icon: CreditCard, highlight: true },
-                        { id: 'cod', label: 'Cash on Delivery (COD)', icon: Banknote },
-                        { id: 'upi', label: 'Direct UPI App', icon: Wallet },
-                        { id: 'bacs', label: 'Direct Bank Transfer', icon: Building }
-                      ].map((pm) => {
-                        const IconComp = pm.icon;
-                        const isSelected = paymentMethod === pm.id || (!paymentMethod && pm.id === 'zohopay');
+                {/* Bottom Gallery Thumbnails Bar */}
+                <div className="w-full flex flex-col items-center gap-2 pt-2 z-10">
+                  {galleryImages.length > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto max-w-full py-1 px-4 bg-black/40 rounded-2xl border border-white/10 backdrop-blur-md">
+                      {galleryImages.map((imgUrl, idx) => {
+                        const isCurrent = zoomedImage === imgUrl;
                         return (
                           <button
-                            key={pm.id}
+                            key={idx}
                             type="button"
-                            onClick={() => setPaymentMethod(pm.id)}
-                            className={`p-3 rounded-md border text-left flex items-center gap-2 text-xs transition-colors ${
-                              isSelected
-                                ? 'border-[#E60000] bg-[#FAF8F6] text-[#E60000] font-semibold ring-1 ring-[#E60000]'
-                                : 'border-[#EFEAE6] bg-white text-[#514C48]'
-                            }`}
+                            onClick={() => setZoomedImage(imgUrl)}
+                            className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all p-0.5 cursor-pointer bg-black/40 flex-shrink-0 ${isCurrent ? 'border-[#E60000] ring-2 ring-red-500 scale-105' : 'border-white/20 opacity-50 hover:opacity-100'
+                              }`}
                           >
-                            <IconComp className="w-4 h-4 flex-shrink-0 text-[#E60000]" />
-                            <span className="truncate">{pm.label}</span>
+                            <img src={imgUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
                           </button>
                         );
                       })}
                     </div>
-                  </div>
-
-                  {(paymentMethod === 'zohopay' || !paymentMethod) ? (
-                    <ZohoPayCheckout
-                      amount={finalTotal}
-                      customerName={`${formData.firstName} ${formData.lastName}`.trim()}
-                      customerEmail={formData.email}
-                      customerPhone={formData.phone}
-                      onPaymentSuccess={async (paymentRes) => {
-                        if (isSubmittingOrder) return;
-                        setIsSubmittingOrder(true);
-                        const orderNumber = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
-                        const customerDetails = {
-                          firstName: formData.firstName || getFirstName(userDisplayName) || 'Valued Customer',
-                          lastName: formData.lastName || '',
-                          name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || userDisplayName || 'Valued Customer',
-                          email: formData.email || userEmail || '',
-                          phone: formData.phone || userPhone || '',
-                          address: formData.address || '',
-                          city: formData.city || '',
-                          state: formData.state || '',
-                          postcode: formData.postcode || ''
-                        };
-
-                        try {
-                          const response = await fetch('/wp-json/modena/v1/create-wc-order', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              order_number: orderNumber,
-                              items: cart,
-                              customer: customerDetails,
-                              paymentMethod: `Zoho Pay (${paymentRes.paymentId})`,
-                              total: finalTotal
-                            })
-                          });
-                          const data = await response.json();
-                          const realOrderNumber = data.success ? data.order_number : orderNumber;
-                          setPlacedOrder({
-                            orderNumber: realOrderNumber,
-                            total: finalTotal,
-                            paymentMethod: `Zoho Pay (${paymentRes.paymentId})`,
-                            customer: customerDetails
-                          });
-                        } catch {
-                          setPlacedOrder({
-                            orderNumber,
-                            total: finalTotal,
-                            paymentMethod: `Zoho Pay (${paymentRes.paymentId})`,
-                            customer: customerDetails
-                          });
-                        } finally {
-                          setCart([]);
-                          setIsSubmittingOrder(false);
-                        }
-                      }}
-                      buttonText={`Pay ₹${finalTotal.toFixed(2)} with Zoho Pay`}
-                    />
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={isSubmittingOrder || !cart || cart.length === 0}
-                      className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-4 px-6 rounded-md font-headline-md text-base shadow-lg transition-all tracking-wide text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmittingOrder ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin text-white" />
-                          <span>Processing Order...</span>
-                        </>
-                      ) : (
-                        <span>Confirm &amp; Place Order ({currencySymbol}{subtotal.toFixed(2)})</span>
-                      )}
-                    </button>
                   )}
-                </form>
-
-              )}
-            </div>
-
-            {/* Right Side: Order Summary Column */}
-            <div className="lg:w-5/12 bg-[#2A2724] text-white p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
-              <div>
-                <h3 className="font-headline-md text-lg text-white border-b border-[#333] pb-4 mb-4 flex items-center justify-between">
-                  <span>Order Summary</span>
-                  <span className="text-xs font-label-caps text-[#EFEAE6]">{cart.length} Items</span>
-                </h3>
-
-                {cart.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">No items in cart.</p>
-                ) : (
-                  <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
-                    {cart.map((item) => (
-                      <div key={item.id} className="flex gap-3 items-center justify-between text-xs">
-                        <div className="flex items-center gap-3 truncate">
-                          <img src={item.image} alt={item.name} className="w-10 h-10 object-contain bg-white rounded p-1 flex-shrink-0" />
-                          <div className="truncate">
-                            <span className="block text-white font-medium truncate">{item.name}</span>
-                            <span className="text-gray-400">Qty: {item.quantity}</span>
-                          </div>
-                        </div>
-                        <span className="font-semibold text-white flex-shrink-0">
-                          {currencySymbol}{(item.price * item.quantity).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="text-center text-xs text-gray-400">
+                    <span>Click image to toggle zoom scale (100% → 180% → 250%)</span>
                   </div>
-                )}
+                </div>
               </div>
+            );
+          })()}
 
-              <div className="pt-6 border-t border-[#333] space-y-3 mt-6">
-                <div className="flex justify-between text-xs text-gray-300">
-                  <span>Subtotal</span>
-                  <span>{currencySymbol}{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-300">
-                  <span>Shipping</span>
-                  <span className="text-emerald-400 font-medium">FREE</span>
-                </div>
-                <div className="flex justify-between text-sm font-headline-md font-bold text-white pt-2 border-t border-[#333]">
-                  <span>Total Amount</span>
-                  <span className="text-[#EFEAE6]">{currencySymbol}{subtotal.toFixed(2)}</span>
+          {/* 10. ANCHOR DEMO PAGES MODALS */}
+
+          {/* MODAL 1: OUR CRAFT */}
+          {activeModal === 'craft' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
+              <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
+                <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+                <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Modena Engineering &amp; Heritage</h2>
+                <p className="font-body-lg text-sm text-[#514C48] leading-relaxed mb-6">
+                  Our products bring together heavy industrial cast iron, 5-ply 18/10 stainless steel, and high-performance motors to deliver lifelong durability with elegant domestic warmth.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7]">
+                    <Flame className="w-6 h-6 text-[#E60000] mb-2" />
+                    <h4 className="font-headline-md text-base text-[#2A2724] font-bold">Thermal Mass Engineering</h4>
+                    <p className="font-body-md text-xs text-[#514C48] mt-1">Zero hot spots and maximum heat retention for perfect cooking results.</p>
+                  </div>
+                  <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7]">
+                    <ShieldCheck className="w-6 h-6 text-[#E60000] mb-2" />
+                    <h4 className="font-headline-md text-base text-[#2A2724] font-bold">Food-Grade Steel</h4>
+                    <p className="font-body-md text-xs text-[#514C48] mt-1">Zero chemical coating — no plastic or Teflon coating where food particles touch.</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* FULLSCREEN LIGHTBOX IMAGE ZOOM MODAL WITH MULTI-PICTURE GALLERY */}
-      {zoomedImage && (() => {
-        const galleryImages = selectedProduct && Array.isArray(selectedProduct.images) && selectedProduct.images.length > 0
-          ? selectedProduct.images
-          : [zoomedImage];
-        const currentIdx = galleryImages.indexOf(zoomedImage) !== -1 ? galleryImages.indexOf(zoomedImage) : 0;
-
-        return (
-          <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-8 animate-in fade-in duration-200">
-            {/* Top Control Bar */}
-            <div className="w-full max-w-5xl flex items-center justify-between z-10 text-white pb-4 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider bg-[#E60000] px-3 py-1 rounded-full">
-                  Fullscreen Image Inspector ({currentIdx + 1}/{galleryImages.length})
-                </span>
-                <span className="text-xs text-gray-400 hidden sm:inline">
-                  Click image or use controls to zoom
-                </span>
+          {/* MODAL 2: MIXER GRINDERS */}
+          {activeModal === 'mixerGrinders' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
+              <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
+                <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+                <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Modena Sindoor 990W Mixer Grinder Specs</h2>
+                <div className="bg-white p-4 rounded-lg border border-[#EFEAE6] space-y-3 text-xs mb-6">
+                  <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
+                    <span className="font-semibold text-[#2A2724]">Motor Capacity:</span>
+                    <span className="text-[#514C48]">990 Watts (100% Copper Winding)</span>
+                  </div>
+                  <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
+                    <span className="font-semibold text-[#2A2724]">Jars Included:</span>
+                    <span className="text-[#514C48]">2 Stainless Steel Jars (Wet &amp; Dry Grinding)</span>
+                  </div>
+                  <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
+                    <span className="font-semibold text-[#2A2724]">Overload Protection:</span>
+                    <span className="text-[#514C48]">Automatic Thermal Circuit Breaker</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-[#2A2724]">Warranty:</span>
+                    <span className="text-[#E60000] font-bold">5 Years Motor Warranty</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveModal(null);
+                    handleAddToCart({
+                      id: 26,
+                      name: 'modena sindoor 990W mixer grinder',
+                      price: 2500,
+                      price_html: '₹2,500.00',
+                      image: '/wp-content/uploads/2026/08/modena-sindoor-990W-mixer-grinder.webp'
+                    });
+                  }}
+                  className="bg-[#E60000] text-white py-3 px-6 rounded text-xs font-label-caps"
+                >
+                  ADD TO CART NOW (₹2,500.00)
+                </button>
               </div>
+            </div>
+          )}
 
-              <div className="flex items-center gap-3">
-                {/* Zoom Out */}
-                <button
-                  type="button"
-                  onClick={() => setZoomScale((s) => Math.max(1, s - 0.5))}
-                  disabled={zoomScale <= 1}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white p-2 rounded-full transition-colors cursor-pointer"
-                  title="Zoom Out"
-                >
-                  <ZoomOut className="w-5 h-5" />
+          {/* MODAL 3: REVIEWS */}
+          {activeModal === 'reviews' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
+              <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
+                <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
+                  <X className="w-5 h-5" />
                 </button>
+                <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Customer Ratings &amp; Feedback</h2>
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-lg border border-[#EFEAE6]">
+                    <div className="flex text-amber-400 mb-1">
+                      {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400" />)}
+                    </div>
+                    <h4 className="font-headline-md text-sm text-[#2A2724] font-bold">Unbeatable Performance</h4>
+                    <p className="font-body-md text-xs text-[#514C48] mt-1">"Grinds idli batter and hard spices smoothly in seconds without overheating."</p>
+                    <span className="text-[10px] text-[#8A827C] block mt-2">— Verified Buyer, Bengaluru</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-                {/* Zoom Percentage */}
-                <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1.5 rounded-lg">
-                  {Math.round(zoomScale * 100)}%
-                </span>
-
-                {/* Zoom In */}
-                <button
-                  type="button"
-                  onClick={() => setZoomScale((s) => Math.min(3, s + 0.5))}
-                  disabled={zoomScale >= 3}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white p-2 rounded-full transition-colors cursor-pointer"
-                  title="Zoom In"
-                >
-                  <ZoomIn className="w-5 h-5" />
+          {/* MODAL 4: CARE GUIDE & WARRANTY */}
+          {(activeModal === 'careGuide' || activeModal === 'warranty') && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
+              <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
+                <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
+                  <X className="w-5 h-5" />
                 </button>
+                <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Product Care &amp; Warranty Support</h2>
+                <p className="font-body-md text-xs text-[#514C48] mb-4">
+                  All Modena appliances and cookware are covered by our heritage service guarantee. Clean with warm soapy water and wipe dry after use.
+                </p>
+                <button onClick={() => setActiveModal(null)} className="bg-[#2A2724] text-white py-2.5 px-6 rounded text-xs font-label-caps">
+                  CLOSE
+                </button>
+              </div>
+            </div>
+          )}
 
-                {/* Close Lightbox */}
+          {/* ACCOUNT DETAILS MODAL (When User is Logged In) */}
+          {activeModal === 'account' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+              <div
+                onClick={() => setActiveModal(null)}
+                className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md transition-opacity"
+              />
+              <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-200 z-50 my-auto text-[#2A2724] overflow-hidden">
                 <button
-                  type="button"
-                  onClick={() => setZoomedImage(null)}
-                  className="bg-[#E60000] hover:bg-red-700 text-white p-2 rounded-full transition-colors cursor-pointer ml-2 shadow-lg"
-                  title="Close Zoom View"
+                  onClick={() => setActiveModal(null)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full hover:bg-gray-100 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
-              </div>
-            </div>
 
-            {/* Centered Zoom Image Container with Navigation Arrows */}
-            <div className="w-full flex-1 flex items-center justify-center overflow-auto p-4 relative my-auto">
-              {galleryImages.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const prevIdx = (currentIdx - 1 + galleryImages.length) % galleryImages.length;
-                      setZoomedImage(galleryImages[prevIdx]);
-                    }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors cursor-pointer z-20 shadow-xl border border-white/20"
-                    title="Previous Picture"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextIdx = (currentIdx + 1) % galleryImages.length;
-                      setZoomedImage(galleryImages[nextIdx]);
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors cursor-pointer z-20 shadow-xl border border-white/20"
-                    title="Next Picture"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </>
-              )}
-
-              <img
-                src={zoomedImage}
-                alt="Zoomed Product View"
-                style={{ transform: `scale(${zoomScale})` }}
-                onClick={() => setZoomScale((s) => (s === 1 ? 1.8 : s === 1.8 ? 2.5 : 1))}
-                className="max-w-full max-h-[70vh] object-contain transition-transform duration-300 shadow-2xl rounded-2xl bg-white/5 border border-white/10 p-2 cursor-zoom-in"
-                onError={(e) => {
-                  e.target.src =
-                    'https://images.unsplash.com/photo-1584992236310-6edddc08acff?q=80&w=800&auto=format&fit=crop';
-                }}
-              />
-            </div>
-
-            {/* Bottom Gallery Thumbnails Bar */}
-            <div className="w-full flex flex-col items-center gap-2 pt-2 z-10">
-              {galleryImages.length > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto max-w-full py-1 px-4 bg-black/40 rounded-2xl border border-white/10 backdrop-blur-md">
-                  {galleryImages.map((imgUrl, idx) => {
-                    const isCurrent = zoomedImage === imgUrl;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setZoomedImage(imgUrl)}
-                        className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all p-0.5 cursor-pointer bg-black/40 flex-shrink-0 ${
-                          isCurrent ? 'border-[#E60000] ring-2 ring-red-500 scale-105' : 'border-white/20 opacity-50 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={imgUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
-                      </button>
-                    );
-                  })}
+                {/* Profile Header */}
+                <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
+                  <div className="w-16 h-16 rounded-full bg-[#E60000] text-white flex items-center justify-center text-2xl font-bold shadow-lg ring-4 ring-red-50 flex-shrink-0">
+                    {getFirstName(userDisplayName).charAt(0)}
+                  </div>
+                  <div className="truncate">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-[10px] font-bold tracking-widest bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full uppercase border border-amber-200">
+                        VIP Member
+                      </span>
+                    </div>
+                    <h2 className="text-xl font-bold text-[#2A2724] truncate">
+                      Hi, {getFirstName(userDisplayName || 'User')}!
+                    </h2>
+                    <p className="text-xs text-gray-500 truncate">
+                      {userEmail || loginEmail || 'No email associated'}
+                    </p>
+                  </div>
                 </div>
-              )}
-              <div className="text-center text-xs text-gray-400">
-                <span>Click image to toggle zoom scale (100% → 180% → 250%)</span>
+
+                {/* Account Info Cards */}
+                <div className="py-5 space-y-3.5">
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200/80 space-y-2">
+                    <h3 className="text-xs font-bold text-gray-400 tracking-wider uppercase">Account Profile</h3>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-gray-500 block text-[11px]">First Name</span>
+                        <span className="font-semibold text-gray-900">{getFirstName(userDisplayName || 'User')}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 block text-[11px]">Full Name</span>
+                        <span className="font-semibold text-gray-900 truncate block">{userDisplayName || 'Logged In Customer'}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-gray-500 block text-[11px]">Email Address</span>
+                        <span className="font-semibold text-gray-900 truncate block">{userEmail || loginEmail || 'Not provided'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
+                    <h3 className="text-xs font-bold text-gray-400 tracking-wider uppercase mb-2">Default Delivery Address</h3>
+                    {userAddresses.length > 0 ? (
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        <p className="font-semibold">{userAddresses[0].name}</p>
+                        <p>{userAddresses[0].line1} {userAddresses[0].line2}</p>
+                        <p>{userAddresses[0].city}, {userAddresses[0].state} - {userAddresses[0].postcode}</p>
+                        <p className="text-gray-500 mt-1">📱 {userAddresses[0].phone}</p>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <p className="italic">No delivery address saved yet.</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveModal(null);
+                            setCurrentView('yourAddresses');
+                          }}
+                          className="text-[#E60000] font-bold hover:underline block pt-1"
+                        >
+                          + Add Address in Manage Account
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Actions */}
+                <div className="pt-2 flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveModal('checkout');
+                    }}
+                    className="w-full bg-[#2A2724] hover:bg-[#2A2724] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>View Cart &amp; Checkout</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full bg-red-50 hover:bg-red-100 text-[#E60000] py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border border-red-200 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Sign Out / Logout</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          )}
 
-      {/* 10. ANCHOR DEMO PAGES MODALS */}
-
-      {/* MODAL 1: OUR CRAFT */}
-      {activeModal === 'craft' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
-          <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
-            <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
-              <X className="w-5 h-5" />
-            </button>
-            <span className="font-label-caps text-[#E60000] text-xs tracking-widest block mb-1">OUR CRAFT</span>
-            <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Modena Engineering &amp; Heritage</h2>
-            <p className="font-body-lg text-sm text-[#514C48] leading-relaxed mb-6">
-              Our products bring together heavy industrial cast iron, 5-ply 18/10 stainless steel, and 990W heavy copper winding motors to deliver lifelong durability with elegant domestic warmth.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7]">
-                <Flame className="w-6 h-6 text-[#E60000] mb-2" />
-                <h4 className="font-headline-md text-base text-[#2A2724] font-bold">Thermal Mass Engineering</h4>
-                <p className="font-body-md text-xs text-[#514C48] mt-1">Zero hot spots and maximum heat retention for perfect cooking results.</p>
-              </div>
-              <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7]">
-                <ShieldCheck className="w-6 h-6 text-[#E60000] mb-2" />
-                <h4 className="font-headline-md text-base text-[#2A2724] font-bold">Food-Grade Steel</h4>
-                <p className="font-body-md text-xs text-[#514C48] mt-1">Non-reactive 304 grade stainless steel jars and razor-sharp blades.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: MIXER GRINDERS */}
-      {activeModal === 'mixerGrinders' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
-          <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
-            <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
-              <X className="w-5 h-5" />
-            </button>
-            <span className="font-label-caps text-[#E60000] text-xs tracking-widest block mb-1">MIXER GRINDERS</span>
-            <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Modena Sindoor 990W Mixer Grinder Specs</h2>
-            <div className="bg-white p-4 rounded-lg border border-[#EFEAE6] space-y-3 text-xs mb-6">
-              <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
-                <span className="font-semibold text-[#2A2724]">Motor Capacity:</span>
-                <span className="text-[#514C48]">990 Watts (100% Copper Winding)</span>
-              </div>
-              <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
-                <span className="font-semibold text-[#2A2724]">Jars Included:</span>
-                <span className="text-[#514C48]">2 Stainless Steel Jars (Wet &amp; Dry Grinding)</span>
-              </div>
-              <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
-                <span className="font-semibold text-[#2A2724]">Overload Protection:</span>
-                <span className="text-[#514C48]">Automatic Thermal Circuit Breaker</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-[#2A2724]">Warranty:</span>
-                <span className="text-[#E60000] font-bold">2 Years Manufacturer Warranty</span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
+          {/* 5. ENTERPRISE AMAZON-STYLE AUTHENTICATION & SESSION PIPELINE */}
+          <AmazonAuthModal
+            isOpen={activeModal === 'login'}
+            onClose={() => { setActiveModal(null); resetAuthForm(); }}
+            onAuthSuccess={(userData) => {
+              setUserDisplayName(userData.display_name || userData.email.split('@')[0]);
+              setUserEmail(userData.email);
+              if (cart.length > 0) {
+                setActiveModal('checkout');
+              } else {
                 setActiveModal(null);
-                handleAddToCart({
-                  id: 26,
-                  name: 'modena sindoor 990W mixer grinder',
-                  price: 2500,
-                  price_html: '₹2,500.00',
-                  image: '/wp-content/uploads/2026/08/modena-sindoor-990W-mixer-grinder.webp'
-                });
-              }}
-              className="bg-[#E60000] text-white py-3 px-6 rounded text-xs font-label-caps"
-            >
-              ADD TO CART NOW (₹2,500.00)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: REVIEWS */}
-      {activeModal === 'reviews' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
-          <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
-            <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
-              <X className="w-5 h-5" />
-            </button>
-            <span className="font-label-caps text-[#E60000] text-xs tracking-widest block mb-1">VERIFIED REVIEWS</span>
-            <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Customer Ratings &amp; Feedback</h2>
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border border-[#EFEAE6]">
-                <div className="flex text-amber-400 mb-1">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400" />)}
-                </div>
-                <h4 className="font-headline-md text-sm text-[#2A2724] font-bold">Unbeatable Performance</h4>
-                <p className="font-body-md text-xs text-[#514C48] mt-1">"Grinds idli batter and hard spices smoothly in seconds without overheating."</p>
-                <span className="text-[10px] text-[#8A827C] block mt-2">— Verified Buyer, Bengaluru</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: CARE GUIDE & WARRANTY */}
-      {(activeModal === 'careGuide' || activeModal === 'warranty') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div onClick={() => setActiveModal(null)} className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md" />
-          <div className="relative w-full max-w-3xl bg-[#FAF8F6] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#EFEAE6] z-50 my-auto max-h-[85vh] overflow-y-auto">
-            <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
-              <X className="w-5 h-5" />
-            </button>
-            <span className="font-label-caps text-[#E60000] text-xs tracking-widest block mb-1">CARE &amp; WARRANTY</span>
-            <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Product Care &amp; Warranty Support</h2>
-            <p className="font-body-md text-xs text-[#514C48] mb-4">
-              All Modena appliances and cookware are covered by our heritage service guarantee. Clean with warm soapy water and wipe dry after use.
-            </p>
-            <button onClick={() => setActiveModal(null)} className="bg-[#2A2724] text-white py-2.5 px-6 rounded text-xs font-label-caps">
-              CLOSE
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ACCOUNT DETAILS MODAL (When User is Logged In) */}
-      {activeModal === 'account' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-          <div
-            onClick={() => setActiveModal(null)}
-            className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md transition-opacity"
+              }
+            }}
+            cartItems={cart}
           />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-200 z-50 my-auto text-[#2A2724] overflow-hidden">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-black p-2 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
 
-            {/* Profile Header */}
-            <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
-              <div className="w-16 h-16 rounded-full bg-[#E60000] text-white flex items-center justify-center text-2xl font-bold shadow-lg ring-4 ring-red-50 flex-shrink-0">
-                {getFirstName(userDisplayName).charAt(0)}
-              </div>
-              <div className="truncate">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px] font-bold tracking-widest bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full uppercase border border-amber-200">
-                    VIP Member
-                  </span>
+          {/* 11. LUXURY LIGHT END-TO-END FOOTER */}
+          <footer id="site-footer" className="bg-[#E5E1DA] text-[#292725] pt-16 pb-28 sm:pb-32 border-t border-[#D8D4CD] w-full font-inter physics-container">
+            <div className="w-full px-4 sm:px-8 lg:px-12 space-y-12">
+
+              {/* Top Row: Full-Width Newsletter & Exclusive VIP Club Card */}
+              <div className="bg-[#F8F7F4] border border-[#D8D4CD] p-8 sm:p-10 rounded-3xl shadow-xs flex flex-col lg:flex-row items-center justify-between gap-8">
+                <div className="space-y-2 text-center lg:text-left max-w-2xl">
+                  <div className="inline-flex items-center gap-2 bg-[#C91F26] text-white text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>JOIN OUR CLUB</span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#292725] tracking-tight">
+                    Get Offers, New Products &amp; Tips
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#716D67] leading-relaxed font-medium">
+                    Subscribe for special offers, recipes, and helpful product guides.
+                  </p>
                 </div>
-                <h2 className="text-xl font-bold text-[#2A2724] truncate">
-                  Hi, {getFirstName(userDisplayName || 'User')}!
-                </h2>
-                <p className="text-xs text-gray-500 truncate">
-                  {userEmail || loginEmail || 'No email associated'}
-                </p>
-              </div>
-            </div>
 
-            {/* Account Info Cards */}
-            <div className="py-5 space-y-3.5">
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200/80 space-y-2">
-                <h3 className="text-xs font-bold text-gray-400 tracking-wider uppercase">Account Profile</h3>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-gray-500 block text-[11px]">First Name</span>
-                    <span className="font-semibold text-gray-900">{getFirstName(userDisplayName || 'User')}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 block text-[11px]">Full Name</span>
-                    <span className="font-semibold text-gray-900 truncate block">{userDisplayName || 'Logged In Customer'}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-gray-500 block text-[11px]">Email Address</span>
-                    <span className="font-semibold text-gray-900 truncate block">{userEmail || loginEmail || 'Not provided'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
-                <h3 className="text-xs font-bold text-gray-400 tracking-wider uppercase mb-2">Default Delivery Address</h3>
-                {userAddresses.length > 0 ? (
-                  <div className="text-xs text-gray-700 leading-relaxed">
-                    <p className="font-semibold">{userAddresses[0].name}</p>
-                    <p>{userAddresses[0].line1} {userAddresses[0].line2}</p>
-                    <p>{userAddresses[0].city}, {userAddresses[0].state} - {userAddresses[0].postcode}</p>
-                    <p className="text-gray-500 mt-1">📱 {userAddresses[0].phone}</p>
-                  </div>
-                ) : (
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p className="italic">No delivery address saved yet.</p>
+                <div className="w-full lg:w-auto min-w-[320px] sm:min-w-[420px]">
+                  <div className="flex gap-2 bg-[#F3F1ED] p-2 rounded-2xl border border-[#D8D4CD] shadow-xs focus-within:border-[#C91F26] transition-colors">
+                    <input
+                      id="newsletter-email-input"
+                      name="newsletter_email"
+                      type="email"
+                      placeholder="Enter your email address..."
+                      className="bg-transparent px-4 py-3 text-xs sm:text-sm text-[#292725] placeholder-[#716D67] flex-1 focus:outline-none font-medium"
+                    />
                     <button
-                      type="button"
-                      onClick={() => {
-                        setActiveModal(null);
-                        setCurrentView('yourAddresses');
-                      }}
-                      className="text-[#E60000] font-bold hover:underline block pt-1"
+                      onClick={() => setNewsletterSubscribed(true)}
+                      className="bg-[#C91F26] hover:bg-[#A9181E] text-white px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xs hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap"
                     >
-                      + Add Address in Manage Account
+                      SUBSCRIBE
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="pt-2 flex flex-col gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveModal('checkout');
-                }}
-                className="w-full bg-[#2A2724] hover:bg-[#2A2724] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>View Cart &amp; Checkout</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full bg-red-50 hover:bg-red-100 text-[#E60000] py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border border-red-200 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Sign Out / Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. ENTERPRISE AMAZON-STYLE AUTHENTICATION & SESSION PIPELINE */}
-      <AmazonAuthModal
-        isOpen={activeModal === 'login'}
-        onClose={() => { setActiveModal(null); resetAuthForm(); }}
-        onAuthSuccess={(userData) => {
-          setUserDisplayName(userData.display_name || userData.email.split('@')[0]);
-          setUserEmail(userData.email);
-          if (cart.length > 0) {
-            setActiveModal('checkout');
-          } else {
-            setActiveModal(null);
-          }
-        }}
-        cartItems={cart}
-      />
-
-      {/* 11. LUXURY LIGHT END-TO-END FOOTER */}
-      <footer id="site-footer" className="bg-white text-[#2A2724] pt-16 pb-12 border-t border-gray-200/90 w-full font-inter physics-container">
-        <div className="w-full px-4 sm:px-8 lg:px-12 space-y-12">
-          
-          {/* Top Row: Full-Width Newsletter & Exclusive VIP Club Card */}
-          <div className="bg-gradient-to-r from-white via-[#FAF8F6] to-white border border-gray-200/80 p-8 sm:p-10 rounded-3xl shadow-sm flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="space-y-2 text-center lg:text-left max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-[#E60000] text-white text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>JOIN THE MODENA CULINARY CLUB</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#2A2724] tracking-tight">
-                Unlock Secret Offers, Product Drops &amp; Maintenance Guides
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-medium">
-                Subscribe to receive private sales, chef-tested seasoning guides, and early access to limited edition cast iron collections.
-              </p>
-            </div>
-
-            <div className="w-full lg:w-auto min-w-[320px] sm:min-w-[420px]">
-              <div className="flex gap-2 bg-white p-2 rounded-2xl border border-gray-300 shadow-sm focus-within:border-[#E60000] transition-colors">
-                <input
-                  id="newsletter-email-input"
-                  name="newsletter_email"
-                  type="email"
-                  placeholder="Enter your email address..."
-                  className="bg-transparent px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 flex-1 focus:outline-none font-medium"
-                />
-                <button
-                  onClick={() => setNewsletterSubscribed(true)}
-                  className="bg-[#E60000] hover:bg-red-800 text-white px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap"
-                >
-                  SUBSCRIBE NOW
-                </button>
-              </div>
-              {newsletterSubscribed && (
-                <span className="text-xs text-emerald-700 block font-bold mt-2 text-center lg:text-left">
-                  ✓ Welcome! You have been successfully subscribed to Modena Culinary Club.
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Middle Row: 5 Well-Balanced End-to-End Columns Grid */}
-          <div className="grid grid-cols-1 @[600px]:grid-cols-2 @[900px]:grid-cols-3 @[1200px]:grid-cols-5 gap-8 @[900px]:gap-10 border-b border-gray-200/80 pb-12 text-xs">
-            
-            {/* Col 1: Brand & Excellence Badges */}
-            <div className="space-y-4">
-              <img
-                src={logoBlackRed}
-                alt="Modena Logo"
-                className="h-10 w-auto object-contain"
-              />
-              <p className="text-gray-600 leading-relaxed text-xs font-medium">
-                Modena represents modern luxury cookware and heavy appliances—fusing industrial grade 990W copper motors and virgin cast iron with refined domestic warmth.
-              </p>
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <ShieldCheck className="w-4 h-4 text-[#E60000]" />
-                  <span>100% Virgin Cast Iron &amp; Pure Copper</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Truck className="w-4 h-4 text-[#E60000]" />
-                  <span>Free Shipping on Orders Above ₹2,999</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Award className="w-4 h-4 text-[#E60000]" />
-                  <span>5-Year Motor Warranty Protection</span>
+                  {newsletterSubscribed && (
+                    <span className="text-xs text-emerald-700 block font-bold mt-2 text-center lg:text-left">
+                      ✓ Welcome! You have been successfully subscribed to Modena Culinary Club.
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Col 2: Quick Navigation */}
-            <div className="space-y-3">
-              <span className="text-[#E60000] font-extrabold tracking-widest uppercase block text-xs">QUICK NAVIGATION</span>
-              <ul className="space-y-2.5 text-gray-600 font-medium">
-                <li><button onClick={() => setCurrentView('home')} className="hover:text-[#E60000] transition-colors cursor-pointer">Home Showroom</button></li>
-                <li><button onClick={() => setCurrentView('bestseller')} className="hover:text-[#E60000] transition-colors cursor-pointer">Bestselling Cookware</button></li>
-                <li><button onClick={() => setCurrentView('deal')} className="hover:text-[#E60000] transition-colors cursor-pointer">Deals &amp; Flash Sales</button></li>
-                <li><button onClick={() => setCurrentView('electronics')} className="hover:text-[#E60000] transition-colors cursor-pointer">Culinary Electronics</button></li>
-                <li><button onClick={() => setCurrentView('utensils')} className="hover:text-[#E60000] transition-colors cursor-pointer">Heritage Utensils</button></li>
-              </ul>
-            </div>
+              {/* Middle Row: 5 Well-Balanced End-to-End Columns Grid */}
+              <div className="grid grid-cols-1 @[600px]:grid-cols-2 @[900px]:grid-cols-3 @[1200px]:grid-cols-5 gap-8 @[900px]:gap-10 border-b border-gray-200/80 pb-12 text-xs">
 
-            {/* Col 3: Customer Account */}
-            <div className="space-y-3">
-              <span className="text-[#E60000] font-extrabold tracking-widest uppercase block text-xs">CUSTOMER ACCOUNT</span>
-              <ul className="space-y-2.5 text-gray-600 font-medium">
-                <li><button onClick={() => userDisplayName ? setCurrentView('yourAccount') : setActiveModal('login')} className="hover:text-[#E60000] transition-colors cursor-pointer">Manage Account Hub</button></li>
-                <li><button onClick={() => setCurrentView('yourOrders')} className="hover:text-[#E60000] transition-colors cursor-pointer">Your Orders &amp; Tracking</button></li>
-                <li><button onClick={() => setCurrentView('yourAddresses')} className="hover:text-[#E60000] transition-colors cursor-pointer">Saved Delivery Addresses</button></li>
-                <li><button onClick={() => setIsWishlistModalOpen(true)} className="hover:text-[#E60000] transition-colors cursor-pointer">Your Saved Wishlist</button></li>
-                <li><button onClick={() => setActiveModal('checkout')} className="hover:text-[#E60000] transition-colors cursor-pointer">Express Checkout</button></li>
-              </ul>
-            </div>
+                {/* Col 1: Brand & Excellence Badges */}
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <img
+                      src={logoBlackRed}
+                      alt="Modena Logo"
+                      className="h-10 w-auto object-contain"
+                    />
+                    <p className="text-gray-600 leading-relaxed text-xs font-medium">
+                      Crafted for Everyday Living
+                    </p>
+                  </div>
 
-            {/* Col 4: Store & Legal Policies */}
-            <div className="space-y-3">
-              <span className="text-[#E60000] font-extrabold tracking-widest uppercase block text-xs">STORE &amp; LEGAL POLICIES</span>
-              <ul className="space-y-2.5 text-gray-600 font-medium">
-                <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#E60000] transition-colors cursor-pointer">1. Terms &amp; Conditions</button></li>
-                <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#E60000] transition-colors cursor-pointer">2. Return &amp; Refund Policy</button></li>
-                <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#E60000] transition-colors cursor-pointer">3. Shipping Policy (₹300 Rate)</button></li>
-                <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#E60000] transition-colors cursor-pointer">4. Privacy Policy (DPDP Act)</button></li>
-                <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#E60000] transition-colors cursor-pointer">5. Warranty Policy</button></li>
-              </ul>
-            </div>
+                  {/* Social Media Icons Row */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <a
+                      href="https://www.facebook.com/share/1JP7Qqovtv/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8.5 h-8.5 rounded-full bg-gray-100 hover:bg-[#E60000] text-gray-700 hover:text-white flex items-center justify-center transition-all duration-300 shadow-xs hover:scale-110 active:scale-95 cursor-pointer"
+                      title="Facebook"
+                      aria-label="Facebook"
+                    >
+                      <FacebookIcon className="w-4 h-4 fill-current" />
+                    </a>
+                    <a
+                      href="https://www.instagram.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8.5 h-8.5 rounded-full bg-gray-100 hover:bg-[#E60000] text-gray-700 hover:text-white flex items-center justify-center transition-all duration-300 shadow-xs hover:scale-110 active:scale-95 cursor-pointer"
+                      title="Instagram"
+                      aria-label="Instagram"
+                    >
+                      <InstagramIcon className="w-4 h-4 fill-current" />
+                    </a>
+                    <a
+                      href="https://www.youtube.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8.5 h-8.5 rounded-full bg-gray-100 hover:bg-[#E60000] text-gray-700 hover:text-white flex items-center justify-center transition-all duration-300 shadow-xs hover:scale-110 active:scale-95 cursor-pointer"
+                      title="YouTube"
+                      aria-label="YouTube"
+                    >
+                      <YoutubeIcon className="w-4 h-4 fill-current" />
+                    </a>
+                    <a
+                      href="https://x.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8.5 h-8.5 rounded-full bg-gray-100 hover:bg-[#E60000] text-gray-700 hover:text-white flex items-center justify-center transition-all duration-300 shadow-xs hover:scale-110 active:scale-95 cursor-pointer"
+                      title="X / Twitter"
+                      aria-label="X / Twitter"
+                    >
+                      <TwitterXIcon className="w-4 h-4 fill-current" />
+                    </a>
+                  </div>
+                </div>
 
-            {/* Col 5: Corporate & Grievance Contact */}
-            <div className="space-y-3">
-              <span className="text-[#E60000] font-extrabold tracking-widest uppercase block text-xs">CORPORATE &amp; SUPPORT</span>
-              <div className="space-y-2 text-gray-600 text-xs font-medium">
-                <p><strong className="text-[#2A2724]">Operated by:</strong> Kimatsu India Pvt. Ltd.</p>
-                <p><strong className="text-[#2A2724]">GSTIN:</strong> <span className="font-mono text-gray-800">27AAFCK9795E1ZZ</span></p>
-                <p><strong className="text-[#2A2724]">HQ Address:</strong> 201–202 Tirupati Udyog, Goregaon East, Mumbai – 400063</p>
-                <p><strong className="text-[#2A2724]">Support Email:</strong> <a href="mailto:support@modenahome.in" className="hover:text-[#E60000] font-semibold">support@modenahome.in</a></p>
-                <p><strong className="text-[#2A2724]">Grievance Officer:</strong> <a href="mailto:grievance@modenahome.in" className="hover:text-[#E60000] font-semibold">grievance@modenahome.in</a></p>
-                <p><strong className="text-[#2A2724]">Phone &amp; WhatsApp:</strong> <a href="https://wa.me/919326641825" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-700 font-bold">+91 93266 41825</a></p>
-                <p><strong className="text-[#2A2724]">Grievance Line:</strong> +91 91366 69608</p>
+                {/* Col 2: Quick Navigation */}
+                <div className="space-y-3">
+                  <ul className="space-y-2.5 text-gray-600 font-medium">
+                    <li><button onClick={() => setCurrentView('home')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Home</button></li>
+                    <li><button onClick={() => setCurrentView('bestseller')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Bestsellers</button></li>
+                    <li><button onClick={() => setCurrentView('deal')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Deals</button></li>
+                    <li><button onClick={() => setCurrentView('electronics')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Appliances</button></li>
+                    <li><button onClick={() => setCurrentView('utensils')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Utensils</button></li>
+                  </ul>
+                </div>
+
+                {/* Col 3: Customer Account */}
+                <div className="space-y-3">
+                  <ul className="space-y-2.5 text-gray-600 font-medium">
+                    <li><button onClick={() => userDisplayName ? setCurrentView('yourAccount') : setActiveModal('login')} className="hover:text-[#C91F26] transition-colors cursor-pointer">My Account</button></li>
+                    <li><button onClick={() => setCurrentView('yourOrders')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Your Orders</button></li>
+                    <li><button onClick={() => setCurrentView('yourAddresses')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Saved Addresses</button></li>
+                    <li><button onClick={() => setIsWishlistModalOpen(true)} className="hover:text-[#C91F26] transition-colors cursor-pointer">Wishlist</button></li>
+                    <li><button onClick={() => setActiveModal('checkout')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Quick Checkout</button></li>
+                  </ul>
+                </div>
+
+                {/* Col 4: Store & Legal Policies */}
+                <div className="space-y-3">
+                  <ul className="space-y-2.5 text-gray-600 font-medium">
+                    <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Terms &amp; Conditions</button></li>
+                    <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Return Policy</button></li>
+                    <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Shipping Policy</button></li>
+                    <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Privacy Policy</button></li>
+                    <li><button onClick={() => setCurrentView('storePolicies')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Warranty</button></li>
+                  </ul>
+                </div>
+
+                {/* Col 5: Corporate Contact */}
+                <div className="space-y-3">
+                  <div className="space-y-2 text-gray-600 text-xs font-medium">
+                    <p>Kimatsu India Pvt. Ltd.</p>
+                    <p>201–202 Tirupati Udyog, Goregaon East, Mumbai – 400063</p>
+                    <p><a href="mailto:support@modenahome.in" className="hover:text-[#E60000] font-semibold">support@modenahome.in</a></p>
+                    <p><a href="whatsapp://send?phone=919326641825" onClick={(e) => openWhatsAppDirect('919326641825', '', e)} className="hover:text-emerald-700 font-bold">+91 93266 41825</a></p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Bottom Bar: Full-Width Copyright & Accepted Payment Methods */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500 pt-2 font-medium">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span>© {new Date().getFullYear()} <strong className="text-[#2A2724]">Kimatsu India Pvt. Ltd.</strong> (Modena Home). All rights reserved.</span>
+                </div>
+
+                <div className="flex items-center gap-3 text-[11px] font-mono text-gray-700 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-xs">
+                  <span className="font-bold text-[#2A2724]">100% PREPAID STORE:</span>
+                  <span className="text-emerald-700 font-bold">UPI</span>
+                  <span>•</span>
+                  <span className="text-sky-700 font-bold">Razorpay</span>
+                  <span>•</span>
+                  <span>Cards</span>
+                </div>
               </div>
             </div>
-
-          </div>
-
-          {/* Bottom Bar: Full-Width Copyright & Accepted Payment Methods */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500 pt-2 font-medium">
-            <div className="flex flex-wrap items-center gap-3">
-              <span>© {new Date().getFullYear()} <strong className="text-[#2A2724]">Kimatsu India Pvt. Ltd.</strong> (Modena Home). All rights reserved.</span>
-              <span className="hidden md:inline">•</span>
-              <span>Mumbai, Maharashtra, India</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-[11px] font-mono text-gray-700 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-xs">
-              <span className="font-bold text-[#2A2724]">100% PREPAID STORE:</span>
-              <span className="text-emerald-700 font-bold">UPI</span>
-              <span>•</span>
-              <span className="text-sky-700 font-bold">Zoho Pay</span>
-              <span>•</span>
-              <span>Cards</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+          </footer>
         </>
       )}
       {/* RETURN & REPLACEMENT INTERACTIVE MODAL */}
       {activeReturnModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
           <div onClick={() => setActiveReturnModalItem(null)} className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
-          
+
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden z-50 my-auto border border-gray-200 p-6 sm:p-8 text-[#2A2724] max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setActiveReturnModalItem(null)}
@@ -4980,7 +5059,7 @@ function App() {
             </button>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-1 font-inter">Choose items to return / replace</h2>
-            <p className="text-xs text-gray-500 mb-6">Select your reason and preference for replacement or direct Zoho Pay refund.</p>
+            <p className="text-xs text-gray-500 mb-6">Select your reason and preference for replacement or direct Razorpay refund.</p>
 
             {/* Product Summary */}
             <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6">
@@ -5068,7 +5147,7 @@ function App() {
                     status: 'Pickup Scheduled',
                     policyNote: resolutionType === 'replace'
                       ? 'Replacement item will be dispatched immediately once the returned product is collected from your address.'
-                      : 'Refund will be transferred directly to your Zoho Pay/Bank details once the item is collected.'
+                      : 'Refund will be transferred directly to your Razorpay/Bank details once the item is collected.'
                   }
                 }));
                 setReturnRequestedIds((prev) => [...prev, activeReturnModalItem.id]);
@@ -5087,6 +5166,10 @@ function App() {
                 <label className="block font-bold text-gray-900 mb-2 text-sm">
                   Why are you returning this? <span className="text-red-500">*</span>
                 </label>
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-xl text-[11px] mb-3 space-y-1.5 font-medium">
+                  <p><strong>Policy Notice:</strong> Damaged/wrong items must be reported within 48 hours of delivery with an unboxing video. Change-of-mind returns incur shipping costs.</p>
+                  <p><em>Note for Cast Iron:</em> Variations in seasoning color, minor surface rust, and casting marks are inherent traits, not manufacturing defects.</p>
+                </div>
                 <select
                   required
                   value={returnReason}
@@ -5212,11 +5295,10 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setResolutionType('replace')}
-                    className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
-                      resolutionType === 'replace'
-                        ? 'border-[#E60000] bg-red-50/50 ring-2 ring-[#E60000]'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
+                    className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${resolutionType === 'replace'
+                      ? 'border-[#E60000] bg-red-50/50 ring-2 ring-[#E60000]'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
                   >
                     <span className="font-bold text-sm text-gray-900 block mb-1">🔄 Replacement</span>
                     <span className="text-[11px] text-gray-600 leading-relaxed">
@@ -5227,15 +5309,14 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setResolutionType('refund')}
-                    className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
-                      resolutionType === 'refund'
-                        ? 'border-[#E60000] bg-red-50/50 ring-2 ring-[#E60000]'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
+                    className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${resolutionType === 'refund'
+                      ? 'border-[#E60000] bg-red-50/50 ring-2 ring-[#E60000]'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
                   >
                     <span className="font-bold text-sm text-gray-900 block mb-1">💳 Refund</span>
                     <span className="text-[11px] text-gray-600 leading-relaxed">
-                      Direct refund transferred to your original Zoho Pay payment method or bank/UPI account upon pickup.
+                      Direct refund transferred to your original Razorpay payment method or bank/UPI account upon pickup.
                     </span>
                   </button>
                 </div>
@@ -5245,17 +5326,17 @@ function App() {
               {resolutionType === 'refund' && (
                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-4 animate-in fade-in duration-200">
                   <span className="font-bold text-xs text-gray-900 block">Select Refund Destination:</span>
-                  
+
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-800">
                       <input
                         type="radio"
                         name="refundMethod"
-                        checked={refundMethod === 'zohopay'}
-                        onChange={() => setRefundMethod('zohopay')}
+                        checked={refundMethod === 'razorpay'}
+                        onChange={() => setRefundMethod('razorpay')}
                         className="accent-[#E60000]"
                       />
-                      <span>⚡ Zoho Pay (Original Payment Method)</span>
+                      <span>⚡ Razorpay (Original Payment Method)</span>
                     </label>
 
                     <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-800">
@@ -5339,9 +5420,9 @@ function App() {
               <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-amber-900 text-xs leading-relaxed flex items-start gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold block">Modena Zoho Pay Return &amp; Replacement Policy:</span>
+                  <span className="font-bold block">Modena Razorpay Return &amp; Replacement Policy:</span>
                   <span>
-                    Replacements are dispatched automatically once the product is collected from your address. Direct refunds are credited back via Zoho Pay Payment Gateway directly to your account details upon pickup verification.
+                    Replacements are dispatched automatically once the product is collected from your address. Direct refunds are credited back via Razorpay Payment Gateway directly to your account details upon pickup verification.
                   </span>
                 </div>
               </div>
@@ -5505,9 +5586,8 @@ function App() {
                         className="p-1 cursor-pointer transition-transform hover:scale-110 focus:outline-none"
                       >
                         <Star
-                          className={`w-7 h-7 ${
-                            star <= sellerFeedbackForm.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
-                          }`}
+                          className={`w-7 h-7 ${star <= sellerFeedbackForm.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                            }`}
                         />
                       </button>
                     ))}
@@ -5546,7 +5626,7 @@ function App() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
           <div onClick={() => setIsWishlistModalOpen(false)} className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-50 my-auto text-[#2A2724] space-y-6 max-h-[85vh] flex flex-col border border-gray-100">
-            
+
             {/* Header with Title & Action Controls */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-5 gap-4">
               <div className="flex items-center gap-3">
@@ -5653,27 +5733,25 @@ function App() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 pt-3 border-t border-gray-200/80">
-                        <button
-                          onClick={() => {
-                            handleAddToCart({
-                              id: item.id,
-                              name: item.name,
-                              price: item.numericPrice || item.price,
-                              price_html: item.price_html || item.dealPrice || `₹${item.price}`,
-                              image: item.image
-                            });
-                          }}
-                          className="flex-1 bg-[#E60000] hover:bg-[#E60000] text-white text-[11px] font-bold py-2.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> ADD TO CART
-                        </button>
+                      <div className="flex gap-2 pt-3 border-t border-gray-200/80 items-center">
+                        <div className="flex-1">
+                          <CartQuantityControl
+                            product={item}
+                            cart={cart}
+                            onAddToCart={handleAddToCart}
+                            onUpdateQuantity={updateQuantity}
+                            size="full"
+                            buttonText="ADD TO CART"
+                            buttonClassName="bg-[#E60000] hover:bg-red-800 text-[11px] py-2.5"
+                            controlClassName="bg-[#E60000] h-[36px]"
+                          />
+                        </div>
                         <button
                           onClick={() => {
                             setSelectedProduct(item);
                             setIsWishlistModalOpen(false);
                           }}
-                          className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-[11px] font-bold px-3.5 py-2.5 rounded-xl transition-colors cursor-pointer shadow-sm"
+                          className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-[11px] font-bold px-3.5 py-2.5 rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
                         >
                           VIEW
                         </button>
@@ -5686,54 +5764,51 @@ function App() {
           </div>
         </div>
       )}
-      {/* FLOATING BOTTOM CART / BUY PILL BUTTON (DYNAMIC SCROLL DIRECTION & FOOTER INTERSECTION STATE) */}
+      {/* FLOATING BOTTOM CART / BUY PILL BUTTON */}
       {cart.length > 0 && !isCartOpen && (
         <div
-          className={`fixed z-40 transition-all duration-500 ease-in-out ${
-            isFooterInView ? 'bottom-28 sm:bottom-32' : 'bottom-6'
-          } ${
-            scrollDirection === 'down'
-              ? 'left-6 translate-x-0'
-              : 'left-1/2 -translate-x-1/2'
-          }`}
+          className="fixed bottom-5 sm:bottom-6 left-4 sm:left-6 z-40 pointer-events-none transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
+          style={{
+            transform: scrollDirection === 'down'
+              ? 'translate3d(0, 0, 0)'
+              : 'translate3d(calc(50vw - 50% - var(--cart-offset, 1.5rem)), 0, 0)'
+          }}
         >
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="View Cart"
-            className={`shadow-2xl border flex items-center transition-all duration-500 ease-in-out cursor-pointer group select-none ${
+            className={`pointer-events-auto shadow-2xl border flex items-center transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer group select-none ${
               scrollDirection === 'down'
-                ? 'w-14 h-14 rounded-full bg-[#E60000] hover:bg-red-800 text-white border-white/30 justify-center p-0 hover:scale-110 active:scale-95 shadow-[0_10px_25px_rgba(183,1,0,0.5)] ring-4 ring-red-100/50'
-                : 'bg-[#2A2724] hover:bg-[#E60000] text-white px-5 sm:px-6 py-3.5 rounded-full border-white/20 gap-3.5 hover:scale-105 active:scale-95'
+                ? 'w-14 h-14 rounded-full bg-[#C91F26] hover:bg-[#A9181E] text-white border-white/30 justify-center p-0 hover:scale-105 active:scale-95 shadow-[0_10px_25px_rgba(183,1,0,0.4)]'
+                : 'bg-[#292725] hover:bg-[#1E1C1A] text-white px-5 sm:px-6 py-3.5 rounded-full border-white/20 gap-3.5 hover:scale-105 active:scale-95'
             }`}
           >
             {/* Cart Icon with Notification Badge */}
             <div className="relative flex items-center justify-center flex-shrink-0">
               <ShoppingBag
-                className={`${
-                  scrollDirection === 'down' ? 'w-6 h-6' : 'w-5 h-5'
-                } text-white group-hover:scale-110 transition-transform duration-300`}
+                className={`${scrollDirection === 'down' ? 'w-6 h-6' : 'w-5 h-5'} text-white group-hover:scale-110 transition-transform duration-300`}
               />
               <span
                 className={`absolute -top-2 -right-2 ${
                   scrollDirection === 'down'
-                    ? 'bg-white text-[#E60000] border-[#E60000]'
-                    : 'bg-[#E60000] group-hover:bg-white text-white group-hover:text-[#E60000] border-[#2A2724]'
+                    ? 'bg-white text-[#C91F26] border-[#C91F26]'
+                    : 'bg-[#C91F26] group-hover:bg-white text-white group-hover:text-[#C91F26] border-[#292725]'
                 } text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 transition-colors shadow-xs`}
               >
                 {totalItemCount}
               </span>
             </div>
 
-            {/* Expanded Text Content (Visible on Scroll Up / Center Pill) */}
+            {/* Expanded Text Content */}
             <div
-              className={`flex items-center gap-3.5 transition-all duration-500 overflow-hidden ${
+              className={`flex items-center gap-3.5 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
                 scrollDirection === 'down'
                   ? 'max-w-0 opacity-0 pointer-events-none'
                   : 'max-w-[340px] opacity-100'
               }`}
             >
               <div className="text-left font-inter whitespace-nowrap">
-                <span className="text-[10px] text-gray-400 group-hover:text-white/80 block uppercase tracking-wider font-semibold">
+                <span className="text-[10px] text-gray-300 group-hover:text-white/80 block uppercase tracking-wider font-semibold">
                   Your Cart
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-white block">
@@ -5741,7 +5816,7 @@ function App() {
                 </span>
               </div>
 
-              <div className="bg-[#E60000] group-hover:bg-white text-white group-hover:text-[#E60000] px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition-colors ml-1 shadow-sm whitespace-nowrap">
+              <div className="bg-[#C91F26] group-hover:bg-white text-white group-hover:text-[#C91F26] px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition-colors ml-1 shadow-sm whitespace-nowrap">
                 <span>VIEW CART</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
@@ -5753,7 +5828,6 @@ function App() {
       <WhatsAppWidget
         isCartOpen={isCartOpen}
         isCheckoutOpen={activeModal === 'checkout'}
-        isFooterInView={isFooterInView}
       />
       <Chatbot
         currentView={currentView}
@@ -5762,7 +5836,6 @@ function App() {
         onAddToCart={handleAddToCart}
         isCartOpen={isCartOpen}
         isCheckoutOpen={activeModal === 'checkout'}
-        isFooterInView={isFooterInView}
       />
       {isCompareModalOpen && (
         <CompareModal

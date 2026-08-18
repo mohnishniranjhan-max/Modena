@@ -11,7 +11,7 @@ The platform utilizes a cutting-edge headless architecture, decoupling the front
 * **Styling:** Tailwind CSS v4 (Leveraging native `@container` queries and fluid typography via `clamp()`).
 * **Icons:** Lucide React (Lightweight, consistent SVG icons).
 * **State Management:** React Hooks (`useState`, `useEffect`, custom hooks) with `localStorage` for cart and session persistence.
-* **Payment Gateway:** Zoho Pay (Integrated directly into the React checkout modal).
+* **Payment Gateway:** Razorpay (Integrated directly into the React checkout modal).
 * **PDF Generation:** Custom invoice generation for order receipts.
 
 ### Backend (Server-Side & APIs)
@@ -32,7 +32,7 @@ The platform utilizes a cutting-edge headless architecture, decoupling the front
    - Inventory, pricing, and orders sync in real-time.
 4. **Frictionless Checkout Flow:** 
    - Single-page pop-up modal checkout.
-   - Integrated Zoho Pay for UPI, NetBanking, and Card payments.
+   - Integrated Razorpay for UPI, NetBanking, and Card payments.
    - Automated form population for logged-in users.
 5. **Comprehensive User Accounts:** 
    - Customers can track active packages via BlueDart, initiate return requests, and one-click reorder past purchases.
@@ -54,4 +54,4 @@ When presenting this project to stakeholders, interviewers, or clients, structur
 1. **User visits site** -> React (Vite) serves the SPA.
 2. **Product Load** -> Custom React hook (`useProducts`) fetches JSON data from the WooCommerce REST API.
 3. **User asks a question** -> Chatbot sends payload to Gemini API (or the local Python FastAPI `rag-backend`) to process the natural language query against the product catalog.
-4. **User buys product** -> React opens Zoho Pay modal -> Payment success token is generated -> Order payload is pushed directly into WooCommerce HPOS tables.
+4. **User buys product** -> React opens Razorpay modal -> Payment success token is generated -> Order payload is pushed directly into WooCommerce HPOS tables.

@@ -30,7 +30,9 @@ export default function CompareModal({ items, onClose, onAddToCart }) {
             <div key={item.id} className="bg-gray-50 rounded-2xl border border-gray-200 p-5 flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <div className="w-full h-44 bg-white rounded-xl overflow-hidden p-2 flex items-center justify-center border border-gray-200">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                  {item.image && item.image.trim() !== '' ? (
+                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                  ) : null}
                 </div>
 
                 <span className="text-[10px] font-bold bg-[#E60000] text-white px-2 py-0.5 rounded shadow">
@@ -45,7 +47,7 @@ export default function CompareModal({ items, onClose, onAddToCart }) {
               <div className="space-y-2 text-xs border-t border-gray-200 pt-3">
                 <div className="flex justify-between text-gray-600">
                   <span>Material:</span>
-                  <strong className="text-gray-900 font-semibold">{item.id === 26 ? '100% Copper Motor' : item.id === 31 ? 'Organic Cast Iron' : item.id === 32 ? '3-Ply Stainless Steel' : 'German DIN 1.4116 Steel'}</strong>
+                  <strong className="text-gray-900 font-semibold">{item.material || ((item.name || '').toLowerCase().includes('cast iron') ? 'Organic Cast Iron' : (item.name || '').toLowerCase().includes('triply') || (item.name || '').toLowerCase().includes('stainless') || (item.name || '').toLowerCase().includes('steel') ? '3-Ply Stainless Steel' : (item.name || '').toLowerCase().includes('knife') ? 'German DIN 1.4116 Steel' : 'Food-Grade Materials')}</strong>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Rating:</span>
