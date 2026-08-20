@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from main import app
 from rate_limiter import rate_limiter
+from routers.auth import USER_DB
 
 client = TestClient(app)
 
@@ -16,6 +17,12 @@ def reset_rate_limiter():
     """Resets in-memory rate limiter state before each test."""
     rate_limiter._global_requests.clear()
     rate_limiter._auth_failed_attempts.clear()
+    USER_DB["mohnishniranjhan@gmail.com"] = {
+        "id": "user_test_1",
+        "email": "mohnishniranjhan@gmail.com",
+        "password": "mohnish@#20092006",
+        "display_name": "Mohnish Niranjhan"
+    }
 
 def test_headers_on_successful_request():
     """Verify standard rate limit headers are added to all API responses."""

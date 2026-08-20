@@ -94,7 +94,7 @@ const AccessoriesSection = ({
                 {/* Left Side (Image & Badging) */}
                 <div
                   onClick={() => onSelectProduct && onSelectProduct(product)}
-                  className="w-full sm:w-52 @[700px]:w-full aspect-[4/3] bg-[#F3F1ED] rounded-xl overflow-hidden relative flex-shrink-0 flex items-center justify-center p-2.5 transition-all duration-300 cursor-pointer border border-[#EAE7E1]"
+                  className="w-full sm:w-52 @[700px]:w-full aspect-square bg-[#F3F1ED] rounded-xl overflow-hidden relative flex-shrink-0 flex items-center justify-center p-2.5 transition-all duration-300 cursor-pointer border border-[#EAE7E1]"
                 >
                   {/* Out of Stock Badge */}
                   {isOut && (

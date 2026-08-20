@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 from pydantic import BaseModel
 
 # Automatically register Windows store user site-packages if present
@@ -16,7 +17,7 @@ class Settings(BaseModel):
     CONFIDENCE_THRESHOLD: float = 0.35
     TOP_K: int = 4
     MAX_SESSION_HISTORY: int = 10
-    ANALYTICS_LOG_FILE: str = os.path.join(os.path.dirname(__file__), "rag_analytics.json")
+    ANALYTICS_LOG_FILE: str = os.path.join(tempfile.gettempdir(), "modena_rag_analytics.json")
     
     # Authentication & Security
     JWT_SECRET: str = os.environ.get("JWT_SECRET", "")

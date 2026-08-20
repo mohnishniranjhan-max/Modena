@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build && powershell -Command \"Copy-Item -Path 'dist/assets/*' -Destination 'assets' -Force\"",
-    "lint": "oxlint",
+    "lint": "oxlint src",
     "preview": "vite --host preview"
   },
   "dependencies": {

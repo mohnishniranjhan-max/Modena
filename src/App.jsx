@@ -9,21 +9,21 @@ import { fetchRecipeBySlug } from './hooks/useRecipes';
 import Chatbot from './components/Chatbot/Chatbot';
 import WhatsAppWidget from './components/Common/WhatsAppWidget';
 import CrackerSparksCanvas from './components/Common/CrackerSparksCanvas';
-import RazorpayCheckout from './components/Checkout/RazorpayCheckout';
 import ReviewForm from './components/Reviews/ReviewForm';
 import CompareModal from './components/Compare/CompareModal';
 import AmazonAuthModal from './components/Auth/AmazonAuthModal';
 import ReturnProofModal from './components/Account/ReturnProofModal';
 import AnnouncementBar from './components/Home/AnnouncementBar';
 import CartQuantityControl from './components/Common/CartQuantityControl';
-import logoMonoWhiteRed from '/modena_logo_mono-white_red.png';
-import logoBlackRed from '/modena_logo_black_red.png';
+import logoMonoWhiteRed from './assets/logos/modena_logo_mono-white_red.png';
+import logoBlackRed from './assets/logos/modena_logo_black_red.png';
 import banner1 from './assets/hero/banner-1.png';
 import banner2 from './assets/hero/banner-2.png';
 import banner3 from './assets/hero/banner-3.png';
 import banner4 from './assets/hero/banner-4.png';
 import StorePolicies from './components/Legal/StorePolicies';
-import { useProducts, getProductReviews, saveReviewToDb, fetchProductReviewsFromApi, deleteReviewApi } from './hooks/useProducts';
+import { useProducts, getProductReviews, saveReviewToDb, fetchProductReviewsFromApi, deleteReviewApi, fetchProductBySlugOrId } from './hooks/useProducts';
+import { getStandardProductDetails } from './data/productDetails';
 import { useDebounce } from './hooks/useDebounce';
 import { useDisplayTopology } from './hooks/useDisplayTopology';
 import { generateInvoicePDF } from './utils/generateInvoicePDF';
@@ -141,6 +141,9 @@ const DealCountdownTimer = () => {
 function App() {
   const { isMobile, isExtraSmall } = useDisplayTopology();
 
+  // Live WooCommerce API Products Integration via useProducts hook
+  const { products: apiProducts, loading: isProductsLoading, error: productsError } = useProducts();
+
   // Persisted Shopping Cart State (saved across browser refreshes)
   const [cart, setCart] = useState(() => {
     try {
@@ -224,11 +227,18 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Track previous category/catalog view to allow clean "Back to Catalog"
+  const [previousView, setPreviousView] = useState('home');
+
   // Navigation View State with Full Refresh & URL Hash Persistence
   const [currentView, setCurrentView] = useState(() => {
     try {
-      const hash = window.location.hash.replace('#', '').trim();
+      const hash = window.location.hash.replace(/^#\/?/, '').trim();
       if (hash) return hash;
+      const pathname = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').trim();
+      if (pathname && (pathname.startsWith('product/') || pathname.startsWith('recipe/'))) {
+        return pathname;
+      }
       const savedView = localStorage.getItem('modena_current_view');
       return savedView || 'home';
     } catch {
@@ -236,14 +246,22 @@ function App() {
     }
   });
 
+  const currentViewRef = useRef(currentView);
+  currentViewRef.current = currentView;
+
+  const apiProductsRef = useRef(apiProducts);
+  apiProductsRef.current = apiProducts;
+
+  // URL Hash Synchronizer (prevents infinite hashchange / re-render loops)
   useEffect(() => {
     try {
       localStorage.setItem('modena_current_view', currentView);
+      const currentHash = window.location.hash.replace(/^#\/?/, '').trim();
       if (currentView === 'home') {
         if (window.location.hash) {
           history.replaceState(null, '', window.location.pathname + window.location.search);
         }
-      } else {
+      } else if (currentHash !== currentView) {
         window.location.hash = currentView;
       }
     } catch (e) {
@@ -253,11 +271,40 @@ function App() {
 
   useEffect(() => {
     const handleHashChange = async () => {
-      const hash = window.location.hash.replace('#', '').trim();
-      if (!hash) {
+      const hash = window.location.hash.replace(/^#\/?/, '').trim();
+      const targetRoute = !hash || hash === 'home' ? 'home' : hash;
+
+      // Avoid redundant resets and re-render loops if route didn't change
+      if (targetRoute === currentViewRef.current && (targetRoute !== 'home' || !window.location.hash)) {
+        return;
+      }
+
+      // Route genuinely changed from browser history / back-forward
+      setActiveModal(null);
+      setBuyNowItem(null);
+      setPlacedOrder(null);
+
+      if (!hash || hash === 'home') {
+        setSelectedProduct(null);
         setCurrentView('home');
-      } else if (hash.startsWith('recipe/')) {
-        const slug = hash.replace('recipe/', '');
+      } else if (hash.startsWith('product/') || hash.startsWith('/product/')) {
+        const slugOrId = hash.replace(/^\/?product\//, '').replace(/\/$/, '').trim();
+        let found = (apiProductsRef.current || []).find(
+          (p) => String(p.slug) === String(slugOrId) || String(p.id) === String(slugOrId)
+        );
+        if (!found) {
+          found = await fetchProductBySlugOrId(slugOrId);
+        }
+        if (found) {
+          setSelectedProduct(found);
+          setCurrentView(`product/${slugOrId}`);
+        } else {
+          setSelectedProduct(null);
+          setCurrentView('home');
+        }
+      } else if (hash.startsWith('recipe/') || hash.startsWith('/recipe/')) {
+        setSelectedProduct(null);
+        const slug = hash.replace(/^\/?recipe\//, '').replace(/\/$/, '').trim();
         const found = await fetchRecipeBySlug(slug);
         if (found) {
           setSelectedRecipe(found);
@@ -266,11 +313,14 @@ function App() {
           setCurrentView('recipes');
         }
       } else if (hash === 'recipes') {
+        setSelectedProduct(null);
         setCurrentView('recipes');
       } else {
+        setSelectedProduct(null);
         setCurrentView(hash);
       }
     };
+
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
@@ -289,6 +339,10 @@ function App() {
   };
   // Modals state for Big Checkout & Login popups ('checkout' | 'login' | 'account' | 'reviews' | 'careGuide' | 'warranty' | null)
   const [activeModal, setActiveModal] = useState(null);
+
+  // Dedicated Buy Now State & Loading state for isolated checkout flow
+  const [buyNowItem, setBuyNowItem] = useState(null);
+  const [isBuyNowLoading, setIsBuyNowLoading] = useState(false);
 
   // Recipe Selected State
   const [selectedRecipe, setSelectedRecipe] = useState(null);
@@ -309,6 +363,28 @@ function App() {
   // Dynamic Product Reviews State for Selected Product Detail Page
   const [activeProductReviews, setActiveProductReviews] = useState([]);
   const [isReviewsLoading, setIsReviewsLoading] = useState(false);
+
+  // Resolve direct product URL once API products load
+  useEffect(() => {
+    const rawHash = window.location.hash.replace(/^#\/?/, '').trim();
+    const rawPath = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').trim();
+    const targetRoute = (rawHash.startsWith('product/') || rawHash.startsWith('/product/'))
+      ? rawHash
+      : (rawPath.startsWith('product/') || rawPath.startsWith('/product/'))
+        ? rawPath
+        : '';
+
+    if (targetRoute && !selectedProduct && apiProducts?.length > 0) {
+      const slugOrId = targetRoute.replace(/^\/?product\//, '').replace(/\/$/, '').trim();
+      const found = apiProducts.find(
+        (p) => String(p.slug) === String(slugOrId) || String(p.id) === String(slugOrId)
+      );
+      if (found) {
+        setSelectedProduct(found);
+        setCurrentView(`product/${slugOrId}`);
+      }
+    }
+  }, [apiProducts, selectedProduct]);
 
   useEffect(() => {
     if (!selectedProduct?.id) {
@@ -339,16 +415,36 @@ function App() {
     };
   }, [selectedProduct?.id]);
 
-  // Automatic Scroll To Top on Page Navigation & Product Selection
+  // Automatic Scroll To Top on Page Navigation
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [currentView, selectedProduct]);
+    if (currentView) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+  }, [currentView]);
 
   const handleSelectProduct = (product) => {
+    if (!product) return;
+    if (currentView && !currentView.startsWith('product/') && !currentView.startsWith('/product/')) {
+      setPreviousView(currentView);
+    }
     setSelectedProduct(product);
     setActiveProductImage(null);
     setProductQuantity(1);
+    const slugOrId = product.slug || product.id;
+    setCurrentView(`product/${slugOrId}`);
+    window.location.hash = `product/${slugOrId}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackFromProduct = () => {
+    setSelectedProduct(null);
+    setActiveModal(null);
+    setBuyNowItem(null);
+    const target = previousView && !previousView.startsWith('product/') && !previousView.startsWith('/product/')
+      ? previousView
+      : 'home';
+    setCurrentView(target);
+    window.location.hash = target === 'home' ? '' : target;
   };
 
   // Helper to extract clean First Name everywhere in the UI
@@ -442,34 +538,20 @@ function App() {
   const [returnProofError, setReturnProofError] = useState('');
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
 
-  // Live WooCommerce API Products Integration via useProducts hook
-  const { products: apiProducts, loading: isProductsLoading, error: productsError } = useProducts();
-
   // Extract dynamic categories from WooCommerce products (strictly excluding internal sub-components like accessories)
   const dynamicCategories = useMemo(() => {
-    if (!apiProducts || !Array.isArray(apiProducts)) return [];
-    
-    const uniqueMap = new Map();
-    apiProducts.forEach((p) => {
-      if (p.categories && Array.isArray(p.categories)) {
-        p.categories.forEach((cat) => {
-          if (cat.name && cat.slug && cat.slug !== 'uncategorized' && cat.slug !== 'accessories' && cat.slug !== 'out-of-stock') {
-            uniqueMap.set(cat.slug, cat.name);
-          }
-        });
-      }
-    });
-
     const predefinedOrder = ['mixer-grinder', 'nutrimix', 'cookware'];
-    const cats = Array.from(uniqueMap.entries())
-      .filter(([slug]) => predefinedOrder.includes(slug))
-      .map(([slug, name]) => ({ id: slug, label: name.toUpperCase() }));
-    return cats.sort((a, b) => {
-      const indexA = predefinedOrder.indexOf(a.id);
-      const indexB = predefinedOrder.indexOf(b.id);
-      return indexA - indexB;
-    });
-  }, [apiProducts]);
+    const labelMap = {
+      'mixer-grinder': 'MIXER GRINDER',
+      'nutrimix': 'NUTRIMIX',
+      'cookware': 'COOKWARE'
+    };
+
+    return predefinedOrder.map((slug) => ({
+      id: slug,
+      label: labelMap[slug]
+    }));
+  }, []);
 
   const bestsellers = useMemo(() => {
     if (!apiProducts || apiProducts.length === 0) return [];
@@ -871,7 +953,51 @@ function App() {
     setIsLoggingIn(false);
   };
 
-  const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod', 'card', 'upi', 'bacs'
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [wcPaymentGateways, setWcPaymentGateways] = useState([
+    { id: 'razorpay', title: 'UPI, Cards, NetBanking', description: 'Pay securely via UPI, Cards, or NetBanking.', is_default: true },
+    { id: 'bacs', title: 'Direct bank transfer', description: 'Make your payment directly into our bank account.', is_default: false },
+    { id: 'cheque', title: 'Check payments', description: 'Please send a check to Store address.', is_default: false }
+  ]);
+  const [isFetchingGateways, setIsFetchingGateways] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  // Fetch enabled WooCommerce payment gateways dynamically
+  useEffect(() => {
+    let isMounted = true;
+    setIsFetchingGateways(true);
+    fetch('/wp-json/modena/v1/payment-methods')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && Array.isArray(data.gateways) && data.gateways.length > 0) {
+          setWcPaymentGateways(data.gateways);
+          setPaymentMethod((prev) => {
+            if (prev && data.gateways.some((g) => g.id === prev)) return prev;
+            const def = data.gateways.find((g) => g.is_default) || data.gateways[0];
+            return def ? def.id : 'razorpay';
+          });
+        }
+      })
+      .catch((err) => console.warn('Could not load dynamic WooCommerce payment gateways:', err))
+      .finally(() => {
+        if (isMounted) setIsFetchingGateways(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const getGatewayIcon = (gatewayId) => {
+    const id = (gatewayId || '').toLowerCase();
+    if (id.includes('razorpay') || id.includes('card') || id.includes('pay')) return CreditCard;
+    if (id.includes('upi') || id.includes('wallet')) return Wallet;
+    if (id.includes('bacs') || id.includes('bank')) return Building;
+    if (id.includes('cod') || id.includes('cash')) return Banknote;
+    if (id.includes('cheque') || id.includes('check')) return FileText;
+    return CreditCard;
+  };
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -1081,35 +1207,112 @@ function App() {
     }
   }, [activeModal, userDisplayName, userEmail, userPhone, userAddresses]);
 
-  // Helper function to enforce authentication before proceeding to checkout
-  const triggerCheckoutFlow = () => {
-    // Strictly check for email or token to ensure they actually logged in, ignoring old demo display names
-    const loggedIn = Boolean(
-      userEmail ||
-      localStorage.getItem('user_email') ||
-      localStorage.getItem('modena_jwt_token')
-    );
-    if (!loggedIn) {
-      setActiveModal('login');
-    } else {
-      setActiveModal('checkout');
+  // Direct checkout flow trigger for Cart and Buy Now
+  const triggerCheckoutFlow = (isBuyNow = false) => {
+    if (!isBuyNow) {
+      setBuyNowItem(null);
     }
+    setPlacedOrder(null);
+    setActiveModal('checkout');
   };
 
   const parsePrice = (product) => {
+    if (!product) return 0;
+    if (typeof product.numericPrice === 'number' && product.numericPrice > 0) {
+      return product.numericPrice;
+    }
     if (product.prices?.price) {
       return parseFloat(product.prices.price) / Math.pow(10, product.prices.currency_minor_unit || 2);
     }
-    if (typeof product.price === 'number') return product.price;
+    if (typeof product.price === 'number' && product.price > 0) return product.price;
     if (typeof product.price === 'string') {
       const cleaned = product.price.replace(/[^0-9.]/g, '');
-      if (cleaned) return parseFloat(cleaned);
+      if (cleaned) {
+        const val = parseFloat(cleaned);
+        if (!isNaN(val) && val > 0) return val;
+      }
+    }
+    if (product.price_html && typeof product.price_html === 'string') {
+      const cleaned = product.price_html.replace(/<[^>]*>?/gm, '').replace(/[^0-9.]/g, '');
+      if (cleaned) {
+        const val = parseFloat(cleaned);
+        if (!isNaN(val) && val > 0) return val;
+      }
     }
     return 0;
   };
 
+  // Central Navigation Handler: resets active modals, product detail view, and isolated state
+  const handleNavigate = (viewId) => {
+    setSelectedProduct(null);
+    setActiveModal(null);
+    setBuyNowItem(null);
+    setPlacedOrder(null);
+    setIsCartOpen(false);
+    setMobileMenuOpen(false);
+    setCurrentView(viewId);
+  };
+
+  // TRUE BUY NOW HANDLER: Operates via isolated buyNowItem state without corrupting persistent cart
+  const handleBuyNow = (product, quantityToAdd = 1, variation = null) => {
+    if (!product) return;
+    if (isBuyNowLoading) return; // Double-click protection
+
+    setIsBuyNowLoading(true);
+
+    // 1. Stock validation
+    const isOut =
+      product.isOutOfStock ||
+      product.stock === 'Out of Stock' ||
+      product.is_in_stock === false ||
+      (product.categories || []).some(
+        (c) => (typeof c === 'string' ? c : c.slug || c.name || '').toLowerCase().includes('out of stock')
+      );
+
+    if (isOut) {
+      alert('Sorry, this product is currently Out of Stock.');
+      setIsBuyNowLoading(false);
+      return;
+    }
+
+    const priceVal = parsePrice(product);
+    const img =
+      (Array.isArray(product.images) && product.images.length > 0
+        ? (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.src || product.images[0]?.thumbnail)
+        : null) ||
+      product.image ||
+      'https://images.unsplash.com/photo-1584992236310-6edddc08acff?q=80&w=800&auto=format&fit=crop';
+
+    const selectedVar = variation || product.selectedVariation || null;
+
+    const itemToBuy = {
+      id: selectedVar ? `${product.id}-${selectedVar.id || selectedVar.name}` : product.id,
+      productId: product.id,
+      name: selectedVar ? `${product.name} (${selectedVar.name || selectedVar.attributes})` : (product.name || product.title),
+      price: selectedVar?.price ? parseFloat(selectedVar.price) : priceVal,
+      price_html: selectedVar?.price_html || product.dealPrice || product.price_html || product.price || `₹${priceVal.toFixed(2)}`,
+      currency_symbol: product.prices?.currency_symbol || '₹',
+      image: selectedVar?.image?.src || img,
+      quantity: Math.max(1, quantityToAdd),
+      variation: selectedVar
+    };
+
+    setPlacedOrder(null);
+    setBuyNowItem(itemToBuy);
+    setActiveModal('checkout');
+    setIsBuyNowLoading(false);
+  };
+
+  const lastCartThrottleRef = useRef(0);
+
   const handleAddToCart = (product, quantityToAdd = 1) => {
     if (!product) return;
+    const now = Date.now();
+    if (now - lastCartThrottleRef.current < 300) {
+      return; // Anti-spam click guard
+    }
+    lastCartThrottleRef.current = now;
+
     const isOut =
       product.isOutOfStock ||
       product.stock === 'Out of Stock' ||
@@ -1124,7 +1327,7 @@ function App() {
     }
 
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find((item) => String(item.id) === String(product.id) || (product.name && item.name === product.name));
       const priceVal = parsePrice(product);
       const img =
         product.images?.[0]?.src ||
@@ -1134,7 +1337,9 @@ function App() {
 
       if (existing) {
         return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantityToAdd } : item
+          String(item.id) === String(product.id) || (product.name && item.name === product.name)
+            ? { ...item, quantity: item.quantity + quantityToAdd }
+            : item
         );
       } else {
         return [
@@ -1154,10 +1359,16 @@ function App() {
   };
 
   const updateQuantity = (id, delta) => {
+    const now = Date.now();
+    if (now - lastCartThrottleRef.current < 200) {
+      return; // Anti-spam click guard
+    }
+    lastCartThrottleRef.current = now;
+
     setCart((prevCart) =>
       prevCart
         .map((item) => {
-          if (item.id === id) {
+          if (String(item.id) === String(id) || item.name === id) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -1175,15 +1386,21 @@ function App() {
   const totalItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const currencySymbol = cart[0]?.currency_symbol || '₹';
 
+  // Active items for Checkout Popup (isolated Buy Now vs persistent Cart)
+  const activeCheckoutItems = buyNowItem ? [buyNowItem] : cart;
+  const activeSubtotal = activeCheckoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const activeTotalItemCount = activeCheckoutItems.reduce((sum, item) => sum + item.quantity, 0);
+  const activeCurrencySymbol = activeCheckoutItems[0]?.currency_symbol || '₹';
+
   // Shipping Fee per Official Policy #3: Free shipping above ₹2,999. Orders below ₹2,999 attract flat ₹300 fee.
-  const shippingFee = subtotal > 0 && subtotal < 2999 ? 300 : 0;
+  const shippingFee = activeSubtotal > 0 && activeSubtotal < 2999 ? 300 : 0;
 
   const discountAmount = appliedDiscount
     ? appliedDiscount.percent
-      ? (subtotal * appliedDiscount.percent) / 100
+      ? (activeSubtotal * appliedDiscount.percent) / 100
       : appliedDiscount.flat || 0
     : 0;
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+  const finalTotal = Math.max(0, activeSubtotal - discountAmount + shippingFee);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -1193,7 +1410,7 @@ function App() {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     if (isSubmittingOrder) return;
-    if (!cart || cart.length === 0) return;
+    if (!activeCheckoutItems || activeCheckoutItems.length === 0) return;
 
     setIsSubmittingOrder(true);
     const orderNumber = 'MOD-' + Math.floor(100000 + Math.random() * 900000);
@@ -1244,29 +1461,39 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order_number: orderNumber,
-          items: cart,
+          items: activeCheckoutItems,
           customer: customerDetails,
-          paymentMethod: paymentMethod || 'cod',
-          total: subtotal
+          paymentMethod: paymentMethod || 'razorpay'
         })
       });
       const data = await response.json();
-      const realOrderNumber = data.success ? data.order_number : orderNumber;
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to place order in WooCommerce.');
+      }
+
+      const selectedGatewayObj = wcPaymentGateways.find((g) => g.id === (data.payment_method || paymentMethod));
+      const paymentTitle = data.payment_method_title || (selectedGatewayObj ? selectedGatewayObj.title : paymentMethod);
 
       const newOrder = {
-        id: 'order-' + Date.now(),
-        orderNumber: realOrderNumber,
-        items: [...cart],
-        total: subtotal,
+        id: 'order-' + (data.order_id || Date.now()),
+        orderId: data.order_id,
+        orderNumber: data.order_number || orderNumber,
+        items: [...activeCheckoutItems],
+        total: typeof data.total === 'number' ? data.total : finalTotal,
+        currency: data.currency || 'INR',
         date: new Date().toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'short',
           year: 'numeric'
         }),
         customer: customerDetails,
-        paymentMethod,
-        status: 'Processing',
-        deliveryStatus: '🚚 Order Placed - Arriving Soon via BlueDart'
+        paymentMethod: data.payment_method || paymentMethod,
+        paymentMethodTitle: paymentTitle,
+        instructions: data.instructions || (selectedGatewayObj ? selectedGatewayObj.description : ''),
+        status: data.status || 'processing',
+        statusLabel: data.status_label || 'Processing',
+        deliveryStatus: '🚚 Order Placed - Processing in WooCommerce'
       };
 
       setPlacedOrder(newOrder);
@@ -1279,27 +1506,18 @@ function App() {
         }
         return updated;
       });
-      setCart([]);
+      if (!buyNowItem) {
+        setCart([]);
+      }
+      setBuyNowItem(null);
+
+      // If an online gateway returns a payment link, redirect customer to complete payment
+      if (data.redirect_url && typeof data.redirect_url === 'string' && data.redirect_url.startsWith('http') && data.payment_method !== 'bacs' && data.payment_method !== 'cheque') {
+        window.location.href = data.redirect_url;
+      }
     } catch (error) {
       console.error('Failed to create WooCommerce order:', error);
-      // Fallback
-      const newOrder = {
-        id: 'order-' + Date.now(),
-        orderNumber,
-        items: [...cart],
-        total: subtotal,
-        date: new Date().toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }),
-        customer: customerDetails,
-        paymentMethod,
-        status: 'Processing',
-        deliveryStatus: '🚚 Order Placed - Arriving Soon via BlueDart'
-      };
-      setPlacedOrder(newOrder);
-      setCart([]);
+      setOrderError(error.message || 'Failed to create WooCommerce order. Please try again.');
     } finally {
       setIsSubmittingOrder(false);
     }
@@ -1387,7 +1605,7 @@ function App() {
         <div className={`border px-6 sm:px-10 h-16 sm:h-18 flex items-center justify-between relative transition-all duration-300 ease-out border-[#D8D4CD] transform-gpu ${isScrolled ? 'mt-0 rounded-t-none rounded-b-[36px] shadow-sm bg-[#F8F7F4]/95 backdrop-blur-2xl text-[#292725]' : 'mt-2.5 sm:mt-4 rounded-[36px] bg-[#F8F7F4]/90 backdrop-blur-xl shadow-xs text-[#292725]'}`}>
           {/* Left: Logo */}
           <div className="flex items-center gap-3.5">
-            <button onClick={() => { setSelectedProduct(null); setCurrentView('home'); }} className="flex items-center group cursor-pointer flex-shrink-0">
+            <button onClick={() => handleNavigate('home')} className="flex items-center group cursor-pointer flex-shrink-0">
               <img
                 src={logoBlackRed}
                 alt="Modena Logo"
@@ -1404,7 +1622,7 @@ function App() {
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => { setSelectedProduct(null); setCurrentView(item.id); }}
+                onClick={() => handleNavigate(item.id)}
                 className={`py-2 border-b-2 transition-all cursor-pointer font-semibold uppercase ${(currentView === item.id || ((item.id === 'mixer-grinder' || item.id === 'mixer') && ['mixer', 'mixer-grinder', 'mixer-grinders'].includes(currentView))) && !selectedProduct ? 'text-[#C91F26] border-[#C91F26] font-bold scale-105' : 'text-[#292725] hover:text-[#C91F26] border-transparent'
                   }`}
               >
@@ -1424,8 +1642,7 @@ function App() {
                 <div className="bg-[#F8F7F4] rounded-xl shadow-xl border border-[#D8D4CD] flex flex-col relative text-[#292725]">
                   <button
                     onClick={() => {
-                      setSelectedProduct(null);
-                      setCurrentView('corporate-gifting');
+                      handleNavigate('corporate-gifting');
                       window.location.hash = 'corporate-gifting';
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
@@ -1437,8 +1654,7 @@ function App() {
                   </button>
                   <button
                     onClick={() => {
-                      setSelectedProduct(null);
-                      setCurrentView('philosophy');
+                      handleNavigate('philosophy');
                       window.location.hash = 'philosophy';
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
@@ -1447,7 +1663,7 @@ function App() {
                     ABOUT US
                   </button>
                   <button
-                    onClick={() => { setSelectedProduct(null); setCurrentView('contactUs'); }}
+                    onClick={() => handleNavigate('contactUs')}
                     className="w-full text-left px-5 py-3 hover:bg-[#EAE7E1] transition-colors text-[#292725] hover:text-[#C91F26] uppercase text-xs tracking-wider cursor-pointer font-semibold"
                   >
                     CONTACT US
@@ -1528,8 +1744,7 @@ function App() {
                           <div
                             className="flex items-center gap-3 truncate mr-2 cursor-pointer flex-1"
                             onClick={() => {
-                              setSelectedProduct(item);
-                              setProductQuantity(1);
+                              handleSelectProduct(item);
                               setIsSearchOverlayOpen(false);
                             }}
                           >
@@ -1880,11 +2095,7 @@ function App() {
                 ].map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => {
-                      setSelectedProduct(null);
-                      setCurrentView(item.id);
-                      setMobileMenuOpen(false);
-                    }}
+                    onClick={() => handleNavigate(item.id)}
                     className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase ${currentView === item.id || ((item.id === 'mixer-grinder' || item.id === 'mixer') && ['mixer', 'mixer-grinder', 'mixer-grinders'].includes(currentView))
                       ? 'bg-[#C91F26] text-white shadow-xs'
                       : 'text-[#292725] hover:bg-[#EAE7E1] hover:text-[#C91F26]'
@@ -1905,10 +2116,8 @@ function App() {
                   <div className="pl-4 pr-2 py-2 space-y-1">
                     <button
                       onClick={() => {
-                        setSelectedProduct(null);
-                        setCurrentView('corporate-gifting');
+                        handleNavigate('corporate-gifting');
                         window.location.hash = 'corporate-gifting';
-                        setMobileMenuOpen(false);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className="relative overflow-visible w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left text-[#F9DE8B] bg-gradient-to-r from-[#4A3B18] to-transparent border border-[#D4AF37]/40"
@@ -1922,10 +2131,8 @@ function App() {
 
                     <button
                       onClick={() => {
-                        setSelectedProduct(null);
-                        setCurrentView('philosophy');
+                        handleNavigate('philosophy');
                         window.location.hash = 'philosophy';
-                        setMobileMenuOpen(false);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase text-[11px] ${['about', 'philosophy'].includes(currentView)
@@ -1937,11 +2144,7 @@ function App() {
                     </button>
 
                     <button
-                      onClick={() => {
-                        setSelectedProduct(null);
-                        setCurrentView('contactUs');
-                        setMobileMenuOpen(false);
-                      }}
+                      onClick={() => handleNavigate('contactUs')}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer font-bold tracking-widest text-left uppercase text-[11px] ${currentView === 'contactUs'
                         ? 'bg-[#E60000] text-white shadow-md'
                         : 'text-gray-200 hover:bg-white/5 hover:text-white'
@@ -1982,7 +2185,7 @@ function App() {
           {/* Breadcrumb Navigation & Back to Store Button */}
           <div className="flex items-center justify-between border-b border-gray-200 pb-4">
             <button
-              onClick={() => setSelectedProduct(null)}
+              onClick={handleBackFromProduct}
               className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#E60000] hover:text-red-700 transition-colors cursor-pointer group"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -1995,13 +2198,21 @@ function App() {
 
           {/* Main Product Info Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* Left Column: Product Image Gallery with 4 Pictures, Thumbnails & Zoom */}
+            {/* Left Column: Product Image Gallery with Thumbnails & Zoom */}
             {(() => {
-              const currentImages =
-                Array.isArray(selectedProduct.images) && selectedProduct.images.length > 0
-                  ? selectedProduct.images
-                  : [selectedProduct.image];
-              const displayImg = activeProductImage || selectedProduct.image || currentImages[0];
+              const currentImages = Array.from(
+                new Set(
+                  (Array.isArray(selectedProduct.images) && selectedProduct.images.length > 0
+                    ? selectedProduct.images
+                    : [selectedProduct.image]
+                  ).filter(Boolean)
+                )
+              );
+              const displayImg = (activeProductImage && currentImages.includes(activeProductImage))
+                ? activeProductImage
+                : (selectedProduct.image && currentImages.includes(selectedProduct.image))
+                  ? selectedProduct.image
+                  : currentImages[0];
 
               return (
                 <div className="lg:col-span-6 flex flex-col items-center space-y-4">
@@ -2011,7 +2222,7 @@ function App() {
                       setZoomedImage(displayImg);
                       setZoomScale(1);
                     }}
-                    className="w-full aspect-[4/3] bg-[#FAF8F6] rounded-2xl overflow-hidden border border-[#E2DCD7] relative group cursor-pointer flex items-center justify-center p-4 shadow-sm hover:shadow-md transition-all"
+                    className="w-full aspect-square bg-[#FAF8F6] rounded-2xl overflow-hidden border border-[#E2DCD7] relative group cursor-pointer flex items-center justify-center p-4 shadow-sm hover:shadow-md transition-all"
                   >
                     {selectedProduct.badge && (
                       <span className="absolute top-4 left-4 bg-[#E60000] text-white text-[10px] font-bold font-label-caps px-3 py-1 rounded-full shadow-md tracking-wider uppercase z-10">
@@ -2065,19 +2276,19 @@ function App() {
                     )}
                   </div>
 
-                  {/* 4 Thumbnail Picture Row */}
+                  {/* Thumbnail Picture Row */}
                   {currentImages.length > 1 && (
                     <div className="w-full flex items-center justify-center gap-3 overflow-x-auto py-1">
                       {currentImages.map((imgUrl, idx) => {
                         const isCurrent = displayImg === imgUrl;
                         return (
                           <button
-                            key={idx}
+                            key={`${imgUrl}-${idx}`}
                             type="button"
                             onClick={() => setActiveProductImage(imgUrl)}
                             className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all p-1 cursor-pointer bg-white flex-shrink-0 ${isCurrent
-                              ? 'border-[#E60000] ring-2 ring-[#E2DCD7] scale-105 shadow-md'
-                              : 'border-[#E2DCD7] opacity-60 hover:opacity-100'
+                              ? 'border-[#E60000] ring-2 ring-[#E60000]/30 scale-105 shadow-md'
+                              : 'border-[#E2DCD7] opacity-60 hover:opacity-100 hover:border-gray-400'
                               }`}
                           >
                             <img
@@ -2303,54 +2514,92 @@ function App() {
                       />
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleAddToCart(
-                          {
-                            id: selectedProduct.id,
-                            name: selectedProduct.name,
-                            price: selectedProduct.numericPrice || selectedProduct.price,
-                            price_html:
-                              selectedProduct.dealPrice ||
-                              selectedProduct.price_html ||
-                              selectedProduct.price,
-                            image: selectedProduct.image,
-                            isOutOfStock: selectedProduct.isOutOfStock,
-                            stock: selectedProduct.stock
-                          },
-                          productQuantity
+                    {(() => {
+                      const cartItemForProduct = (cart || []).find(
+                        (item) => String(item.id) === String(selectedProduct.id) || (selectedProduct.name && item.name === selectedProduct.name)
+                      );
+                      const currentCartQty = cartItemForProduct ? cartItemForProduct.quantity : 0;
+
+                      if (currentCartQty > 0) {
+                        return (
+                          <div className="flex-1 bg-[#2A2724] text-white py-2 px-3 sm:px-4 rounded-xl flex items-center justify-between shadow-md border border-[#3A3734] min-h-[52px] select-none">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(cartItemForProduct.id, -1);
+                              }}
+                              className="w-10 h-10 rounded-lg hover:bg-white/10 active:bg-white/20 flex items-center justify-center transition-all cursor-pointer"
+                              title="Decrease Quantity"
+                              aria-label="Decrease Quantity"
+                            >
+                              <Minus className="w-5 h-5 text-white stroke-[2.5]" />
+                            </button>
+
+                            <div className="flex flex-col items-center select-none px-2">
+                              <span className="text-[10px] font-label-caps text-[#E2DCD7] tracking-widest font-semibold">IN CART</span>
+                              <span className="text-base font-extrabold text-white leading-none tracking-wider">{currentCartQty}</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(cartItemForProduct.id, 1);
+                              }}
+                              className="w-10 h-10 rounded-lg hover:bg-white/10 active:bg-white/20 flex items-center justify-center transition-all cursor-pointer"
+                              title="Increase Quantity"
+                              aria-label="Increase Quantity"
+                            >
+                              <Plus className="w-5 h-5 text-white stroke-[2.5]" />
+                            </button>
+                          </div>
                         );
-                      }}
-                      className="flex-1 bg-[#2A2724] hover:bg-[#2A2724] text-white py-4 px-6 rounded-xl text-xs sm:text-sm font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>ADD TO CART</span>
-                    </button>
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAddToCart(
+                              {
+                                id: selectedProduct.id,
+                                name: selectedProduct.name,
+                                price: selectedProduct.numericPrice || selectedProduct.price,
+                                price_html:
+                                  selectedProduct.dealPrice ||
+                                  selectedProduct.price_html ||
+                                  selectedProduct.price,
+                                image: selectedProduct.image,
+                                isOutOfStock: selectedProduct.isOutOfStock,
+                                stock: selectedProduct.stock
+                              },
+                              productQuantity
+                            );
+                          }}
+                          className="flex-1 bg-[#2A2724] hover:bg-[#1E1C1A] text-white py-4 px-6 rounded-xl text-xs sm:text-sm font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <Plus className="w-4 h-4 stroke-[2.5]" />
+                          <span>ADD TO CART</span>
+                        </button>
+                      );
+                    })()}
 
                     <button
                       type="button"
-                      onClick={() => {
-                        handleAddToCart(
-                          {
-                            id: selectedProduct.id,
-                            name: selectedProduct.name,
-                            price: selectedProduct.numericPrice || selectedProduct.price,
-                            price_html:
-                              selectedProduct.dealPrice ||
-                              selectedProduct.price_html ||
-                              selectedProduct.price,
-                            image: selectedProduct.image,
-                            isOutOfStock: selectedProduct.isOutOfStock,
-                            stock: selectedProduct.stock
-                          },
-                          productQuantity
-                        );
-                        triggerCheckoutFlow();
+                      disabled={isBuyNowLoading}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleBuyNow(selectedProduct, productQuantity);
                       }}
-                      className="flex-1 bg-[#E60000] hover:bg-[#E60000] text-white py-4 px-6 rounded-xl text-xs sm:text-sm font-bold tracking-wider uppercase transition-all shadow-lg shadow-red-900/20 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
+                      className="flex-1 bg-[#E60000] hover:bg-[#E60000] text-white py-4 px-6 rounded-xl text-xs sm:text-sm font-bold tracking-wider uppercase transition-all shadow-lg shadow-red-900/20 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Zap className="w-4 h-4 fill-white" />
+                      {isBuyNowLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      ) : (
+                        <Zap className="w-4 h-4 fill-white" />
+                      )}
                       <span>BUY NOW</span>
                     </button>
 
@@ -2360,262 +2609,177 @@ function App() {
             </div>
           </div>
 
-          {/* COLLAPSIBLE ACCORDIONS SECTION (Matching Screenshot 2) */}
-          <div className="pt-8 border-t border-gray-200 max-w-4xl mx-auto space-y-4">
-            {/* Accordion 1: Description */}
-            <div className="border-b border-gray-200 pb-4">
-              <button
-                onClick={() =>
-                  setOpenAccordion((prev) => (prev === 'description' ? null : 'description'))
-                }
-                className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
-              >
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
-                  Description
-                </h3>
-                <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
-                  {openAccordion === 'description' ? (
-                    <ChevronUp className="w-4 h-4 text-gray-700" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-700" />
-                  )}
-                </div>
-              </button>
-              {openAccordion === 'description' && (
-                <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-3 animate-in fade-in duration-200">
-                  <p>
-                    {selectedProduct.desc ||
-                      selectedProduct.description ||
-                      'Engineered with industrial precision and domestic warmth. Designed for commercial home chefs and culinary enthusiasts who demand reliable power, food safety, and ergonomic durability.'}
-                  </p>
-                </div>
-              )}
-            </div>
+          {/* STANDARDIZED 5-FIELD PRODUCT DETAILS ACCORDIONS */}
+          {(() => {
+            const std = getStandardProductDetails(selectedProduct) || {};
+            const desc = std.description || selectedProduct.description || selectedProduct.desc || '';
+            const incList = std.included_components || (Array.isArray(selectedProduct.included_components) ? selectedProduct.included_components : (selectedProduct.included_components ? [selectedProduct.included_components] : []));
+            const uspList = std.usp || (Array.isArray(selectedProduct.usp) ? selectedProduct.usp : (selectedProduct.usp ? [selectedProduct.usp] : []));
+            const dimsText = std.dimensions || selectedProduct.dimensions || '';
+            const mfrText = std.manufacturer || selectedProduct.manufacturer || '';
 
-            {/* Accordion 2: USP */}
-            <div className="border-b border-gray-200 pb-4">
-              <button
-                onClick={() => setOpenAccordion((prev) => (prev === 'usp' ? null : 'usp'))}
-                className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
-              >
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
-                  USP
-                </h3>
-                <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
-                  {openAccordion === 'usp' ? (
-                    <ChevronUp className="w-4 h-4 text-gray-700" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-700" />
-                  )}
-                </div>
-              </button>
-              {openAccordion === 'usp' && (
-                <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
-                  <ul className="list-disc pl-5 space-y-1.5">
-                    {(() => {
-                      const pName = (selectedProduct.name || '').toLowerCase();
-                      const isNonStick = pName.includes('non-stick') || pName.includes('nonstick');
-                      const isCastIron = pName.includes('cast iron') || pName.includes('tawa') || pName.includes('kadai') || pName.includes('pan');
-                      const isMixer = pName.includes('mixer') || pName.includes('grinder') || pName.includes('jar');
-
-                      if (isNonStick) {
-                        return (
-                          <>
-                            <li>Heavy-gauge uniform heat distribution on gas stoves</li>
-                            <li>Premium scratch-resistant food-safe surface</li>
-                            <li>Ergonomic heat-resistant wooden handle for comfortable grip</li>
-                            <li>Effortless cooking and low-oil meal preparation</li>
-                          </>
-                        );
+            return (
+              <div className="pt-8 border-t border-gray-200 max-w-4xl mx-auto space-y-4">
+                {/* 1. Description */}
+                {desc && (
+                  <div className="border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() =>
+                        setOpenAccordion((prev) => (prev === 'description' ? null : 'description'))
                       }
-
-                      if (isCastIron) {
-                        return (
-                          <>
-                            <li>Pre-seasoned with 100% natural vegetable oils</li>
-                            <li>Zero chemical coating — no plastic or Teflon coating where food particles touch.</li>
-                            <li>Heavy-gauge virgin cast iron for superior heat retention</li>
-                            <li>Naturally enriches iron and enhances traditional slow cooking</li>
-                          </>
-                        );
-                      }
-
-                      if (isMixer) {
-                        return (
-                          <>
-                            <li>High-performance motor engineered for tough daily grinding</li>
-                            <li>Food-Grade Stainless Steel Jars &amp; Blades</li>
-                            <li>Zero chemical coating — no plastic or Teflon coating where food particles touch.</li>
-                            <li>Thermal overload circuit breaker for maximum motor protection</li>
-                          </>
-                        );
-                      }
-
-                      return (
-                        <>
-                          <li>Food-Grade Stainless Steel construction for maximum durability</li>
-                          <li>Zero chemical coating — no plastic or Teflon coating where food particles touch.</li>
-                          <li>Multi-layered heat-conductive base for uniform cooking</li>
-                          <li>Non-reactive surfaces that protect natural taste and nutrition</li>
-                        </>
-                      );
-                    })()}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion 3: More */}
-            <div className="border-b border-gray-200 pb-4">
-              <button
-                onClick={() => setOpenAccordion((prev) => (prev === 'more' ? null : 'more'))}
-                className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
-              >
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
-                  More
-                </h3>
-                <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
-                  {openAccordion === 'more' ? (
-                    <ChevronUp className="w-4 h-4 text-gray-700" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-700" />
-                  )}
-                </div>
-              </button>
-              {openAccordion === 'more' && (
-                <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
-                  <p>
-                    <strong>Care &amp; Cleaning Instructions:</strong> Always unplug before cleaning. Wipe motor unit with a damp cloth. Jars are hand-wash safe with mild detergent. Do not submerge motor base in water.
-                  </p>
-                  <p>
-                    <strong>Warranty Type:</strong> {(() => {
-                      const pName = (selectedProduct.name || '').toLowerCase();
-                      const pCats = (selectedProduct.categories || []).map(c => typeof c === 'string' ? c.toLowerCase() : (c.slug || '').toLowerCase());
-                      const isMixer = pCats.includes('mixer-grinder') || pCats.includes('mixer') || pName.includes('mixer');
-                      const isBlender = pCats.includes('personal-blender') || pCats.includes('nutri') || pName.includes('nutri');
-                      if (isMixer) return "5-Year Domestic Motor Warranty.";
-                      if (isBlender) return "2-Year Domestic Motor Warranty.";
-                      return "Warranty against manufacturing defects.";
-                    })()}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion 4: Dimensions */}
-            <div className="border-b border-gray-200 pb-4">
-              <button
-                onClick={() =>
-                  setOpenAccordion((prev) => (prev === 'dimensions' ? null : 'dimensions'))
-                }
-                className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
-              >
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
-                  Dimensions
-                </h3>
-                <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
-                  {openAccordion === 'dimensions' ? (
-                    <ChevronUp className="w-4 h-4 text-gray-700" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-700" />
-                  )}
-                </div>
-              </button>
-              {openAccordion === 'dimensions' && (
-                <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
-                  <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <div>
-                      <strong>Length:</strong> 34 cm
-                    </div>
-                    <div>
-                      <strong>Width:</strong> 22 cm
-                    </div>
-                    <div>
-                      <strong>Height:</strong> 38 cm
-                    </div>
-                    <div>
-                      <strong>Gross Weight:</strong> 4.8 kg
-                    </div>
-                    <div>
-                      <strong>Liquidizing Jar:</strong> 1.5 Liters
-                    </div>
-                    <div>
-                      <strong>Chutney Jar:</strong> 0.4 Liters
-                    </div>
+                      className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
+                    >
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
+                        Description
+                      </h3>
+                      <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+                        {openAccordion === 'description' ? (
+                          <ChevronUp className="w-4 h-4 text-gray-700" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-700" />
+                        )}
+                      </div>
+                    </button>
+                    {openAccordion === 'description' && (
+                      <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-3 animate-in fade-in duration-200">
+                        <p>{desc}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* Accordion 5: Included Components */}
-            <div className="border-b border-gray-200 pb-4">
-              <button
-                onClick={() =>
-                  setOpenAccordion((prev) =>
-                    prev === 'includedComponents' ? null : 'includedComponents'
-                  )
-                }
-                className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
-              >
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
-                  Included Components
-                </h3>
-                <div className="w-8 h-8 rounded-full bg-[#2A2724] text-white flex items-center justify-center transition-colors">
-                  {openAccordion === 'includedComponents' ? (
-                    <ChevronUp className="w-4 h-4 text-white" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-white" />
-                  )}
-                </div>
-              </button>
-              {openAccordion === 'includedComponents' && (
-                <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>1 N Main Heavy Motor Unit</li>
-                    <li>1 N 1.5L Stainless Steel Wet Grinding Jar with Lid</li>
-                    <li>1 N 1.0L Stainless Steel Dry Grinding Jar with Lid</li>
-                    <li>1 N 0.4L Stainless Steel Chutney Jar with Lid</li>
-                    <li>1 N Ergonomic Stirrer Spatula</li>
-                    <li>1 N User Manual &amp; Warranty Certificate</li>
-                  </ul>
-                </div>
-              )}
-            </div>
+                {/* 2. Included Components */}
+                {incList && incList.length > 0 && (
+                  <div className="border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() =>
+                        setOpenAccordion((prev) =>
+                          prev === 'includedComponents' ? null : 'includedComponents'
+                        )
+                      }
+                      className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
+                    >
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
+                        Included Components
+                      </h3>
+                      <div className="w-8 h-8 rounded-full bg-[#2A2724] text-white flex items-center justify-center transition-colors">
+                        {openAccordion === 'includedComponents' ? (
+                          <ChevronUp className="w-4 h-4 text-white" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-white" />
+                        )}
+                      </div>
+                    </button>
+                    {openAccordion === 'includedComponents' && (
+                      <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
+                        <ul className="list-disc pl-5 space-y-1">
+                          {incList.map((comp, idx) => (
+                            <li key={idx}>{comp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {/* Accordion 6: Manufacturer */}
-            <div className="border-b border-gray-200 pb-4">
-              <button
-                onClick={() =>
-                  setOpenAccordion((prev) => (prev === 'manufacturer' ? null : 'manufacturer'))
-                }
-                className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
-              >
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
-                  Manufacturer
-                </h3>
-                <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
-                  {openAccordion === 'manufacturer' ? (
-                    <ChevronUp className="w-4 h-4 text-gray-700" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-700" />
-                  )}
-                </div>
-              </button>
-              {openAccordion === 'manufacturer' && (
-                <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-1 animate-in fade-in duration-200">
-                  <p>
-                    <strong>Manufacturer:</strong> Modena Kitchenware Industries Ltd.
-                  </p>
-                  <p>
-                    <strong>Country of Origin:</strong> India
-                  </p>
-                  <p>
-                    <strong>Customer Support:</strong> support@modenahome.in | +91 93266 41825
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+                {/* 3. USP */}
+                {uspList && uspList.length > 0 && (
+                  <div className="border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() => setOpenAccordion((prev) => (prev === 'usp' ? null : 'usp'))}
+                      className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
+                    >
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
+                        USP
+                      </h3>
+                      <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+                        {openAccordion === 'usp' ? (
+                          <ChevronUp className="w-4 h-4 text-gray-700" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-700" />
+                        )}
+                      </div>
+                    </button>
+                    {openAccordion === 'usp' && (
+                      <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
+                        <ul className="list-disc pl-5 space-y-1.5">
+                          {uspList.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. Dimensions */}
+                {dimsText && (
+                  <div className="border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() =>
+                        setOpenAccordion((prev) => (prev === 'dimensions' ? null : 'dimensions'))
+                      }
+                      className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
+                    >
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
+                        Dimensions
+                      </h3>
+                      <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+                        {openAccordion === 'dimensions' ? (
+                          <ChevronUp className="w-4 h-4 text-gray-700" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-700" />
+                        )}
+                      </div>
+                    </button>
+                    {openAccordion === 'dimensions' && (
+                      <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-2 animate-in fade-in duration-200">
+                        <p className="bg-gray-50 p-4 rounded-xl border border-gray-100 leading-relaxed font-medium text-gray-800">
+                          {dimsText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 5. Manufacturer */}
+                {mfrText && (
+                  <div className="border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() =>
+                        setOpenAccordion((prev) => (prev === 'manufacturer' ? null : 'manufacturer'))
+                      }
+                      className="w-full text-left flex justify-between items-center py-2 cursor-pointer group"
+                    >
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">
+                        Manufacturer
+                      </h3>
+                      <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+                        {openAccordion === 'manufacturer' ? (
+                          <ChevronUp className="w-4 h-4 text-gray-700" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-700" />
+                        )}
+                      </div>
+                    </button>
+                    {openAccordion === 'manufacturer' && (
+                      <div className="pt-3 text-sm text-gray-600 leading-relaxed space-y-1 animate-in fade-in duration-200">
+                        <p>
+                          <strong>Manufacturer:</strong> {mfrText}
+                        </p>
+                        <p>
+                          <strong>Country of Origin:</strong> India
+                        </p>
+                        <p>
+                          <strong>Customer Support:</strong> support@modenahome.in | +91 93266 41825
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* RECOMMENDED RELATED PRODUCTS GRID */}
           <div className="pt-8 border-t border-gray-200">
@@ -2641,11 +2805,7 @@ function App() {
                 .map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => {
-                      setSelectedProduct(item);
-                      setProductQuantity(1);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
+                    onClick={() => handleSelectProduct(item)}
                     className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-[#E60000] transition-all cursor-pointer group shadow-xs hover:shadow-md flex flex-col justify-between"
                   >
                     <div>
@@ -2817,7 +2977,7 @@ function App() {
               allProducts={apiProducts}
               isProductsLoading={isProductsLoading}
               selectedProduct={selectedProduct}
-              setSelectedProduct={setSelectedProduct}
+              setSelectedProduct={handleSelectProduct}
               setProductQuantity={setProductQuantity}
               handleAddToCart={handleAddToCart}
               cart={cart}
@@ -2847,7 +3007,7 @@ function App() {
                 onAddToCart={handleAddToCart}
                 onUpdateQuantity={updateQuantity}
                 cart={cart}
-                onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+                onSelectProduct={handleSelectProduct}
                 searchQuery=""
                 selectedCategoryName={currentView}
                 wishlist={wishlist}
@@ -2860,7 +3020,7 @@ function App() {
           {(currentView === 'corporate-gifting' || currentView === 'corporateGifting') && (
             <CorporateGifting
               setCurrentView={setCurrentView}
-              onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+              onSelectProduct={handleSelectProduct}
               onAddToCart={handleAddToCart}
               onUpdateQuantity={updateQuantity}
               cart={cart}
@@ -2890,7 +3050,7 @@ function App() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               setCurrentView={setCurrentView}
-              onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+              onSelectProduct={handleSelectProduct}
               allProducts={apiProducts}
             />
           )}
@@ -3027,10 +3187,6 @@ function App() {
             </div>
           )}
 
-          {/* MODENA PHILOSOPHY PAGE VIEW */}
-          {(currentView === 'philosophy' || currentView === 'about') && (
-            <Philosophy setCurrentView={setCurrentView} />
-          )}
 
           {/* STORE POLICIES VIEW */}
           {currentView === 'storePolicies' && (
@@ -3174,7 +3330,7 @@ function App() {
 
                             {ord.items?.map((item) => (
                               <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-gray-100 first:border-0">
-                                <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setSelectedProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
+                                <div className="flex items-center gap-4 group cursor-pointer" onClick={() => handleSelectProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
                                   <img src={item.image} alt={item.name} className="w-20 h-20 object-contain bg-gray-50 p-1 rounded-xl border border-gray-200 transition-transform group-hover:scale-105" />
                                   <div>
                                     <h4 className="font-bold text-sm text-[#E60000] group-hover:underline">{item.name}</h4>
@@ -3271,7 +3427,7 @@ function App() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {buyAgainItems.map((item, idx) => (
                         <div key={idx} className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
-                          <div className="group cursor-pointer" onClick={() => setSelectedProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
+                          <div className="group cursor-pointer" onClick={() => handleSelectProduct({ id: item.id, name: item.name, price: item.price, price_html: item.price_html || `₹${item.price}`, image: item.image })}>
                             <div className="w-full h-44 bg-gray-50 rounded-xl overflow-hidden mb-4 p-3 flex items-center justify-center border border-gray-100 group-hover:border-[#E60000]/30 transition-colors">
                               <img src={item.image} alt={item.name} className="w-full h-full object-contain transition-transform group-hover:scale-105" />
                             </div>
@@ -3348,7 +3504,7 @@ function App() {
                           </div>
 
                           <div className="flex items-center justify-between flex-wrap gap-4">
-                            <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setSelectedProduct({ id: 31, name: ret.itemName, price: 1450, price_html: ret.price, image: ret.image })}>
+                            <div className="flex items-center gap-4 group cursor-pointer" onClick={() => handleSelectProduct({ id: 31, name: ret.itemName, price: 1450, price_html: ret.price, image: ret.image })}>
                               <img src={ret.image} alt={ret.itemName} className="w-16 h-16 object-contain bg-gray-50 p-1 rounded-xl border border-gray-200 transition-transform group-hover:scale-105" />
                               <div>
                                 <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#E60000] transition-colors">{ret.itemName}</h4>
@@ -3972,7 +4128,7 @@ function App() {
                 onAddToCart={handleAddToCart}
                 onUpdateQuantity={updateQuantity}
                 cart={cart}
-                onSelectProduct={(p) => { setSelectedProduct(p); setProductQuantity(1); }}
+                onSelectProduct={handleSelectProduct}
                 searchQuery={submittedQuery}
                 selectedCategoryName="searchResults"
                 wishlist={wishlist}
@@ -3980,8 +4136,10 @@ function App() {
               />
             </div>
           )}
+        </>
+      )}
 
-          {/* 10. MINI CART QUICK DRAWER */}
+      {/* 10. MINI CART QUICK DRAWER */}
           {isCartOpen && (
             <>
               <div
@@ -4167,7 +4325,10 @@ function App() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
               {/* Backdrop Blur */}
               <div
-                onClick={() => setActiveModal(null)}
+                onClick={() => {
+                  setBuyNowItem(null);
+                  setActiveModal(null);
+                }}
                 className="fixed inset-0 bg-[#2A2724]/70 backdrop-blur-md transition-opacity duration-300"
                 aria-hidden="true"
               />
@@ -4176,7 +4337,10 @@ function App() {
               <div className="relative w-full max-w-4xl bg-[#FAF8F6] rounded-2xl shadow-2xl overflow-hidden border border-[#EFEAE6] z-50 my-auto flex flex-col lg:flex-row max-h-[90vh]">
                 {/* Close Button */}
                 <button
-                  onClick={() => setActiveModal(null)}
+                  onClick={() => {
+                    setBuyNowItem(null);
+                    setActiveModal(null);
+                  }}
                   className="absolute top-4 right-4 z-20 bg-[#2A2724] text-white p-2 rounded-full hover:bg-black transition-colors"
                   aria-label="Close checkout modal"
                 >
@@ -4200,25 +4364,40 @@ function App() {
                       <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                         <CheckCircle2 className="w-10 h-10" />
                       </div>
-                      <span className="font-label-caps text-[#E60000] text-xs">ORDER CONFIRMED</span>
+                      <span className="font-label-caps text-[#E60000] text-xs font-bold tracking-wider">ORDER CONFIRMED</span>
                       <h3 className="font-display-lg text-2xl text-[#2A2724]">
                         Thank You, {placedOrder.customer.firstName}!
                       </h3>
                       <p className="font-body-md text-xs text-[#514C48] max-w-md mx-auto">
-                        Order <span className="font-semibold text-[#2A2724]">{placedOrder.orderNumber}</span> has been successfully placed. Order confirmation sent to {placedOrder.customer.email}.
+                        Order <span className="font-semibold text-[#2A2724]">#{placedOrder.orderNumber}</span> has been successfully placed in WooCommerce. Confirmation sent to <span className="font-medium text-[#2A2724]">{placedOrder.customer.email}</span>.
                       </p>
-                      <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7] text-left text-xs space-y-2 max-w-md mx-auto">
+                      <div className="bg-[#FAF8F6] p-4 rounded-lg border border-[#E2DCD7] text-left text-xs space-y-2.5 max-w-md mx-auto">
                         <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
-                          <span className="text-[#514C48]">Total Paid:</span>
-                          <span className="font-semibold text-[#2A2724]">{currencySymbol}{placedOrder.total.toFixed(2)}</span>
+                          <span className="text-[#514C48]">Order Number:</span>
+                          <span className="font-bold text-[#2A2724]">#{placedOrder.orderNumber}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
+                          <span className="text-[#514C48]">Order Status:</span>
+                          <span className="inline-block px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[11px]">
+                            {placedOrder.statusLabel || placedOrder.status || 'Processing'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
+                          <span className="text-[#514C48]">Total Amount:</span>
+                          <span className="font-bold text-[#2A2724]">{activeCurrencySymbol}{typeof placedOrder.total === 'number' ? placedOrder.total.toFixed(2) : placedOrder.total}</span>
                         </div>
                         <div className="flex justify-between border-b border-[#E2DCD7] pb-2">
                           <span className="text-[#514C48]">Payment Method:</span>
-                          <span className="uppercase text-[#2A2724] font-semibold">{placedOrder.paymentMethod}</span>
+                          <span className="uppercase text-[#2A2724] font-semibold">{placedOrder.paymentMethodTitle || placedOrder.paymentMethod}</span>
                         </div>
-                        <div className="flex justify-between">
+                        {placedOrder.instructions && (
+                          <div className="p-2.5 bg-blue-50 border border-blue-200 rounded text-blue-900 text-[11px] leading-relaxed">
+                            <strong>Instructions:</strong> {placedOrder.instructions}
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-1">
                           <span className="text-[#514C48]">Delivery To:</span>
-                          <span className="text-[#2A2724] font-medium">
+                          <span className="text-[#2A2724] font-medium text-right max-w-[220px]">
                             {placedOrder.customer.address}, {placedOrder.customer.city}
                           </span>
                         </div>
@@ -4226,11 +4405,12 @@ function App() {
                       <button
                         onClick={() => {
                           setPlacedOrder(null);
+                          setBuyNowItem(null);
                           setActiveModal(null);
                         }}
-                        className="mt-4 bg-[#2A2724] text-white py-3 px-8 rounded text-xs font-label-caps tracking-widest hover:bg-black transition-colors"
+                        className="mt-4 bg-[#2A2724] text-white py-3 px-8 rounded text-xs font-label-caps tracking-widest hover:bg-black transition-colors cursor-pointer"
                       >
-                        CLOSE POPUP
+                        CONTINUE SHOPPING
                       </button>
                     </div>
                   ) : (
@@ -4348,110 +4528,90 @@ function App() {
                         </div>
                       </div>
 
-                      {/* 3. Payment Option */}
+                      {/* 3. WooCommerce Native Payment Gateways */}
                       <div className="space-y-3 pt-3 border-t border-[#FAF8F6]">
-                        <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center gap-2">
-                          <CreditCard className="w-4 h-4 text-[#E60000]" />
-                          <span>3. Select Payment Method</span>
+                        <h3 className="font-headline-md text-sm text-[#2A2724] font-bold flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-[#E60000]" />
+                            <span>3. Select Payment Method</span>
+                          </div>
+                          {isFetchingGateways && (
+                            <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Loading gateways...
+                            </span>
+                          )}
                         </h3>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { id: 'razorpay', label: 'Cards, NetBanking, Wallets', icon: CreditCard, highlight: true },
-                            { id: 'upi', label: 'Direct UPI App', icon: Wallet },
-                            { id: 'bacs', label: 'Direct Bank Transfer', icon: Building }
-                          ].map((pm) => {
-                            const IconComp = pm.icon;
-                            const isSelected = paymentMethod === pm.id || (!paymentMethod && pm.id === 'razorpay');
+
+                        {orderError && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-600 flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                            <span>{orderError}</span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {wcPaymentGateways.map((pm) => {
+                            const IconComp = getGatewayIcon(pm.id);
+                            const isSelected = paymentMethod === pm.id;
                             return (
                               <button
                                 key={pm.id}
                                 type="button"
-                                onClick={() => setPaymentMethod(pm.id)}
-                                className={`p-3 rounded-md border text-left flex items-center gap-2 text-xs transition-colors ${isSelected
-                                  ? 'border-[#E60000] bg-[#FAF8F6] text-[#E60000] font-semibold ring-1 ring-[#E60000]'
-                                  : 'border-[#EFEAE6] bg-white text-[#514C48]'
-                                  }`}
+                                onClick={() => {
+                                  setPaymentMethod(pm.id);
+                                  setOrderError('');
+                                }}
+                                className={`p-3 rounded-md border text-left flex items-start gap-2.5 text-xs transition-all ${
+                                  isSelected
+                                    ? 'border-[#E60000] bg-[#FAF8F6] text-[#2A2724] font-semibold ring-1 ring-[#E60000] shadow-sm'
+                                    : 'border-[#EFEAE6] bg-white text-[#514C48] hover:border-gray-300'
+                                }`}
                               >
-                                <IconComp className="w-4 h-4 flex-shrink-0 text-[#E60000]" />
-                                <span className="truncate">{pm.label}</span>
+                                <IconComp className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isSelected ? 'text-[#E60000]' : 'text-gray-400'}`} />
+                                <div className="truncate flex-1">
+                                  <span className="block truncate font-medium">{pm.title}</span>
+                                  {pm.description && (
+                                    <span className="block text-[10px] text-gray-400 line-clamp-1 font-normal mt-0.5">
+                                      {pm.description}
+                                    </span>
+                                  )}
+                                </div>
                               </button>
                             );
                           })}
                         </div>
+
+                        {/* Selected Gateway Info Note */}
+                        {(() => {
+                          const selectedGw = wcPaymentGateways.find((g) => g.id === paymentMethod);
+                          if (selectedGw && selectedGw.description) {
+                            return (
+                              <div className="p-2.5 bg-[#FAF8F6] border border-[#EFEAE6] rounded text-[11px] text-[#514C48] flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                <span>{selectedGw.description}</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
 
-                      {(paymentMethod === 'razorpay' || !paymentMethod) ? (
-                        <RazorpayCheckout
-                          amount={finalTotal}
-                          customerName={`${formData.firstName} ${formData.lastName}`.trim()}
-                          customerEmail={formData.email}
-                          customerPhone={formData.phone}
-                          onPaymentSuccess={async (paymentRes) => {
-                            if (isSubmittingOrder) return;
-                            setIsSubmittingOrder(true);
-                            const orderNumber = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
-                            const customerDetails = {
-                              firstName: formData.firstName || getFirstName(userDisplayName) || 'Valued Customer',
-                              lastName: formData.lastName || '',
-                              name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || userDisplayName || 'Valued Customer',
-                              email: formData.email || userEmail || '',
-                              phone: formData.phone || userPhone || '',
-                              address: formData.address || '',
-                              city: formData.city || '',
-                              state: formData.state || '',
-                              postcode: formData.postcode || ''
-                            };
-
-                            try {
-                              const response = await fetch('/wp-json/modena/v1/create-wc-order', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  order_number: orderNumber,
-                                  items: cart,
-                                  customer: customerDetails,
-                                  paymentMethod: `Razorpay (${paymentRes.paymentId})`,
-                                  total: finalTotal
-                                })
-                              });
-                              const data = await response.json();
-                              const realOrderNumber = data.success ? data.order_number : orderNumber;
-                              setPlacedOrder({
-                                orderNumber: realOrderNumber,
-                                total: finalTotal,
-                                paymentMethod: `Razorpay (${paymentRes.paymentId})`,
-                                customer: customerDetails
-                              });
-                            } catch {
-                              setPlacedOrder({
-                                orderNumber,
-                                total: finalTotal,
-                                paymentMethod: `Razorpay (${paymentRes.paymentId})`,
-                                customer: customerDetails
-                              });
-                            } finally {
-                              setCart([]);
-                              setIsSubmittingOrder(false);
-                            }
-                          }}
-                          buttonText={`Pay ₹${finalTotal.toFixed(2)} with Razorpay`}
-                        />
-                      ) : (
-                        <button
-                          type="submit"
-                          disabled={isSubmittingOrder || !cart || cart.length === 0}
-                          className="w-full bg-[#E60000] hover:bg-[#E60000] text-white py-4 px-6 rounded-md font-headline-md text-base shadow-lg transition-all tracking-wide text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isSubmittingOrder ? (
-                            <>
-                              <Loader2 className="w-5 h-5 animate-spin text-white" />
-                              <span>Processing Order...</span>
-                            </>
-                          ) : (
-                            <span>Confirm &amp; Place Order ({currencySymbol}{subtotal.toFixed(2)})</span>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        type="submit"
+                        disabled={isSubmittingOrder || !activeCheckoutItems || activeCheckoutItems.length === 0}
+                        className="w-full bg-[#E60000] hover:bg-[#c91f26] text-white py-4 px-6 rounded-md font-headline-md text-base shadow-lg transition-all tracking-wide text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                      >
+                        {isSubmittingOrder ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin text-white" />
+                            <span>Processing Order with WooCommerce...</span>
+                          </>
+                        ) : (
+                          <span>
+                            Confirm &amp; Place Order ({activeCurrencySymbol}{finalTotal.toFixed(2)})
+                          </span>
+                        )}
+                      </button>
                     </form>
 
                   )}
@@ -4462,24 +4622,31 @@ function App() {
                   <div>
                     <h3 className="font-headline-md text-lg text-white border-b border-[#333] pb-4 mb-4 flex items-center justify-between">
                       <span>Order Summary</span>
-                      <span className="text-xs font-label-caps text-[#EFEAE6]">{cart.length} Items</span>
+                      <span className="text-xs font-label-caps text-[#EFEAE6]">
+                        {buyNowItem ? '1 Buy Now Item' : `${cart.length} Items`}
+                      </span>
                     </h3>
 
-                    {cart.length === 0 ? (
-                      <p className="text-xs text-gray-400 italic">No items in cart.</p>
+                    {activeCheckoutItems.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">No items in checkout.</p>
                     ) : (
                       <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
-                        {cart.map((item) => (
+                        {activeCheckoutItems.map((item) => (
                           <div key={item.id} className="flex gap-3 items-center justify-between text-xs">
                             <div className="flex items-center gap-3 truncate">
                               <img src={item.image} alt={item.name} className="w-10 h-10 object-contain bg-white rounded p-1 flex-shrink-0" />
                               <div className="truncate">
                                 <span className="block text-white font-medium truncate">{item.name}</span>
+                                {item.variation && (
+                                  <span className="block text-[10px] text-gray-400 truncate">
+                                    Option: {item.variation.name || item.variation.attributes}
+                                  </span>
+                                )}
                                 <span className="text-gray-400">Qty: {item.quantity}</span>
                               </div>
                             </div>
                             <span className="font-semibold text-white flex-shrink-0">
-                              {currencySymbol}{(item.price * item.quantity).toFixed(2)}
+                              {activeCurrencySymbol}{(item.price * item.quantity).toFixed(2)}
                             </span>
                           </div>
                         ))}
@@ -4490,15 +4657,23 @@ function App() {
                   <div className="pt-6 border-t border-[#333] space-y-3 mt-6">
                     <div className="flex justify-between text-xs text-gray-300">
                       <span>Subtotal</span>
-                      <span>{currencySymbol}{subtotal.toFixed(2)}</span>
+                      <span>{activeCurrencySymbol}{activeSubtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-300">
                       <span>Shipping</span>
-                      <span className="text-emerald-400 font-medium">FREE</span>
+                      <span className="text-emerald-400 font-medium">
+                        {shippingFee === 0 ? 'FREE' : `${activeCurrencySymbol}${shippingFee}`}
+                      </span>
                     </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-xs text-emerald-400">
+                        <span>Discount</span>
+                        <span>-{activeCurrencySymbol}{discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm font-headline-md font-bold text-white pt-2 border-t border-[#333]">
                       <span>Total Amount</span>
-                      <span className="text-[#EFEAE6]">{currencySymbol}{subtotal.toFixed(2)}</span>
+                      <span className="text-[#EFEAE6]">{activeCurrencySymbol}{finalTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -4984,11 +5159,11 @@ function App() {
                 {/* Col 2: Quick Navigation */}
                 <div className="space-y-3">
                   <ul className="space-y-2.5 text-gray-600 font-medium">
-                    <li><button onClick={() => setCurrentView('home')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Home</button></li>
-                    <li><button onClick={() => setCurrentView('bestseller')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Bestsellers</button></li>
-                    <li><button onClick={() => setCurrentView('deal')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Deals</button></li>
-                    <li><button onClick={() => setCurrentView('electronics')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Appliances</button></li>
-                    <li><button onClick={() => setCurrentView('utensils')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Utensils</button></li>
+                    <li><button onClick={() => handleNavigate('home')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Home</button></li>
+                    {dynamicCategories.map(cat => (
+                      <li key={cat.id}><button onClick={() => handleNavigate(cat.id)} className="hover:text-[#C91F26] transition-colors cursor-pointer capitalize">{cat.label.toLowerCase()}</button></li>
+                    ))}
+                    <li><button onClick={() => handleNavigate('corporate-gifting')} className="hover:text-[#C91F26] transition-colors cursor-pointer">Corporate Gifting</button></li>
                   </ul>
                 </div>
 
@@ -5043,8 +5218,6 @@ function App() {
               </div>
             </div>
           </footer>
-        </>
-      )}
       {/* RETURN & REPLACEMENT INTERACTIVE MODAL */}
       {activeReturnModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
@@ -5708,7 +5881,7 @@ function App() {
 
                       <div
                         className="flex items-center gap-3.5 mb-3 cursor-pointer"
-                        onClick={() => { setSelectedProduct(item); setIsWishlistModalOpen(false); }}
+                        onClick={() => { handleSelectProduct(item); setIsWishlistModalOpen(false); }}
                       >
                         <div className="w-20 h-20 bg-white rounded-xl p-1.5 border border-gray-200 flex-shrink-0 flex items-center justify-center shadow-sm">
                           <img
@@ -5748,7 +5921,7 @@ function App() {
                         </div>
                         <button
                           onClick={() => {
-                            setSelectedProduct(item);
+                            handleSelectProduct(item);
                             setIsWishlistModalOpen(false);
                           }}
                           className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-[11px] font-bold px-3.5 py-2.5 rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
@@ -5832,7 +6005,7 @@ function App() {
       <Chatbot
         currentView={currentView}
         selectedProduct={selectedProduct}
-        onSelectProduct={setSelectedProduct}
+        onSelectProduct={handleSelectProduct}
         onAddToCart={handleAddToCart}
         isCartOpen={isCartOpen}
         isCheckoutOpen={activeModal === 'checkout'}

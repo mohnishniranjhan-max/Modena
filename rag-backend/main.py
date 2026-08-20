@@ -82,8 +82,9 @@ class ProductWebhookPayload(BaseModel):
     permalink: Optional[str] = Field("", max_length=1000, json_schema_extra={"example": "https://modena.local/product/mixer"})
 
 class ChatRequest(BaseModel):
-    session_id: str = Field(..., min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-\.]+$", json_schema_extra={"example": "sess_987654321"})
+    session_id: Optional[str] = Field("sess_default", max_length=128, pattern=r"^[a-zA-Z0-9_\-\.]*$", json_schema_extra={"example": "sess_987654321"})
     message: str = Field(..., min_length=1, max_length=2000, json_schema_extra={"example": "Tell me about the Modena mixer grinder price and motor wattage."})
+    history: Optional[List[Any]] = Field(default_factory=list)
 
 # --- Endpoints ---
 
@@ -114,6 +115,7 @@ def woocommerce_product_webhook(payload: ProductWebhookPayload, background_tasks
     }
 
 @app.post("/api/v1/chat/assistant")
+@app.post("/chat")
 def chat_assistant(request: ChatRequest):
     """
     RAG Retrieval & Memory Management
@@ -123,8 +125,9 @@ def chat_assistant(request: ChatRequest):
     if not request.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
+    sess = request.session_id if (request.session_id and request.session_id.strip()) else "sess_default"
     response = answer_query_with_rag(
-        session_id=request.session_id,
+        session_id=sess,
         query=request.message.strip()
     )
     return response

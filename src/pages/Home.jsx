@@ -147,7 +147,7 @@ const Home = ({
                 if (setSelectedProduct) setSelectedProduct(item);
                 if (setProductQuantity) setProductQuantity(1);
               }}
-              className="w-full aspect-[4/3] bg-[#FAF8F6]/60 rounded-xl overflow-hidden flex items-center justify-center p-3 cursor-pointer border border-[#FAF8F6] relative"
+              className="w-full aspect-square bg-[#FAF8F6]/60 rounded-xl overflow-hidden flex items-center justify-center p-3 cursor-pointer border border-[#FAF8F6] relative"
             >
               {isOut && <div className="absolute inset-0 bg-stone-900/10 pointer-events-none rounded-xl" />}
               <img
@@ -257,7 +257,19 @@ const Home = ({
           {isProductsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-[380px] bg-gray-200 animate-pulse rounded-2xl border border-gray-200" />
+                <div key={i} className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 flex flex-col justify-between shadow-xs">
+                  <div>
+                    <div className="w-full aspect-square bg-gray-200 animate-pulse rounded-xl mb-4" />
+                    <div className="w-1/3 h-3 bg-gray-200 animate-pulse rounded mb-3" />
+                    <div className="w-3/4 h-5 bg-gray-200 animate-pulse rounded mb-2" />
+                    <div className="w-full h-3 bg-gray-200 animate-pulse rounded mb-1" />
+                    <div className="w-2/3 h-3 bg-gray-200 animate-pulse rounded mb-3" />
+                  </div>
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-auto">
+                    <div className="w-1/3 h-6 bg-gray-200 animate-pulse rounded" />
+                    <div className="w-1/3 h-8 bg-gray-200 animate-pulse rounded" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : products.length === 0 ? (

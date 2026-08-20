@@ -41,11 +41,25 @@ export default function CartQuantityControl({
     );
   }
 
-  const cartItem = (cart || []).find((item) => String(item.id) === String(product.id));
+  const lastClickRef = React.useRef(0);
+
+  const cartItem = (cart || []).find(
+    (item) => String(item.id) === String(product.id) || (product.name && item.name === product.name)
+  );
   const quantity = cartItem ? cartItem.quantity : 0;
+
+  const isThrottled = () => {
+    const now = Date.now();
+    if (now - lastClickRef.current < 350) {
+      return true;
+    }
+    lastClickRef.current = now;
+    return false;
+  };
 
   const handleAdd = (e) => {
     e?.stopPropagation?.();
+    if (isThrottled()) return;
     if (onAddToCart) {
       onAddToCart(product);
     }
@@ -53,8 +67,10 @@ export default function CartQuantityControl({
 
   const handleIncrement = (e) => {
     e?.stopPropagation?.();
+    if (isThrottled()) return;
+    const targetId = cartItem ? cartItem.id : product.id;
     if (onUpdateQuantity) {
-      onUpdateQuantity(product.id, 1);
+      onUpdateQuantity(targetId, 1);
     } else if (onAddToCart) {
       onAddToCart(product, 1);
     }
@@ -62,8 +78,10 @@ export default function CartQuantityControl({
 
   const handleDecrement = (e) => {
     e?.stopPropagation?.();
+    if (isThrottled()) return;
+    const targetId = cartItem ? cartItem.id : product.id;
     if (onUpdateQuantity) {
-      onUpdateQuantity(product.id, -1);
+      onUpdateQuantity(targetId, -1);
     } else if (onAddToCart) {
       onAddToCart(product, -1);
     }

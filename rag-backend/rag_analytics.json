@@ -1858,5 +1858,315 @@
         "product_id": "26"
       }
     ]
+  },
+  {
+    "id": "log_1787110424081",
+    "timestamp": 1787110424.0810964,
+    "date": "2026-08-19 09:03:44",
+    "session_id": "test",
+    "query": "Hello",
+    "response": "Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help you explore our premium kitchen appliances, pressure cookers, mixer grinders, and cookware. What product or feature are you looking for today?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "chunk_index": 0
+      },
+      {
+        "sku": "",
+        "chunk_index": 0,
+        "permalink": "",
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1787115375445",
+    "timestamp": 1787115375.445267,
+    "date": "2026-08-19 10:26:15",
+    "session_id": "chat_session_modena_web",
+    "query": "me why Modena Pre-Seasoned Cast Iron Kadai (2.5 Litre) is worth buying",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.3568,
+    "docs": [
+      {
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "category": "Utensils",
+        "price": "1450",
+        "permalink": ""
+      },
+      {
+        "category": "Electronics",
+        "sku": "",
+        "permalink": "",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "product_id": "26",
+        "chunk_index": 0,
+        "price": "2500"
+      }
+    ]
+  },
+  {
+    "id": "log_1787115383599",
+    "timestamp": 1787115383.5993774,
+    "date": "2026-08-19 10:26:23",
+    "session_id": "chat_session_modena_web",
+    "query": "Tell me about the 5L Heritage Dutch Oven",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "price": "1450",
+        "permalink": "",
+        "chunk_index": 0,
+        "product_id": "999"
+      },
+      {
+        "price": "2500",
+        "sku": "",
+        "permalink": "",
+        "category": "Electronics",
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "chunk_index": 0
+      }
+    ]
+  },
+  {
+    "id": "log_1787116727255",
+    "timestamp": 1787116727.2557876,
+    "date": "2026-08-19 10:48:47",
+    "session_id": "chat_session_modena_web",
+    "query": "Tell me about the 5L Heritage Dutch Oven",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "sku": "MOD-CAST-10",
+        "category": "Utensils",
+        "chunk_index": 0,
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "permalink": ""
+      },
+      {
+        "category": "Electronics",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "price": "2500",
+        "chunk_index": 0,
+        "product_id": "26",
+        "sku": "",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1787116893991",
+    "timestamp": 1787116893.9914136,
+    "date": "2026-08-19 10:51:33",
+    "session_id": "chat_session_modena_web",
+    "query": "Tell me about the 5L Heritage Dutch Oven",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "product_id": "999",
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "category": "Utensils",
+        "price": "1450",
+        "chunk_index": 0,
+        "permalink": ""
+      },
+      {
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "chunk_index": 0,
+        "sku": "",
+        "price": "2500",
+        "permalink": "",
+        "product_id": "26"
+      }
+    ]
+  },
+  {
+    "id": "log_1787116990299",
+    "timestamp": 1787116990.299157,
+    "date": "2026-08-19 10:53:10",
+    "session_id": "chat_session_modena_web",
+    "query": "Tell me about the 990W Mixer Grinder",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0121,
+    "docs": [
+      {
+        "price": "2500",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "product_id": "26",
+        "chunk_index": 0,
+        "sku": "",
+        "permalink": ""
+      },
+      {
+        "name": "Modena Test Cast Iron Pan",
+        "product_id": "999",
+        "chunk_index": 0,
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "permalink": "",
+        "category": "Utensils"
+      }
+    ]
+  },
+  {
+    "id": "log_1787117013845",
+    "timestamp": 1787117013.8456948,
+    "date": "2026-08-19 10:53:33",
+    "session_id": "chat_session_modena_web",
+    "query": "5L Heritage Dutch Oven features",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0,
+    "docs": [
+      {
+        "price": "2500",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "category": "Electronics",
+        "product_id": "26",
+        "sku": "",
+        "permalink": ""
+      },
+      {
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "category": "Utensils",
+        "name": "Modena Test Cast Iron Pan",
+        "chunk_index": 0,
+        "permalink": "",
+        "product_id": "999"
+      }
+    ]
+  },
+  {
+    "id": "log_1787117020691",
+    "timestamp": 1787117020.691623,
+    "date": "2026-08-19 10:53:40",
+    "session_id": "chat_session_modena_web",
+    "query": "Cast Iron Skillet benefits & seasoning",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.4549,
+    "docs": [
+      {
+        "chunk_index": 0,
+        "category": "Utensils",
+        "sku": "MOD-CAST-10",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "permalink": "",
+        "product_id": "999"
+      },
+      {
+        "price": "2500",
+        "category": "Electronics",
+        "sku": "",
+        "chunk_index": 0,
+        "product_id": "26",
+        "name": "Modena Sindoor 990W Mixer Grinder",
+        "permalink": ""
+      }
+    ]
+  },
+  {
+    "id": "log_1787117206836",
+    "timestamp": 1787117206.8365533,
+    "date": "2026-08-19 10:56:46",
+    "session_id": "chat_session_modena_web",
+    "query": "Cast Iron Skillet benefits & seasoning",
+    "response": "Based on our Modena catalog for **Modena Test Cast Iron Pan** (Utensils):\n\u2022 **Price**: \u20b91450\n\u2022 **Details**: Product Name: Modena Test Cast Iron Pan Category: Utensils Price: \u20b91450 SKU: MOD-CAST-10 Description: Premium 10 inch pre-seasoned cast iron skillet for high heat cooking. Specifications: Pre-seasoned, 2.5kg weight, dual pour spouts\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.4549,
+    "docs": [
+      {
+        "permalink": "",
+        "sku": "MOD-CAST-10",
+        "chunk_index": 0,
+        "product_id": "999",
+        "name": "Modena Test Cast Iron Pan",
+        "price": "1450",
+        "category": "Utensils"
+      },
+      {
+        "permalink": "",
+        "price": "2500",
+        "category": "Electronics",
+        "product_id": "26",
+        "sku": "",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder"
+      }
+    ]
+  },
+  {
+    "id": "log_1787117274717",
+    "timestamp": 1787117274.717346,
+    "date": "2026-08-19 10:57:54",
+    "session_id": "chat_session_modena_web",
+    "query": "Tell me about the 990W Mixer Grinder",
+    "response": "Based on our Modena catalog for **Modena Sindoor 990W Mixer Grinder** (Electronics):\n\u2022 **Price**: \u20b92500\n\u2022 **Details**: Product Name: Modena Sindoor 990W Mixer Grinder Category: Electronics Price: \u20b92500 SKU: Description: Heavy duty 990W copper motor with dual airflow cooling. Specifications: 990W motor, 3 stainless steel jars, 2-year warranty\n\nWould you like to add this to your cart or need specific details on warranty or features?",
+    "status": "success",
+    "retrieved_count": 2,
+    "confidence": 0.0121,
+    "docs": [
+      {
+        "price": "2500",
+        "category": "Electronics",
+        "sku": "",
+        "product_id": "26",
+        "permalink": "",
+        "chunk_index": 0,
+        "name": "Modena Sindoor 990W Mixer Grinder"
+      },
+      {
+        "name": "Modena Test Cast Iron Pan",
+        "sku": "MOD-CAST-10",
+        "price": "1450",
+        "chunk_index": 0,
+        "permalink": "",
+        "product_id": "999",
+        "category": "Utensils"
+      }
+    ]
   }
 ]

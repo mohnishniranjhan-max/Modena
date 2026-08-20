@@ -1,0 +1,151 @@
+{
+  "passed": 24,
+  "failed": 0,
+  "details": [
+    {
+      "name": "Service: WordPress Backend",
+      "status": "PASS",
+      "message": "Status: 200",
+      "data": null
+    },
+    {
+      "name": "Service: React Frontend (Vite)",
+      "status": "PASS",
+      "message": "Status: 200, Size: 1837 bytes",
+      "data": null
+    },
+    {
+      "name": "Service: RAG Backend (FastAPI)",
+      "status": "PASS",
+      "message": "Status: 200",
+      "data": null
+    },
+    {
+      "name": "API: Fetch Products",
+      "status": "PASS",
+      "message": "Retrieved 15 products from WooCommerce Store API",
+      "data": null
+    },
+    {
+      "name": "Categories: Official 3 Categories Present",
+      "status": "PASS",
+      "message": "Found: ['Cookware', 'Mixer Grinder', 'Nutrimix']",
+      "data": null
+    },
+    {
+      "name": "Categories: No Extraneous Sub-categories",
+      "status": "PASS",
+      "message": "Total category count: 3",
+      "data": null
+    },
+    {
+      "name": "Product #1 Integrity (ID: 473)",
+      "status": "PASS",
+      "message": "Name: 550W 2-Jar Mixer Grinder (Glossy Re... | Price: Rs.2499.0 | Images: 4 | Cat: ['Mixer Grinder']",
+      "data": null
+    },
+    {
+      "name": "Product #2 Integrity (ID: 468)",
+      "status": "PASS",
+      "message": "Name: Tesla Body 750W Mixer Grinder with ... | Price: Rs.3499.0 | Images: 4 | Cat: ['Mixer Grinder']",
+      "data": null
+    },
+    {
+      "name": "Product #3 Integrity (ID: 463)",
+      "status": "PASS",
+      "message": "Name: 200W Cold Press Slow Masticating Ju... | Price: Rs.6499.0 | Images: 4 | Cat: ['Nutrimix']",
+      "data": null
+    },
+    {
+      "name": "Product #4 Integrity (ID: 458)",
+      "status": "PASS",
+      "message": "Name: Pre-Seasoned Heavy-Gauge Cast Iron ... | Price: Rs.1899.0 | Images: 4 | Cat: ['Cookware']",
+      "data": null
+    },
+    {
+      "name": "Product #5 Integrity (ID: 453)",
+      "status": "PASS",
+      "message": "Name: Prestige Pre-Seasoned Cast Iron Pan... | Price: Rs.1499.0 | Images: 4 | Cat: ['Cookware']",
+      "data": null
+    },
+    {
+      "name": "Images: All Catalog Images HTTP 200 OK",
+      "status": "PASS",
+      "message": "Verified 58 image URLs (Failed: 0)",
+      "data": null
+    },
+    {
+      "name": "Search: Keyword 'Blender'",
+      "status": "PASS",
+      "message": "Found 2 matches",
+      "data": null
+    },
+    {
+      "name": "Search: Keyword 'Kadai'",
+      "status": "PASS",
+      "message": "Found 1 matches",
+      "data": null
+    },
+    {
+      "name": "Search: Non-Existent Item returns empty",
+      "status": "PASS",
+      "message": "Returns 0 items gracefully",
+      "data": null
+    },
+    {
+      "name": "Payment Methods API",
+      "status": "PASS",
+      "message": "Active Gateways: []",
+      "data": null
+    },
+    {
+      "name": "Payment Methods: Cash on Delivery Disabled",
+      "status": "PASS",
+      "message": "COD present: False",
+      "data": null
+    },
+    {
+      "name": "Checkout: Order Creation (BACS)",
+      "status": "PASS",
+      "message": "Order #480 created successfully, Total: Rs.8497",
+      "data": null
+    },
+    {
+      "name": "Checkout: Validation on Incomplete Data",
+      "status": "PASS",
+      "message": "Rejected with 400 Bad Request as expected: {\"code\":\"invalid_email\",\"message\":\"A valid customer email ad",
+      "data": null
+    },
+    {
+      "name": "Chatbot: Basic Greeting",
+      "status": "PASS",
+      "message": "Response: Hello! I am your Modena AI Shopping Assistant. \ud83d\udc4b\n\nI can help...",
+      "data": null
+    },
+    {
+      "name": "Chatbot: Cookware Query",
+      "status": "PASS",
+      "message": "Response: Based on our Modena catalog for **Bergner TriPro 4 Pcs Tri-Ply Stainless Steel C...",
+      "data": null
+    },
+    {
+      "name": "Chatbot: Product Specific Query",
+      "status": "PASS",
+      "message": "Response: Based on our Modena catalog for **Modena Floral Design Nutri Blender &#038; Grin...",
+      "data": null
+    },
+    {
+      "name": "Chatbot: Multi-turn Follow-up Context",
+      "status": "PASS",
+      "message": "Response: Based on our Modena catalog for **Bergner TriPro 4 Pcs Tri-Ply Stainless Steel C...",
+      "data": null
+    },
+    {
+      "name": "Chatbot: Unknown / Unrelated Query Graceful Handling",
+      "status": "PASS",
+      "message": "Response: Based on our Modena catalog for **Modena Nutri Bullet Blender &#038; Grinder (55...",
+      "data": null
+    }
+  ],
+  "bugs_found": []
+}

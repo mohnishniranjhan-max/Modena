@@ -12,6 +12,13 @@ const RecipeDetail = ({ recipe, onBack, setCurrentView, onSelectProduct, allProd
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [recipe]);
 
+  // Find matching product in allProducts if available, or use the populated recommended_product object
+  const recProduct = recipe?.recommended_product;
+  const matchedProduct = React.useMemo(() => {
+    if (!recProduct || !allProducts || allProducts.length === 0) return null;
+    return allProducts.find((p) => p.id === recProduct.id || (p.slug && p.slug === recProduct.slug));
+  }, [recProduct, allProducts]);
+
   if (!recipe) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
@@ -25,13 +32,6 @@ const RecipeDetail = ({ recipe, onBack, setCurrentView, onSelectProduct, allProd
       </div>
     );
   }
-
-  // Find matching product in allProducts if available, or use the populated recommended_product object
-  const recProduct = recipe.recommended_product;
-  const matchedProduct = React.useMemo(() => {
-    if (!recProduct || !allProducts || allProducts.length === 0) return null;
-    return allProducts.find((p) => p.id === recProduct.id || (p.slug && p.slug === recProduct.slug));
-  }, [recProduct, allProducts]);
 
   return (
     <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-in fade-in duration-300 font-inter text-[#292725]">

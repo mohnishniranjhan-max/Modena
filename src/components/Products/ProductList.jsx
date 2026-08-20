@@ -527,7 +527,7 @@ const ProductList = ({ onAddToCart, onUpdateQuantity, cart = [], onSelectProduct
             </button>
             <div
               onClick={() => onSelectProduct && onSelectProduct(product)}
-              className="w-full aspect-[4/3] bg-[#FAF8F6]/60 rounded-xl overflow-hidden flex items-center justify-center p-3 cursor-pointer border border-[#FAF8F6] relative"
+              className="w-full aspect-square bg-[#FAF8F6]/60 rounded-xl overflow-hidden flex items-center justify-center p-3 cursor-pointer border border-[#FAF8F6] relative"
             >
               {isOut && <div className="absolute inset-0 bg-stone-900/10 pointer-events-none rounded-xl" />}
               {imageSrc && imageSrc.trim() !== '' ? (

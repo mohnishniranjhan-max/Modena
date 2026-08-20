@@ -16,7 +16,7 @@ import {
   ArrowRight,
   ShieldCheck
 } from 'lucide-react';
-import logoMonoWhiteRed from '/modena_logo_mono-white_red.png';
+import logoMonoWhiteRed from '../../assets/logos/modena_logo_mono-white_red.png';
 
 const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => {
   // Step State:
@@ -458,7 +458,7 @@ const AmazonAuthModal = ({ isOpen, onClose, onAuthSuccess, cartItems = [] }) => 
   // Fallback WP JWT Auth
   const handleWordPressFallbackAuth = async () => {
     try {
-      const res = await fetch('http://modena.local/wp-json/jwt-auth/v1/token', {
+      const res = await fetch('/wp-json/jwt-auth/v1/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: identifier.trim(), password: password })

@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import useSWR from 'swr';
+import { getStandardProductDetails } from '../data/productDetails';
 
 export const IMAGE_MAP = {
   26: '/wp-content/uploads/2026/08/modena-sindoor-990W-mixer-grinder.webp',
@@ -243,20 +244,15 @@ export const normalizeProduct = (item) => {
   if (Array.isArray(item.images) && item.images.length > 0) {
     allImages = item.images.map((i) => (typeof i === 'string' ? i : i.src)).filter(Boolean);
   }
+  if (img && !allImages.includes(img)) {
+    allImages.unshift(img);
+  }
   if (allImages.length === 0 && img) {
     allImages = [img];
   }
 
-  const alternateGalleryViews = [
-    'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?q=80&w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1593618998160-e34014e67546?q=80&w=800&auto=format&fit=crop'
-  ];
-  alternateGalleryViews.forEach((altImg) => {
-    if (!allImages.includes(altImg) && allImages.length < 4) {
-      allImages.push(altImg);
-    }
-  });
+  // Strict URL deduplication preserving original sequence
+  allImages = Array.from(new Set(allImages.filter(Boolean)));
 
   let itemCategories = Array.isArray(item.categories) && item.categories.length > 0 ? item.categories : [];
 
@@ -276,8 +272,17 @@ export const normalizeProduct = (item) => {
     item.stock_status === 'outofstock' ||
     item.stock === 'Out of Stock';
 
+  const stdDetails = getStandardProductDetails(item);
+  const specs = item.extensions?.modena || item.modena_specs || {};
+
+  const incComponents = stdDetails?.included_components || specs.included_components || (item.included_components ? (Array.isArray(item.included_components) ? item.included_components : [item.included_components]) : []);
+  const uspList = stdDetails?.usp || specs.usp || (item.usp ? (Array.isArray(item.usp) ? item.usp : [item.usp]) : []);
+  const dims = stdDetails?.dimensions || specs.dimensions || item.dimensions || '';
+  const mfr = stdDetails?.manufacturer || specs.manufacturer || item.manufacturer || 'Modena Kitchenware';
+
   return {
     id: item.id,
+    slug: item.slug || stdDetails?.slug,
     name: cleanName,
     title: cleanName,
     price: formattedPrice,
@@ -288,7 +293,11 @@ export const normalizeProduct = (item) => {
     image: img,
     images: allImages,
     desc: cleanDesc,
-    description: cleanDesc,
+    description: cleanDesc || stdDetails?.description || '',
+    included_components: Array.isArray(incComponents) ? incComponents : [],
+    usp: Array.isArray(uspList) ? uspList : [],
+    dimensions: typeof dims === 'string' ? dims.trim() : '',
+    manufacturer: typeof mfr === 'string' ? mfr.trim() : 'Modena Kitchenware',
     categories: itemCategories,
     category: primaryCategory,
     stock: isOutOfStock ? 'Out of Stock' : 'In Stock',
@@ -348,6 +357,44 @@ const fetcher = async (url) => {
   if (!Array.isArray(data)) return [];
   const normalized = data.map(normalizeProduct);
   return sortProductsByRating(normalized);
+};
+
+export const fetchProductBySlugOrId = async (slugOrId) => {
+  if (!slugOrId) return null;
+  try {
+    const isNum = /^\d+$/.test(String(slugOrId).trim());
+    if (isNum) {
+      const res = await fetch(`/wp-json/wc/store/v1/products/${slugOrId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.id) {
+          return normalizeProduct(data);
+        }
+      }
+    }
+
+    const res = await fetch(`/wp-json/wc/store/v1/products?slug=${encodeURIComponent(slugOrId)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return normalizeProduct(data[0]);
+      }
+    }
+
+    const searchRes = await fetch(`/wp-json/wc/store/v1/products?search=${encodeURIComponent(slugOrId)}`);
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (Array.isArray(searchData) && searchData.length > 0) {
+        const matched = searchData.find(
+          (p) => String(p.slug) === String(slugOrId) || String(p.id) === String(slugOrId)
+        ) || searchData[0];
+        return normalizeProduct(matched);
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching product by slug/id:', err);
+  }
+  return null;
 };
 
 export const useProducts = () => {

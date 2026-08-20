@@ -30,7 +30,7 @@ export default function ReviewForm({ product, user, isVerifiedPurchaser = false,
       product_id: product?.id || 26,
       review: reviewText.trim(),
       reviewer: reviewerName.trim() || 'Verified Customer',
-      reviewer_email: reviewerEmail.trim() || 'customer@modena.local',
+      reviewer_email: reviewerEmail.trim() || 'customer@modenahome.store',
       rating: rating,
       verified: isVerifiedPurchaser
     };

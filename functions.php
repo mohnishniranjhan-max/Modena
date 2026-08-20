@@ -1,4 +1,9 @@
 <?php
+// Prevent wp_mail from blocking on local environments without active SMTP
+if (strpos(site_url(), '.local') !== false || strpos(site_url(), 'localhost') !== false) {
+    add_filter('pre_wp_mail', '__return_true');
+}
+
 function load_react_app_assets() {
     $theme_dir = get_template_directory();
     $theme_uri = get_template_directory_uri();
@@ -512,8 +517,15 @@ function force_assign_modena_product_categories() {
 // add_action('init', 'force_assign_modena_product_categories', 999);
 
 
-// --- MODENA RAZORPAY REST API INTEGRATION ---
-function register_modena_razorpay_rest_routes() {
+// --- MODENA WOOCOMMERCE NATIVE PAYMENT & REST API INTEGRATION ---
+function register_modena_payment_rest_routes() {
+    // Dynamic payment methods from WooCommerce
+    register_rest_route('modena/v1', '/payment-methods', array(
+        'methods'             => 'GET',
+        'callback'            => 'modena_get_payment_methods_handler',
+        'permission_callback' => '__return_true'
+    ));
+
     register_rest_route('modena/v1', '/create-razorpay-order', array(
         'methods'             => 'POST',
         'callback'            => 'modena_create_razorpay_order_handler',
@@ -544,7 +556,70 @@ function register_modena_razorpay_rest_routes() {
         'permission_callback' => '__return_true'
     ));
 }
-add_action('rest_api_init', 'register_modena_razorpay_rest_routes');
+add_action('rest_api_init', 'register_modena_payment_rest_routes');
+
+// Disable Cash on Delivery (COD)
+add_filter('woocommerce_available_payment_gateways', function($gateways) {
+    if (isset($gateways['cod'])) {
+        unset($gateways['cod']);
+    }
+    return $gateways;
+});
+
+/**
+ * Expose Available WooCommerce Payment Gateways dynamically (Excluding COD)
+ */
+function modena_get_payment_methods_handler() {
+    if (!class_exists('WooCommerce') || !WC()->payment_gateways) {
+        return rest_ensure_response(array(
+            'success'  => true,
+            'gateways' => array(
+                array(
+                    'id'          => 'bacs',
+                    'title'       => 'Direct bank transfer',
+                    'description' => 'Make your payment directly into our bank account.',
+                    'icon'        => '',
+                    'is_default'  => true
+                )
+            )
+        ));
+    }
+
+    $available = WC()->payment_gateways->get_available_payment_gateways();
+    $gateways = array();
+    $first = true;
+    
+    foreach ($available as $id => $gateway) {
+        if ($gateway->id === 'cod') {
+            continue;
+        }
+        $gateways[] = array(
+            'id'          => $gateway->id,
+            'title'       => $gateway->get_title(),
+            'description' => $gateway->get_description(),
+            'icon'        => $gateway->get_icon(),
+            'is_default'  => $first,
+            'has_fields'  => (bool)$gateway->has_fields
+        );
+        $first = false;
+    }
+
+    // Fallback if no online gateways are enabled in WC
+    if (empty($gateways)) {
+        $gateways[] = array(
+            'id'          => 'bacs',
+            'title'       => 'Direct bank transfer',
+            'description' => 'Make your payment directly into our bank account.',
+            'icon'        => '',
+            'is_default'  => true
+        );
+    }
+
+    return rest_ensure_response(array(
+        'success'  => true,
+        'gateways' => $gateways
+    ));
+}
 
 function modena_get_razorpay_credentials() {
     $key_id     = defined('RAZORPAY_KEY_ID') ? RAZORPAY_KEY_ID : get_option('modena_razorpay_key_id', '');
@@ -573,7 +648,6 @@ function modena_create_razorpay_order_handler($request) {
     }
     $raw_amount = isset($params['amount']) ? floatval($params['amount']) : 0;
     
-    // Amount validation (between 1 and 1,000,000 INR)
     if ($raw_amount <= 0 || $raw_amount > 1000000) {
         return new WP_Error('invalid_amount', 'Amount must be a valid number between 1 and 1,000,000.', array('status' => 400));
     }
@@ -583,13 +657,11 @@ function modena_create_razorpay_order_handler($request) {
     $key_id = $creds['key_id'];
     $key_secret = $creds['key_secret'];
 
-    // Razorpay Orders API
     $url = 'https://api.razorpay.com/v1/orders';
-    // Fallback ID if API fails and we want to allow testing without real keys
     $fallback_order_id = 'order_mock_' . time() . rand(1000, 9999);
 
     $payload = array(
-        'amount'          => intval($amount * 100), // Razorpay expects amount in paise
+        'amount'          => intval($amount * 100),
         'currency'        => 'INR',
         'receipt'         => 'rcptid_' . time() . rand(10, 99),
         'payment_capture' => 1,
@@ -612,7 +684,6 @@ function modena_create_razorpay_order_handler($request) {
     $response = wp_remote_post($url, $args);
 
     if (is_wp_error($response)) {
-        // Fallback for offline local dev / sandbox mock session
         return rest_ensure_response(array(
             'success'           => true,
             'razorpay_order_id' => $fallback_order_id,
@@ -656,7 +727,6 @@ function modena_verify_razorpay_payment_handler($request) {
         return new WP_Error('missing_params', 'Valid Razorpay order ID, payment ID, and signature are required.', array('status' => 400));
     }
 
-    // Bypass signature check if it's a mock order id
     if (strpos($razorpay_order_id, 'order_mock_') === 0) {
         return rest_ensure_response(array(
             'success'             => true,
@@ -670,10 +740,8 @@ function modena_verify_razorpay_payment_handler($request) {
     $creds = modena_get_razorpay_credentials();
     $key_secret = $creds['key_secret'];
 
-    // Validate the Razorpay signature
     $generated_signature = hash_hmac('sha256', $razorpay_order_id . '|' . $razorpay_payment_id, $key_secret);
 
-    // Using hash_equals to prevent timing attacks
     if (!hash_equals($generated_signature, $razorpay_signature)) {
         return new WP_Error('invalid_signature', 'Razorpay payment signature verification failed.', array('status' => 400));
     }
@@ -687,8 +755,11 @@ function modena_verify_razorpay_payment_handler($request) {
     ));
 }
 
+/**
+ * Native WooCommerce Order Creation & Payment Processing
+ */
 function modena_create_wc_order_handler($request) {
-    if (!function_exists('wc_create_order')) {
+    if (!function_exists('wc_create_order') || !class_exists('WooCommerce')) {
         return new WP_Error('wc_not_active', 'WooCommerce is not active.', array('status' => 500));
     }
 
@@ -698,24 +769,28 @@ function modena_create_wc_order_handler($request) {
     }
     $items = isset($params['items']) && is_array($params['items']) ? array_slice($params['items'], 0, 50) : array();
     $customer = isset($params['customer']) && is_array($params['customer']) ? $params['customer'] : array();
-    $raw_payment_method = isset($params['paymentMethod']) ? sanitize_text_field($params['paymentMethod']) : 'cod';
-    $allowed_methods = array('cod', 'razorpay', 'upi', 'card', 'netbanking');
-    $paymentMethod = in_array(strtolower($raw_payment_method), $allowed_methods) ? $raw_payment_method : 'cod';
+    $payment_method_id = isset($params['paymentMethod']) ? sanitize_text_field($params['paymentMethod']) : (isset($params['payment_method']) ? sanitize_text_field($params['payment_method']) : 'razorpay');
     
-    // 1. Validate Items Array
+    // 1. Validate Items
     if (empty($items)) {
         return new WP_Error('empty_cart', 'Cannot create order with an empty cart.', array('status' => 400));
     }
 
-    // 2. Validate Customer Address Fields
-    $first_name = isset($customer['firstName']) ? sanitize_text_field(substr(strval($customer['firstName']), 0, 100)) : '';
-    $last_name  = isset($customer['lastName']) ? sanitize_text_field(substr(strval($customer['lastName']), 0, 100)) : '';
+    // 2. Validate Customer Details
+    $first_name = isset($customer['firstName']) ? sanitize_text_field(substr(strval($customer['firstName']), 0, 100)) : (isset($customer['first_name']) ? sanitize_text_field(substr(strval($customer['first_name']), 0, 100)) : '');
+    $last_name  = isset($customer['lastName']) ? sanitize_text_field(substr(strval($customer['lastName']), 0, 100)) : (isset($customer['last_name']) ? sanitize_text_field(substr(strval($customer['last_name']), 0, 100)) : '');
+    if (empty($first_name) && !empty($customer['name'])) {
+        $name_parts = explode(' ', trim($customer['name']), 2);
+        $first_name = $name_parts[0];
+        $last_name  = isset($name_parts[1]) ? $name_parts[1] : '';
+    }
+
     $email      = isset($customer['email']) ? sanitize_email(substr(strval($customer['email']), 0, 254)) : '';
     $phone      = isset($customer['phone']) ? sanitize_text_field(substr(strval($customer['phone']), 0, 25)) : '';
-    $address_1  = isset($customer['address']) ? sanitize_text_field(substr(strval($customer['address']), 0, 250)) : '';
-    $city       = isset($customer['city']) ? sanitize_text_field(substr(strval($customer['city']), 0, 100)) : '';
-    $state      = isset($customer['state']) ? sanitize_text_field(substr(strval($customer['state']), 0, 100)) : '';
-    $postcode   = isset($customer['postcode']) ? sanitize_text_field(substr(strval($customer['postcode']), 0, 20)) : '';
+    $address_1  = isset($customer['address']) ? sanitize_text_field(substr(strval($customer['address']), 0, 250)) : (isset($customer['address_1']) ? sanitize_text_field(substr(strval($customer['address_1']), 0, 250)) : '');
+    $city       = isset($customer['city']) && !empty($customer['city']) ? sanitize_text_field(substr(strval($customer['city']), 0, 100)) : 'Bengaluru';
+    $state      = isset($customer['state']) ? sanitize_text_field(substr(strval($customer['state']), 0, 100)) : 'Karnataka';
+    $postcode   = isset($customer['postcode']) ? sanitize_text_field(substr(strval($customer['postcode']), 0, 20)) : (isset($customer['postalCode']) ? sanitize_text_field(substr(strval($customer['postalCode']), 0, 20)) : '560001');
 
     if (empty($first_name)) {
         return new WP_Error('missing_name', 'First name is required for delivery.', array('status' => 400));
@@ -724,42 +799,71 @@ function modena_create_wc_order_handler($request) {
         return new WP_Error('invalid_email', 'A valid customer email address is required.', array('status' => 400));
     }
     if (empty($phone) || strlen(preg_replace('/[^0-9]/', '', $phone)) < 7) {
-        return new WP_Error('invalid_phone', 'A valid phone number (min 7 digits) is required for shipment dispatch.', array('status' => 400));
+        return new WP_Error('invalid_phone', 'A valid phone number (min 7 digits) is required for delivery.', array('status' => 400));
     }
-    if (empty($address_1) || empty($city)) {
-        return new WP_Error('missing_address', 'Delivery street address and city are required.', array('status' => 400));
-    }
-
-    if (!function_exists('wc_create_order')) {
-        return new WP_Error('woocommerce_missing', 'WooCommerce core engine is not active.', array('status' => 500));
+    if (empty($address_1)) {
+        return new WP_Error('missing_address', 'Delivery street address is required.', array('status' => 400));
     }
 
-    // Create the order
+    // Create the WooCommerce order
     $order = wc_create_order();
     if (is_wp_error($order) || !$order) {
         return new WP_Error('order_creation_failed', 'Failed to initialize order in WooCommerce.', array('status' => 500));
     }
 
-    // Add validated items to order
+    // Add validated items to order using authoritative WooCommerce catalog prices or fallback line items
     $valid_items_count = 0;
     foreach ($items as $item) {
-        $product_id = isset($item['id']) ? absint($item['id']) : 0;
+        $raw_id = isset($item['productId']) ? $item['productId'] : (isset($item['id']) ? $item['id'] : 0);
+        $product_id = absint($raw_id);
         $quantity = isset($item['quantity']) ? max(1, min(99, absint($item['quantity']))) : 1;
+        $product_name = isset($item['name']) ? sanitize_text_field($item['name']) : 'Modena Appliance';
+        $product_price = isset($item['price']) ? floatval($item['price']) : 0;
+        
+        $product_obj = null;
         if ($product_id > 0 && function_exists('wc_get_product')) {
             $product_obj = wc_get_product($product_id);
-            if ($product_obj) {
-                $order->add_product($product_obj, $quantity);
-                $valid_items_count++;
+        }
+
+        // Fallback 1: Lookup by product title if ID changed after re-import
+        if (!$product_obj && !empty($product_name)) {
+            $found_posts = get_posts(array(
+                'post_type'      => 'product',
+                'title'          => $product_name,
+                'post_status'    => 'publish',
+                'posts_per_page' => 1
+            ));
+            if (!empty($found_posts) && function_exists('wc_get_product')) {
+                $product_obj = wc_get_product($found_posts[0]->ID);
             }
+        }
+
+        // Fallback 2: Lookup by SKU
+        if (!$product_obj && !empty($item['sku']) && function_exists('wc_get_product_id_by_sku')) {
+            $sku_id = wc_get_product_id_by_sku($item['sku']);
+            if ($sku_id) {
+                $product_obj = wc_get_product($sku_id);
+            }
+        }
+
+        if ($product_obj) {
+            $order->add_product($product_obj, $quantity);
+            $valid_items_count++;
+        } else {
+            // Fallback 3: Create standard WooCommerce product line item with client price & name
+            $item_line = new WC_Order_Item_Product();
+            $item_line->set_name($product_name);
+            $item_line->set_quantity($quantity);
+            if ($product_price > 0) {
+                $item_line->set_subtotal($product_price * $quantity);
+                $item_line->set_total($product_price * $quantity);
+            }
+            $order->add_item($item_line);
+            $valid_items_count++;
         }
     }
 
-    if ($valid_items_count === 0) {
-        $order->delete(true);
-        return new WP_Error('invalid_products', 'None of the submitted cart items correspond to valid catalog products.', array('status' => 400));
-    }
-
-    // Set addresses
+    // Set Customer Addresses
     $address = array(
         'first_name' => $first_name,
         'last_name'  => $last_name,
@@ -775,21 +879,36 @@ function modena_create_wc_order_handler($request) {
     $order->set_address($address, 'billing');
     $order->set_address($address, 'shipping');
 
-    // Calculate totals
+    // Authoritative WooCommerce totals calculation (taxes, shipping, discounts)
     $order->calculate_totals();
 
-    // Set payment method
-    $order->set_payment_method($paymentMethod);
-    $order->set_payment_method_title(strtoupper($paymentMethod));
-
-    // Update status based on payment method
-    if (strpos(strtolower($paymentMethod), 'razorpay') !== false) {
-        $order->update_status('processing', 'Order paid via Razorpay (React Frontend).');
-    } else {
-        $order->update_status('processing', 'Order placed via React Frontend.');
+    // Attach Selected WooCommerce Payment Gateway
+    $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
+    $gateway = null;
+    if (isset($available_gateways[$payment_method_id])) {
+        $gateway = $available_gateways[$payment_method_id];
+    } elseif (isset($available_gateways['razorpay'])) {
+        $gateway = $available_gateways['razorpay'];
+    } elseif (isset($available_gateways['bacs'])) {
+        $gateway = $available_gateways['bacs'];
+    } elseif (!empty($available_gateways)) {
+        $gateway = reset($available_gateways);
     }
 
-    // Attempt to set customer ID if email belongs to a user
+    $payment_id = $gateway ? $gateway->id : $payment_method_id;
+    $payment_title = $gateway ? $gateway->get_title() : strtoupper($payment_method_id);
+
+    $order->set_payment_method($payment_id);
+    $order->set_payment_method_title($payment_title);
+
+    // Set initial status based on payment gateway
+    if ($payment_id === 'bacs' || $payment_id === 'cheque') {
+        $order->set_status('on-hold', 'Awaiting payment via ' . $payment_title);
+    } else {
+        $order->set_status('processing', 'Order placed via Storefront.');
+    }
+
+    // Set Customer ID if registered
     if (!empty($address['email'])) {
         $user = get_user_by('email', $address['email']);
         if ($user) {
@@ -797,7 +916,7 @@ function modena_create_wc_order_handler($request) {
         }
     }
 
-    // Store order number in metadata for easy lookup by React refund API
+    // Store custom order reference if passed
     if (!empty($params['order_number'])) {
         $clean_order_num = sanitize_text_field(substr(strval($params['order_number']), 0, 50));
         $order->update_meta_data('_order_number', $clean_order_num);
@@ -805,12 +924,35 @@ function modena_create_wc_order_handler($request) {
 
     $order->save();
 
+    // Retrieve gateway instructions
+    $instructions = '';
+    $redirect_url = '';
+
+    if ($gateway) {
+        if (!empty($gateway->instructions)) {
+            $instructions = wp_strip_all_tags($gateway->instructions);
+        } elseif ($gateway->id === 'cod') {
+            $instructions = 'Pay with cash upon delivery.';
+        } elseif ($gateway->id === 'bacs') {
+            $instructions = 'Please transfer payment directly to our bank account using your Order Number as the payment reference.';
+        } elseif ($gateway->id === 'cheque') {
+            $instructions = 'Please send a check to the store address with your Order Number as reference.';
+        }
+    }
+
     return rest_ensure_response(array(
-        'success'      => true,
-        'order_id'     => $order->get_id(),
-        'order_number' => $order->get_order_number(),
-        'total'        => $order->get_total(),
-        'message'      => 'WooCommerce order created successfully'
+        'success'              => true,
+        'order_id'             => $order->get_id(),
+        'order_number'         => $order->get_order_number(),
+        'status'               => $order->get_status(),
+        'status_label'         => wc_get_order_status_name($order->get_status()),
+        'total'                => floatval($order->get_total()),
+        'currency'             => $order->get_currency(),
+        'payment_method'       => $payment_id,
+        'payment_method_title' => $payment_title,
+        'instructions'         => $instructions,
+        'redirect_url'         => $redirect_url,
+        'message'              => 'WooCommerce order created and processed successfully.'
     ));
 }
 
@@ -3221,7 +3363,12 @@ function modena_render_recipe_meta_box($post) {
 }
 
 // 4. Save Recipe Meta Fields
-add_action('save_post_modena_recipe', function ($post_id) {
+function modena_save_recipe_meta($post_id) {
+    static $is_updating = false;
+    if ($is_updating) {
+        return;
+    }
+
     if (!isset($_POST['modena_recipe_meta_nonce']) || !wp_verify_nonce($_POST['modena_recipe_meta_nonce'], 'modena_recipe_meta_save')) {
         return;
     }
@@ -3240,12 +3387,14 @@ add_action('save_post_modena_recipe', function ($post_id) {
 
     // 2. Short Description (Save as post_excerpt)
     if (isset($_POST['recipe_excerpt'])) {
-        remove_action('save_post_modena_recipe', __FUNCTION__);
+        $is_updating = true;
+        remove_action('save_post_modena_recipe', 'modena_save_recipe_meta');
         wp_update_post([
             'ID'           => $post_id,
             'post_excerpt' => sanitize_textarea_field($_POST['recipe_excerpt'])
         ]);
-        add_action('save_post_modena_recipe', __FUNCTION__);
+        add_action('save_post_modena_recipe', 'modena_save_recipe_meta');
+        $is_updating = false;
     }
 
     // 3. Ingredients
@@ -3264,7 +3413,8 @@ add_action('save_post_modena_recipe', function ($post_id) {
         $prod_id = absint($_POST['recommended_product_id']);
         update_post_meta($post_id, '_recommended_product_id', $prod_id);
     }
-});
+}
+add_action('save_post_modena_recipe', 'modena_save_recipe_meta');
 
 // 5. Register Recipe REST API Endpoints
 add_action('rest_api_init', function () {
@@ -3797,24 +3947,27 @@ function modena_google_merchant_feed_handler($request) {
 
         $item = $channel->addChild('item');
         $item->addChild('g:id', (string) $product->get_id(), 'http://base.google.com/ns/1.0');
-        $item->addChild('g:title', htmlspecialchars($product->get_name()), 'http://base.google.com/ns/1.0');
-        $item->addChild('g:description', htmlspecialchars(wp_strip_all_tags($product->get_description() ?: $product->get_short_description())), 'http://base.google.com/ns/1.0');
+        $item->addChild('g:title', htmlspecialchars($product->get_name(), ENT_XML1, 'UTF-8'), 'http://base.google.com/ns/1.0');
+        $item->addChild('g:description', htmlspecialchars(wp_strip_all_tags($product->get_description() ?: $product->get_short_description()), ENT_XML1, 'UTF-8'), 'http://base.google.com/ns/1.0');
         $item->addChild('g:link', get_permalink($product->get_id()), 'http://base.google.com/ns/1.0');
 
         $image_id = $product->get_image_id();
         if ($image_id) {
             $image_url = wp_get_attachment_image_url($image_id, 'full');
-            $item->addChild('g:image_link', $image_url, 'http://base.google.com/ns/1.0');
+            if ($image_url) {
+                $item->addChild('g:image_link', esc_url($image_url), 'http://base.google.com/ns/1.0');
+            }
         }
 
+        $price_val = (float) ($product->get_price() ?: 0);
         $item->addChild('g:availability', $product->is_in_stock() ? 'in stock' : 'out of stock', 'http://base.google.com/ns/1.0');
-        $item->addChild('g:price', number_format($product->get_price(), 2, '.', '') . ' INR', 'http://base.google.com/ns/1.0');
+        $item->addChild('g:price', number_format($price_val, 2, '.', '') . ' INR', 'http://base.google.com/ns/1.0');
         $item->addChild('g:brand', 'Modena Kitchenware', 'http://base.google.com/ns/1.0');
         $item->addChild('g:condition', 'new', 'http://base.google.com/ns/1.0');
 
         $gtin = get_post_meta($product->get_id(), '_gtin', true);
         if (!empty($gtin)) {
-            $item->addChild('g:gtin', $gtin, 'http://base.google.com/ns/1.0');
+            $item->addChild('g:gtin', htmlspecialchars($gtin, ENT_XML1, 'UTF-8'), 'http://base.google.com/ns/1.0');
             $item->addChild('g:identifier_exists', 'yes', 'http://base.google.com/ns/1.0');
         } else {
             $item->addChild('g:identifier_exists', 'no', 'http://base.google.com/ns/1.0');
@@ -3971,5 +4124,243 @@ function modena_xml_sitemap_handler($request) {
     exit;
 }
 
-?>
+// =============================================================================
+// MODENA REACT THEME SYNC & CLEANUP
+// =============================================================================
 
+// 1. Enqueue required Google Fonts and Material Icons for visual parity
+function modena_enqueue_fonts_and_icons() {
+    wp_enqueue_style('modena-google-fonts', 'https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap', array(), null);
+    wp_enqueue_style('modena-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap', array(), null);
+}
+add_action('wp_enqueue_scripts', 'modena_enqueue_fonts_and_icons');
+
+// 2. Remove default WordPress styles that interfere with Tailwind CSS
+function modena_dequeue_default_styles() {
+    wp_dequeue_style('wp-block-library');
+    wp_dequeue_style('wp-block-library-theme');
+    wp_dequeue_style('wc-blocks-style'); 
+    wp_dequeue_style('classic-theme-styles');
+    wp_dequeue_style('global-styles');
+}
+add_action('wp_enqueue_scripts', 'modena_dequeue_default_styles', 100);
+
+// 3. Disable frontend admin bar to prevent layout shifts and margin-top overrides
+add_filter('show_admin_bar', '__return_false');
+
+// =============================================================================
+// MODENA PRODUCT SPECIFICATIONS & DETAILS (ADMIN META BOX & REST API)
+// =============================================================================
+
+/**
+ * Register Product Specifications Meta Box in WooCommerce Product Editor
+ */
+add_action('add_meta_boxes', 'modena_register_product_specs_meta_box');
+function modena_register_product_specs_meta_box() {
+    add_meta_box(
+        'modena_product_specs_box',
+        __('Modena Product Specifications & Details', 'modena'),
+        'modena_render_product_specs_meta_box',
+        'product',
+        'normal',
+        'high'
+    );
+}
+
+function modena_render_product_specs_meta_box($post) {
+    wp_nonce_field('modena_save_product_specs', 'modena_product_specs_nonce');
+
+    $included_components = get_post_meta($post->ID, '_modena_included_components', true);
+    if (is_array($included_components)) {
+        $included_components = implode("\n", $included_components);
+    }
+
+    $usp = get_post_meta($post->ID, '_modena_usp', true);
+    if (is_array($usp)) {
+        $usp = implode("\n", $usp);
+    }
+
+    $dimensions = get_post_meta($post->ID, '_modena_dimensions', true);
+    $manufacturer = get_post_meta($post->ID, '_modena_manufacturer', true);
+    ?>
+    <style>
+        .modena-specs-field { margin-bottom: 20px; }
+        .modena-specs-field label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #1d2327; }
+        .modena-specs-field .description { font-size: 12px; color: #646970; margin-top: 4px; }
+        .modena-specs-field textarea, .modena-specs-field input[type="text"] { width: 100%; border: 1px solid #8c8f94; border-radius: 4px; padding: 8px 12px; font-size: 13px; }
+    </style>
+    <div class="modena-product-specs-wrapper">
+        <p style="margin-bottom: 15px; color: #50575e; font-size: 13px;">
+            Enter the structured product specifications below. These fields automatically synchronize with the React frontend product details accordions in the exact order: <strong>Description &rarr; Included Components &rarr; USP &rarr; Dimensions &rarr; Manufacturer</strong>.
+        </p>
+
+        <!-- 1. Included Components -->
+        <div class="modena-specs-field">
+            <label for="modena_included_components">1. Included Components</label>
+            <textarea id="modena_included_components" name="modena_included_components" rows="5" placeholder="Enter each included component on a new line (e.g. 1x Motor Base, 1x 550ml Jar, 1x Travel Lid)"><?php echo esc_textarea($included_components); ?></textarea>
+            <p class="description">Enter package contents or included accessories. Each line will be formatted into an itemized component list on the frontend.</p>
+        </div>
+
+        <!-- 2. USP -->
+        <div class="modena-specs-field">
+            <label for="modena_usp">2. USP (Unique Selling Points)</label>
+            <textarea id="modena_usp" name="modena_usp" rows="6" placeholder="Enter each key USP point on a new line (e.g. Powerful 990W Copper Motor, Durable Tri-Ply Stainless Steel)"><?php echo esc_textarea($usp); ?></textarea>
+            <p class="description">Enter unique selling points. Each line will be displayed as a feature bullet point on the frontend.</p>
+        </div>
+
+        <!-- 3. Dimensions -->
+        <div class="modena-specs-field">
+            <label for="modena_dimensions">3. Dimensions</label>
+            <textarea id="modena_dimensions" name="modena_dimensions" rows="3" placeholder="e.g. Blending Jar: 550ml (Dia: 75mm) | Base Width: 120mm | Height: 345mm"><?php echo esc_textarea($dimensions); ?></textarea>
+            <p class="description">Enter measurements, size dimensions, capacity, or weight specifications.</p>
+        </div>
+
+        <!-- 4. Manufacturer -->
+        <div class="modena-specs-field">
+            <label for="modena_manufacturer">4. Manufacturer</label>
+            <input type="text" id="modena_manufacturer" name="modena_manufacturer" value="<?php echo esc_attr($manufacturer); ?>" placeholder="e.g. Modena Kitchenware, Bergner, Hawkins, Prestige" />
+            <p class="description">Enter brand, origin, or manufacturer name.</p>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * Save Product Specifications Meta Box
+ */
+add_action('save_post_product', 'modena_save_product_specs_meta_box', 10, 2);
+add_action('woocommerce_process_product_meta', 'modena_save_product_specs_meta_box', 10, 2);
+function modena_save_product_specs_meta_box($post_id, $post = null) {
+    if (!isset($_POST['modena_product_specs_nonce']) || !wp_verify_nonce($_POST['modena_product_specs_nonce'], 'modena_save_product_specs')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    // 1. Included Components
+    if (isset($_POST['modena_included_components'])) {
+        $raw_inc = sanitize_textarea_field($_POST['modena_included_components']);
+        $inc_lines = array_values(array_filter(array_map('trim', explode("\n", $raw_inc))));
+        update_post_meta($post_id, '_modena_included_components', $inc_lines);
+    }
+
+    // 2. USP
+    if (isset($_POST['modena_usp'])) {
+        $raw_usp = sanitize_textarea_field($_POST['modena_usp']);
+        $usp_lines = array_values(array_filter(array_map('trim', explode("\n", $raw_usp))));
+        update_post_meta($post_id, '_modena_usp', $usp_lines);
+    }
+
+    // 3. Dimensions
+    if (isset($_POST['modena_dimensions'])) {
+        update_post_meta($post_id, '_modena_dimensions', sanitize_textarea_field($_POST['modena_dimensions']));
+    }
+
+    // 4. Manufacturer
+    if (isset($_POST['modena_manufacturer'])) {
+        update_post_meta($post_id, '_modena_manufacturer', sanitize_text_field($_POST['modena_manufacturer']));
+    }
+
+    // Delete legacy 'more' meta if present
+    delete_post_meta($post_id, '_modena_more');
+}
+
+/**
+ * Expose Product Specifications in WooCommerce Store API (/wp-json/wc/store/v1/products)
+ */
+add_action('woocommerce_store_api_register_endpoint_data', function() {
+    if (function_exists('woocommerce_store_api_register_endpoint_data')) {
+        woocommerce_store_api_register_endpoint_data([
+            'endpoint'        => 'products',
+            'namespace'       => 'modena',
+            'data_callback'   => function($product) {
+                $post_id = $product->get_id();
+                $inc = maybe_unserialize(get_post_meta($post_id, '_modena_included_components', true));
+                $usp = maybe_unserialize(get_post_meta($post_id, '_modena_usp', true));
+                $dims = get_post_meta($post_id, '_modena_dimensions', true);
+                $mfr = get_post_meta($post_id, '_modena_manufacturer', true);
+
+                return [
+                    'included_components' => is_array($inc) ? array_values(array_filter($inc)) : (empty($inc) ? [] : array_values(array_filter(array_map('trim', explode("\n", $inc))))),
+                    'usp'                 => is_array($usp) ? array_values(array_filter($usp)) : (empty($usp) ? [] : array_values(array_filter(array_map('trim', explode("\n", $usp))))),
+                    'dimensions'          => is_string($dims) ? trim($dims) : '',
+                    'manufacturer'        => is_string($mfr) ? trim($mfr) : 'Modena Kitchenware'
+                ];
+            },
+            'schema_callback' => function() {
+                return [
+                    'included_components' => ['type' => 'array'],
+                    'usp'                 => ['type' => 'array'],
+                    'dimensions'          => ['type' => 'string'],
+                    'manufacturer'        => ['type' => 'string']
+                ];
+            },
+            'schema_type'     => ARRAY_A,
+        ]);
+    }
+});
+
+/**
+ * Register fields for standard WP REST API and WooCommerce v3 API
+ */
+add_action('rest_api_init', function() {
+    register_rest_field('product', 'modena_specs', [
+        'get_callback' => function($product_arr) {
+            $post_id = $product_arr['id'];
+            $inc = maybe_unserialize(get_post_meta($post_id, '_modena_included_components', true));
+            $usp = maybe_unserialize(get_post_meta($post_id, '_modena_usp', true));
+            $dims = get_post_meta($post_id, '_modena_dimensions', true);
+            $mfr = get_post_meta($post_id, '_modena_manufacturer', true);
+
+            return [
+                'included_components' => is_array($inc) ? array_values(array_filter($inc)) : (empty($inc) ? [] : array_values(array_filter(array_map('trim', explode("\n", $inc))))),
+                'usp'                 => is_array($usp) ? array_values(array_filter($usp)) : (empty($usp) ? [] : array_values(array_filter(array_map('trim', explode("\n", $usp))))),
+                'dimensions'          => is_string($dims) ? trim($dims) : '',
+                'manufacturer'        => is_string($mfr) ? trim($mfr) : 'Modena Kitchenware'
+            ];
+        },
+        'schema' => null,
+    ]);
+
+    // Dedicated endpoint for all product specs
+    register_rest_route('modena/v1', '/products-specs', [
+        'methods'             => 'GET',
+        'callback'            => function() {
+            $products = wc_get_products(['limit' => -1]);
+            $out = [];
+            foreach ($products as $p) {
+                $pid = $p->get_id();
+                $inc = maybe_unserialize(get_post_meta($pid, '_modena_included_components', true));
+                $usp = maybe_unserialize(get_post_meta($pid, '_modena_usp', true));
+                $dims = get_post_meta($pid, '_modena_dimensions', true);
+                $mfr = get_post_meta($pid, '_modena_manufacturer', true);
+
+                $out[$pid] = [
+                    'id'                  => $pid,
+                    'slug'                => $p->get_slug(),
+                    'name'                => $p->get_name(),
+                    'description'         => $p->get_description(),
+                    'short_description'   => $p->get_short_description(),
+                    'included_components' => is_array($inc) ? array_values(array_filter($inc)) : (empty($inc) ? [] : array_values(array_filter(array_map('trim', explode("\n", $inc))))),
+                    'usp'                 => is_array($usp) ? array_values(array_filter($usp)) : (empty($usp) ? [] : array_values(array_filter(array_map('trim', explode("\n", $usp))))),
+                    'dimensions'          => is_string($dims) ? trim($dims) : '',
+                    'manufacturer'        => is_string($mfr) ? trim($mfr) : 'Modena Kitchenware'
+                ];
+            }
+            return rest_ensure_response($out);
+        },
+        'permission_callback' => '__return_true'
+    ]);
+});
+
+/**
+ * Modena Product Management & Custom CSV Importer Module
+ */
+require_once get_template_directory() . '/inc/modena-product-importer.php';
+?>
