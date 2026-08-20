@@ -228,7 +228,7 @@ function seed_modena_ppt_products() {
             'gallery'     => array()
         ),
         array(
-            'title'       => 'Modena Sujata 3-Jar Stainless Steel Set',
+            'title'       => 'Modena Pro 3-Jar Stainless Steel Set (Universal Fit)',
             'slug'        => 'modena-sujata-3jar-set',
             'price'       => '1899',
             'regular'     => '2599',
@@ -239,7 +239,7 @@ function seed_modena_ppt_products() {
             'gallery'     => array()
         ),
         array(
-            'title'       => 'Modena Karina 3-Jar Set with PC Polycarbonate Lid',
+            'title'       => 'Modena Crystal 3-Jar Set with PC Polycarbonate Lid',
             'slug'        => 'modena-karina-3jar-pc-lid',
             'price'       => '1999',
             'regular'     => '2799',
@@ -250,7 +250,7 @@ function seed_modena_ppt_products() {
             'gallery'     => array()
         ),
         array(
-            'title'       => 'Modena Preethi Heavy-Duty 3-Jar Set',
+            'title'       => 'Modena Classic Heavy-Duty 3-Jar Set',
             'slug'        => 'modena-preethi-heavy-duty-jar-set',
             'price'       => '2199',
             'regular'     => '2999',
@@ -3260,7 +3260,7 @@ function modena_render_recipe_meta_box($post) {
         <div class="modena-field-group">
             <label for="modena_product_search">Recommended Modena Cookware / Appliance</label>
             <div style="max-width: 500px; display: flex; flex-direction: column; gap: 8px;">
-                <input type="text" id="modena_product_search" placeholder="🔍 Type to search products (e.g. Sindoor, Tawa, Kadai)..." style="width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid #8c8f94;">
+                <input type="text" id="modena_product_search" placeholder="🔍 Type to search products (e.g. Mixer, Tawa, Kadai, Pressure Cooker)..." style="width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid #8c8f94;">
                 <select name="recommended_product_id" id="modena_product_select" style="width: 100%; height: 36px; border-radius: 4px; border: 1px solid #8c8f94;">
                     <option value="">-- None / Select Recommended Modena Product --</option>
                     <?php foreach ($wc_products as $prod): 
@@ -4218,7 +4218,7 @@ function modena_render_product_specs_meta_box($post) {
         <!-- 4. Manufacturer -->
         <div class="modena-specs-field">
             <label for="modena_manufacturer">4. Manufacturer</label>
-            <input type="text" id="modena_manufacturer" name="modena_manufacturer" value="<?php echo esc_attr($manufacturer); ?>" placeholder="e.g. Modena Kitchenware, Bergner, Hawkins, Prestige" />
+            <input type="text" id="modena_manufacturer" name="modena_manufacturer" value="<?php echo esc_attr($manufacturer); ?>" placeholder="e.g. Modena Kitchenware" />
             <p class="description">Enter brand, origin, or manufacturer name.</p>
         </div>
     </div>

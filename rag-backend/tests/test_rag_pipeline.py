@@ -35,7 +35,7 @@ def test_chat_assistant_product_query():
     # First ingest a product
     payload = {
         "id": 26,
-        "name": "Modena Sindoor 990W Mixer Grinder",
+        "name": "Modena 990W Heavy-Duty Mixer Grinder",
         "price": 2500,
         "category": "Electronics",
         "description": "Heavy duty 990W copper motor with dual airflow cooling.",
@@ -46,7 +46,7 @@ def test_chat_assistant_product_query():
     # Now query the RAG assistant
     chat_payload = {
         "session_id": "test_sess_001",
-        "message": "Tell me about the Modena Sindoor 990W Mixer Grinder motor and price."
+        "message": "Tell me about the Modena 990W Mixer Grinder motor and price."
     }
     response = client.post("/api/v1/chat/assistant", json=chat_payload)
     assert response.status_code == 200

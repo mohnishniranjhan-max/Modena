@@ -1010,9 +1010,9 @@ function App() {
         id: 'hero_slide_1',
         bgImage: banner1,
         introText: 'Introducing Modena',
-        titleDisplay: 'SINDOOR 990W',
+        titleDisplay: 'MODENA 990W',
         tagline: 'High POWER. Peak PERFORMANCE.',
-        title: 'Modena Sindoor 990W Heavy Duty Mixer Grinder',
+        title: 'Modena 990W Heavy Duty Mixer Grinder',
         subtitle: 'Heavy duty 990W mixer grinder set',
         price: '₹6,499.00',
         numericPrice: 6499,
@@ -4850,7 +4850,7 @@ function App() {
                 <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 bg-[#2A2724] text-white p-2 rounded-full">
                   <X className="w-5 h-5" />
                 </button>
-                <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Modena Sindoor 990W Mixer Grinder Specs</h2>
+                <h2 className="font-display-lg text-3xl text-[#2A2724] mb-4">Modena 990W Mixer Grinder Specs</h2>
                 <div className="bg-white p-4 rounded-lg border border-[#EFEAE6] space-y-3 text-xs mb-6">
                   <div className="flex justify-between border-b border-[#FAF8F6] pb-2">
                     <span className="font-semibold text-[#2A2724]">Motor Capacity:</span>
@@ -4874,7 +4874,7 @@ function App() {
                     setActiveModal(null);
                     handleAddToCart({
                       id: 26,
-                      name: 'modena sindoor 990W mixer grinder',
+                      name: 'modena 990W mixer grinder',
                       price: 2500,
                       price_html: '₹2,500.00',
                       image: '/wp-content/uploads/2026/08/modena-sindoor-990W-mixer-grinder.webp'

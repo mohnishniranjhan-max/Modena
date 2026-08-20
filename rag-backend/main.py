@@ -73,7 +73,7 @@ app.add_middleware(
 # --- Pydantic Data Models with Strict Size Limits ---
 class ProductWebhookPayload(BaseModel):
     id: Optional[Any] = None
-    name: str = Field(..., min_length=1, max_length=300, json_schema_extra={"example": "Modena Sindoor 990W Mixer Grinder"})
+    name: str = Field(..., min_length=1, max_length=300, json_schema_extra={"example": "Modena 990W Heavy-Duty Mixer Grinder"})
     price: Any = Field(..., json_schema_extra={"example": 2500})
     category: Optional[str] = Field("Electronics", max_length=100, json_schema_extra={"example": "Electronics"})
     description: Optional[str] = Field("", max_length=50000, json_schema_extra={"example": "Heavy duty 990W mixer grinder with dual airflow cooling"})

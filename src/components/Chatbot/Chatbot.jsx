@@ -171,16 +171,16 @@ const Chatbot = ({
         responseText = `The **5L Heavy Heritage Dutch Oven** (₹3,200.00) is an absolute masterpiece! Crafted from heavy ceramic-enameled cast iron, it retains heat exceptionally well for curries, biryanis, and baking artisan sourdough.\n\nThe self-basting lid traps all rich flavors and moisture! Shall I add one to your cart?`;
       } else if (p.id === 32 || (p.name || '').toLowerCase().includes('saucepan')) {
         responseText = `The **3L Tri-Ply Stainless Steel Saucepan** (₹1,850.00) features a 3-layer clad construction with a pure aluminum core between food-grade steel for 100% even heating without hot spots. Compatible with Gas and Induction!`;
-      } else if ((p.name || '').toLowerCase().includes('sindoor') || (p.name || '').toLowerCase().includes('990w')) {
-        responseText = `The **Modena Sindoor 990W Mixer Grinder** (₹2,500.00) features a 100% heavy copper motor reaching 22,000 RPM to grind hard Indian spices in seconds! Comes with 3 stainless steel jars and a 5-Year Motor Warranty.`;
+      } else if ((p.name || '').toLowerCase().includes('990w') || (p.name || '').toLowerCase().includes('sindoor')) {
+        responseText = `The **Modena 990W Heavy-Duty Mixer Grinder** (₹2,500.00) features a 100% heavy copper motor reaching 22,000 RPM to grind hard Indian spices in seconds! Comes with 3 stainless steel jars and a 5-Year Motor Warranty.`;
       } else if (p.id === 31 || (p.name || '').toLowerCase().includes('skillet')) {
         responseText = `The **10" Heavy Cast Iron Skillet** (₹1,450.00) is pre-seasoned with natural vegetable oil. Holds extreme heat for dosas, searing, or oven baking up to 260°C!`;
       } else {
         responseText = `The **${p.name}** is engineered for maximum heat efficiency and long-lasting durability (${p.price || p.price_html}). Would you like me to help you add it to your order?`;
       }
-    } else if (q.includes('sindoor') || q.includes('990') || q.includes('mixer') || q.includes('grind')) {
-      const p = catalog.find((x) => (x.name || '').toLowerCase().includes('sindoor') || (x.name || '').toLowerCase().includes('mixer')) || catalog[0];
-      responseText = `Our **Modena Sindoor 990W Mixer Grinder** (₹2,500.00) is built with a 100% heavy pure copper motor (22,000 RPM), 3 stainless steel jars, thermal overload protection, and a 5-Year Motor Warranty!`;
+    } else if (q.includes('990') || q.includes('mixer') || q.includes('grind') || q.includes('sindoor')) {
+      const p = catalog.find((x) => (x.name || '').toLowerCase().includes('990') || (x.name || '').toLowerCase().includes('mixer') || (x.name || '').toLowerCase().includes('sindoor')) || catalog[0];
+      responseText = `Our **Modena 990W Heavy-Duty Mixer Grinder** (₹2,500.00) is built with a 100% heavy pure copper motor (22,000 RPM), 3 stainless steel jars, thermal overload protection, and a 5-Year Motor Warranty!`;
       matchedProducts = p ? [p] : [];
     } else if (q.includes('skillet') || q.includes('iron') || q.includes('cast iron')) {
       const p = catalog.find((x) => x.id === 31 || (x.name || '').toLowerCase().includes('skillet')) || catalog[1];
@@ -195,7 +195,7 @@ const Chatbot = ({
       responseText = `The **5L Heavy Heritage Dutch Oven** (₹3,200.00) is crafted from heavy ceramic-enameled cast iron with self-basting lid spikes for rich slow-cooked meals!`;
       matchedProducts = p ? [p] : [];
     } else if (q.includes('best') || q.includes('recommend') || q.includes('top') || q.includes('bestseller')) {
-      responseText = "Our **#1 Bestseller** is the **Modena Sindoor 990W Mixer Grinder** (₹2,500.00) with a 5-Year Motor Warranty, alongside our **10\" Heavy Cast Iron Skillet** (₹1,450.00)!";
+      responseText = "Our **#1 Bestseller** is the **Modena 990W Heavy-Duty Mixer Grinder** (₹2,500.00) with a 5-Year Motor Warranty, alongside our **10\" Heavy Cast Iron Skillet** (₹1,450.00)!";
       matchedProducts = catalog.slice(0, 2);
     } else {
       responseText = "Namaste! How can I help upgrade your kitchen today? Ask me about our 990W Mixer Grinders, Cast Iron Skillets, Dutch Ovens, Order Tracking, or Return Policies!";
